@@ -316,6 +316,12 @@ export async function moveTask(store, input = {}) {
         if (task.pendingQuestion && !task.questionResolution) {
           throw new KanbanError('QUESTION_OPEN', `answer or reject the question on ${task.identifier} first`)
         }
+        if (task.status === 'in_review' && actor.type !== 'user') {
+          throw new KanbanError(
+            'HUMAN_DECISION_REQUIRED',
+            `${task.identifier} is in review; ask the human to approve it instead of moving it to Done`,
+          )
+        }
       }
       const next = { ...task, status }
       // Moving into review is legitimate; the review overlay pulls it into Needs you,

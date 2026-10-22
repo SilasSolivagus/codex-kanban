@@ -239,16 +239,53 @@ test('moving between stored statuses updates statusSince and activity', async (t
   assert.equal(noop.task.version, 2)
 })
 
-test('in_review may move to done or running', async (t) => {
+test('in_review may move back to running', async (t) => {
   const { store } = fixture(t)
   const task = await newTask(store, { status: 'in_review' })
   const running = await moveTask(store, { id: task.identifier, version: 1, to: 'running' })
   assert.equal(running.task.status, 'in_progress')
   const review = await moveTask(store, { id: task.identifier, version: 2, to: 'in_review' })
   assert.equal(review.task.status, 'in_review')
-  const done = await moveTask(store, { id: task.identifier, version: 3, to: 'done' })
+})
+
+test('an agent cannot close a task that is in review', async (t) => {
+  const { store } = fixture(t)
+  const task = await newTask(store, { status: 'in_review' })
+  const before = fs.readFileSync(store.path, 'utf8')
+
+  await assert.rejects(
+    moveTask(store, { id: task.identifier, version: 1, to: 'done', as: 'agent' }),
+    (error) => {
+      assert.equal(error.code, 'HUMAN_DECISION_REQUIRED')
+      assert.match(error.message, /ask the human to approve/i)
+      return true
+    },
+  )
+  // The rejected move left no trace: no version bump, no activity, no rewrite.
+  assert.equal(fs.readFileSync(store.path, 'utf8'), before)
+  assert.equal(store.read().tasks[0].version, 1)
+  assert.equal(store.read().tasks[0].status, 'in_review')
+})
+
+test('a human may close a task that is in review', async (t) => {
+  const { store } = fixture(t)
+  const task = await newTask(store, { status: 'in_review' })
+  const done = await moveTask(store, {
+    id: task.identifier,
+    version: 1,
+    to: 'done',
+    as: 'user',
+  })
   assert.equal(done.task.status, 'done')
-  assert.equal(done.task.questionResolution, null)
+  assert.equal(done.task.activity.at(-1).kind, 'moved')
+  assert.deepEqual(done.task.activity.at(-1).actor, { type: 'user', name: 'you' })
+})
+
+test('an agent may close its own in_progress work', async (t) => {
+  const { store } = fixture(t)
+  const task = await newTask(store, { status: 'in_progress' })
+  const done = await moveTask(store, { id: task.identifier, version: 1, to: 'done' })
+  assert.equal(done.task.status, 'done')
 })
 
 test('moves respect blockers and open questions', async (t) => {
