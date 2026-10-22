@@ -3,14 +3,19 @@ import path from 'node:path'
 import {
   addComment,
   answerTask,
+  archiveProject,
   approveTask,
   askTask,
   blockTask,
+  createProject,
   createTask,
   getTaskView,
+  listProjects,
   moveTask,
   rejectTask,
+  restoreProject,
   unblockTask,
+  updateProject,
   updateTask,
 } from '../src/domain.mjs'
 import { renderMarkdown, renderTaskDetail } from '../src/render.mjs'
@@ -38,6 +43,10 @@ const VERSION = {
 const TASK_REF = {
   type: 'string',
   description: 'Task identifier such as KAN-3, or its internal id.',
+}
+const PROJECT = {
+  type: 'string',
+  description: 'Project id or name. Use "all" or omit for every project.',
 }
 
 function schema(properties, required) {
@@ -249,6 +258,59 @@ export const TOOLS = [
   },
 ]
 
+const PROJECT_TOOLS = [
+  {
+    name: 'kanban_project_list',
+    title: 'List projects',
+    description: 'List the projects on this repository board with prefix, archive state and task counts.',
+    inputSchema: schema({ root: ROOT }, []),
+  },
+  {
+    name: 'kanban_project_create',
+    title: 'Create a project',
+    description: 'Create a project (workstream) on the repository board.',
+    inputSchema: schema({
+      root: ROOT,
+      name: { type: 'string', maxLength: 120 },
+      prefix: { type: 'string', description: 'Optional 2-6 character identifier prefix.' },
+      workspace_path: { type: 'string', description: 'Optional absolute path this project tracks.' },
+      as: ACTOR,
+    }, ['name']),
+  },
+  {
+    name: 'kanban_project_update',
+    title: 'Update a project',
+    description: 'Rename a project, change its prefix, or set its workspace path.',
+    inputSchema: schema({
+      root: ROOT,
+      id: { type: 'string', description: 'Project id or name.' },
+      name: { type: 'string', maxLength: 120 },
+      prefix: { type: 'string' },
+      workspace_path: { type: 'string' },
+      as: ACTOR,
+    }, ['id']),
+  },
+  {
+    name: 'kanban_project_archive',
+    title: 'Archive a project',
+    description: 'Archive a project; its tasks become read-only until it is restored.',
+    inputSchema: schema({ root: ROOT, id: { type: 'string' }, as: ACTOR }, ['id']),
+  },
+  {
+    name: 'kanban_project_restore',
+    title: 'Restore a project',
+    description: 'Restore an archived project so its tasks can be edited again.',
+    inputSchema: schema({ root: ROOT, id: { type: 'string' }, as: ACTOR }, ['id']),
+  },
+]
+
+for (const tool of TOOLS) {
+  if (tool.name === 'kanban_board' || tool.name.startsWith('kanban_task_')) {
+    tool.inputSchema.properties = { ...tool.inputSchema.properties, project: PROJECT }
+  }
+}
+TOOLS.push(...PROJECT_TOOLS)
+
 function text(value) {
   return { content: [{ type: 'text', text: value }] }
 }
@@ -270,6 +332,29 @@ function storeFor(args) {
     throw inputError('ROOT_REQUIRED', 'pass the absolute repository path as root (or set CODEX_KANBAN_ROOT)')
   }
   return createStore({ root: resolveRoot(explicit) })
+}
+
+function resolveProject(board, ref) {
+  if (!ref || ref === 'all') return null
+  const needle = String(ref).toLowerCase()
+  const project = (board.projects || []).find(
+    (entry) => entry.id.toLowerCase() === needle || entry.name.toLowerCase() === needle,
+  )
+  if (!project) throw inputError('PROJECT_NOT_FOUND', `no project matches ${ref}`)
+  return project
+}
+
+function assertTaskProject(store, args) {
+  if (!args.project || args.project === 'all') return
+  const board = store.read()
+  const project = resolveProject(board, args.project)
+  const needle = String(args.id || '').toLowerCase()
+  const task = board.tasks.find(
+    (entry) => entry.id.toLowerCase() === needle || entry.identifier.toLowerCase() === needle,
+  )
+  if (task && project && task.projectId !== project.id) {
+    throw inputError('TASK_NOT_FOUND', `${args.id} is not in project ${project.name}`)
+  }
 }
 
 function requireVersion(args) {
@@ -305,28 +390,34 @@ export const HANDLERS = {
     const column = validateColumn(args.column)
     const store = storeFor(args)
     const board = store.read()
+    const project = resolveProject(board, args.project)
     return text(renderMarkdown(board, {
       column,
       // Selecting the Done column is an explicit request for it.
       includeDone: args.include_done !== false || column === 'done',
+      projectId: project?.id ?? null,
+      projectName: project?.name,
     }))
   },
 
   async kanban_task_get(args) {
     const store = storeFor(args)
+    assertTaskProject(store, args)
     const result = getTaskView(store, args)
     return text(renderTaskDetail(result.task, { history: 'full' }))
   },
 
   async kanban_task_create(args) {
     const store = storeFor(args)
-    const result = await createTask(store, args)
+    const project = resolveProject(store.read(), args.project)
+    const result = await createTask(store, { ...args, projectId: project?.id })
     const task = result.task
     return text(`Created ${describeTask(task)}.\nNext: kanban_task_get ${task.identifier} to read it, or kanban_board to see the queue.`)
   },
 
   async kanban_task_update(args) {
     const store = storeFor(args)
+    assertTaskProject(store, args)
     requireVersion(args)
     const result = await updateTask(store, args)
     return text(result.unchanged ? `${describeTask(result.task)} · nothing changed` : `Updated ${describeTask(result.task)}.`)
@@ -334,6 +425,7 @@ export const HANDLERS = {
 
   async kanban_task_move(args) {
     const store = storeFor(args)
+    assertTaskProject(store, args)
     requireVersion(args)
     const result = await moveTask(store, args)
     return text(result.unchanged ? `${describeTask(result.task)} · already there` : `Moved ${describeTask(result.task)}.`)
@@ -341,6 +433,7 @@ export const HANDLERS = {
 
   async kanban_task_block(args) {
     const store = storeFor(args)
+    assertTaskProject(store, args)
     requireVersion(args)
     const result = await blockTask(store, args)
     return text(`Blocked ${describeTask(result.task)}: ${result.task.blockedReason}`)
@@ -348,6 +441,7 @@ export const HANDLERS = {
 
   async kanban_task_unblock(args) {
     const store = storeFor(args)
+    assertTaskProject(store, args)
     requireVersion(args)
     const result = await unblockTask(store, args)
     return text(`Cleared the blocker on ${describeTask(result.task)}.`)
@@ -355,6 +449,7 @@ export const HANDLERS = {
 
   async kanban_task_ask(args) {
     const store = storeFor(args)
+    assertTaskProject(store, args)
     requireVersion(args)
     const result = await askTask(store, args)
     const options = result.task.pendingQuestion.options.map((option) => `${option.id}=${option.label}`).join(', ')
@@ -363,6 +458,7 @@ export const HANDLERS = {
 
   async kanban_task_answer(args) {
     const store = storeFor(args)
+    assertTaskProject(store, args)
     requireVersion(args)
     const result = await answerTask(store, args)
     const selected = result.task.pendingQuestion.selected
@@ -372,6 +468,7 @@ export const HANDLERS = {
   async kanban_task_approve(args) {
     confirmGate(args)
     const store = storeFor(args)
+    assertTaskProject(store, args)
     requireVersion(args)
     const result = await approveTask(store, args)
     return text(`Approved ${describeTask(result.task)}.`)
@@ -380,6 +477,7 @@ export const HANDLERS = {
   async kanban_task_reject(args) {
     confirmGate(args)
     const store = storeFor(args)
+    assertTaskProject(store, args)
     requireVersion(args)
     const result = await rejectTask(store, args)
     return text(`Rejected ${describeTask(result.task)} back to Backlog.`)
@@ -387,6 +485,7 @@ export const HANDLERS = {
 
   async kanban_task_comment(args) {
     const store = storeFor(args)
+    assertTaskProject(store, args)
     requireVersion(args)
     const result = await addComment(store, args)
     return text(`Comment added to ${describeTask(result.task)}.`)
@@ -400,6 +499,52 @@ export const HANDLERS = {
     fs.writeFileSync(outputPath, renderHtml(board), 'utf8')
     const inline = `\uE200visualize\uE202${JSON.stringify({ path: outputPath, title: `Codex Kanban · ${board.project.name}` })}\uE201`
     return text(`Wrote ${outputPath}\n\nInline reference (emit verbatim only in the Codex app):\n${inline}`)
+  },
+  async kanban_project_list(args) {
+    const store = storeFor(args)
+    const board = store.read()
+    const rows = listProjects(board).map((project) => {
+      const total = board.tasks.filter((task) => task.projectId === project.id).length
+      const open = board.tasks.filter((task) => task.projectId === project.id && task.status !== 'done' && task.status !== 'canceled').length
+      const state = project.archivedAt ? 'archived' : 'active'
+      return `| ${project.id} | ${project.name} | ${project.prefix} | ${state} | ${open}/${total} |`
+    })
+    return text(['| id | name | prefix | state | open/total |', '| --- | --- | --- | --- | --- |', ...rows].join('\n'))
+  },
+
+  async kanban_project_create(args) {
+    const store = storeFor(args)
+    const result = await createProject(store, {
+      name: args.name,
+      prefix: args.prefix,
+      workspacePath: args.workspace_path,
+      as: args.as,
+    })
+    return text(`Created project ${result.project.name} (${result.project.prefix}) · ${result.project.id}`)
+  },
+
+  async kanban_project_update(args) {
+    const store = storeFor(args)
+    const result = await updateProject(store, {
+      id: args.id,
+      name: args.name,
+      prefix: args.prefix,
+      workspacePath: args.workspace_path,
+      as: args.as,
+    })
+    return text(`Updated project ${result.project.name} (${result.project.prefix}).`)
+  },
+
+  async kanban_project_archive(args) {
+    const store = storeFor(args)
+    const result = await archiveProject(store, { id: args.id, as: args.as })
+    return text(`Archived project ${result.project.name}. Its tasks are read-only until restored.`)
+  },
+
+  async kanban_project_restore(args) {
+    const store = storeFor(args)
+    const result = await restoreProject(store, { id: args.id, as: args.as })
+    return text(`Restored project ${result.project.name}.`)
   },
 }
 

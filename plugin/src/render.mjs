@@ -89,8 +89,9 @@ export function summarizeView(view) {
   return `${total} task${total === 1 ? '' : 's'} · ${needsYou} needs you · ${counts.running} running`
 }
 
-export function buildView(board, { includeDone = true, includeCanceled = false } = {}) {
-  const tasks = Array.isArray(board?.tasks) ? board.tasks : []
+export function buildView(board, { includeDone = true, includeCanceled = false, projectId = null } = {}) {
+  const allTasks = Array.isArray(board?.tasks) ? board.tasks : []
+  const tasks = projectId ? allTasks.filter((task) => task.projectId === projectId) : allTasks
   const columns = Object.fromEntries(COLUMNS.map((column) => [column.id, []]))
   const counts = { backlog: 0, running: 0, needs: 0, done: 0, canceled: 0 }
 
@@ -116,8 +117,12 @@ export function buildView(board, { includeDone = true, includeCanceled = false }
     flat.push(...columns[id])
   }
 
+  const project = projectId
+    ? (board?.projects || []).find((entry) => entry.id === projectId) || null
+    : board?.project
+
   return {
-    project: board?.project,
+    project,
     columns,
     tasks: flat,
     summary: {
@@ -129,11 +134,11 @@ export function buildView(board, { includeDone = true, includeCanceled = false }
   }
 }
 
-export function renderMarkdown(board, { column, includeDone = true, now = Date.now() } = {}) {
-  const view = buildView(board, { includeDone })
+export function renderMarkdown(board, { column, includeDone = true, now = Date.now(), projectId = null, projectName } = {}) {
+  const view = buildView(board, { includeDone, projectId })
   if (view.summary.total === 0) return EMPTY_BOARD
 
-  const name = inline(board?.project?.name)
+  const name = inline(projectName || view.project?.name)
   const lines = [
     name ? `# Codex Kanban · ${name}` : '# Codex Kanban',
     '',

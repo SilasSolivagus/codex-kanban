@@ -23,6 +23,11 @@ const TOOL_NAMES = [
   'kanban_task_reject',
   'kanban_task_comment',
   'kanban_render',
+  'kanban_project_list',
+  'kanban_project_create',
+  'kanban_project_update',
+  'kanban_project_archive',
+  'kanban_project_restore',
 ]
 
 function delay(ms) {
@@ -172,14 +177,14 @@ test('initialize negotiates the protocol version and advertises the kanban serve
   assert.equal(fallback.result.protocolVersion, '2025-06-18')
 })
 
-test('tools/list exposes exactly the 13 kanban tools', async (t) => {
+test('tools/list exposes exactly the 18 kanban tools', async (t) => {
   const client = startServer(t)
   await client.request('initialize', { protocolVersion: '2025-06-18' })
   client.notify('notifications/initialized')
 
   const response = await client.request('tools/list')
   const tools = response.result.tools
-  assert.equal(tools.length, 13)
+  assert.equal(tools.length, 18)
   assert.deepEqual(tools.map((tool) => tool.name).sort(), [...TOOL_NAMES].sort())
 
   for (const tool of tools) {
@@ -379,4 +384,43 @@ test('an invalid CODEX_KANBAN_ROOT fails with ROOT_NOT_FOUND', async (t) => {
   await client.request('initialize', { protocolVersion: '2025-06-18' })
   const result = await client.call('kanban_board', {})
   expectError(result, 'ROOT_NOT_FOUND')
+})
+
+test('projects filter tasks and archived projects reject writes over mcp', async (t) => {
+  const client = startServer(t)
+  await client.request('initialize', { protocolVersion: '2025-06-18' })
+
+  const created = await client.call('kanban_project_create', {
+    name: 'web',
+    prefix: 'WEB',
+    workspace_path: '/tmp/web',
+  })
+  assert.match(created.content[0].text, /Created project web \(WEB\)/)
+
+  const task = await client.call('kanban_task_create', {
+    title: 'Web task',
+    project: 'web',
+  })
+  assert.match(task.content[0].text, /WEB-1/)
+
+  const filtered = await client.call('kanban_board', { project: 'web' })
+  assert.match(filtered.content[0].text, /Web task/)
+  assert.doesNotMatch(filtered.content[0].text, /KANBAN-/)
+
+  const listed = await client.call('kanban_project_list', {})
+  assert.match(listed.content[0].text, /\| web \| WEB \| active \| 1\/1 \|/)
+
+  const archived = await client.call('kanban_project_archive', { id: 'web' })
+  assert.match(archived.content[0].text, /Archived project web/)
+
+  const blocked = await client.call('kanban_task_create', { title: 'nope', project: 'web' })
+  assert.equal(blocked.isError, true)
+  assert.match(blocked.content[0].text, /PROJECT_ARCHIVED/)
+
+  const restored = await client.call('kanban_project_restore', { id: 'web' })
+  assert.match(restored.content[0].text, /Restored project web/)
+
+  const unknown = await client.call('kanban_board', { project: 'missing' })
+  assert.equal(unknown.isError, true)
+  assert.match(unknown.content[0].text, /PROJECT_NOT_FOUND/)
 })

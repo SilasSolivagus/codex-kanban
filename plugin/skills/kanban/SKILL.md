@@ -33,6 +33,18 @@ Do not create a task for every step you take. Create one when the user asks to
 track work, when the work spans sessions, or when a finding must not be lost.
 Reading the board is cheap; writing noise is not.
 
+## Projects
+
+A repository board can hold several projects (workstreams).
+
+- `kanban_project_list` before assuming a single board; pass `project` (id or name)
+  to `kanban_board` and the task tools when the repo has more than one.
+- `kanban_project_create` / `update` / `archive` / `restore` manage them.
+- An archived project is read-only: every task write fails with
+  `PROJECT_ARCHIVED` until it is restored. Do not try to work around it.
+- Attachments are managed on the local web board (`codex-kanban serve`); agents
+  should reference a link or describe the file instead of moving bytes.
+
 ## Columns and statuses
 
 | Column | Stored status | Meaning |
