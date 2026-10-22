@@ -259,6 +259,22 @@ record it with `kanban_task_answer`, then approve.
 The task has an unresolved question and cannot move to Done. Answer it or reject
 the task; rejecting sends it back to Backlog.
 
+## Use the local web board
+
+```bash
+node plugin/bin/codex-kanban.mjs serve --open
+```
+
+Open `http://127.0.0.1:4317`. Drag cards between Backlog, Running and Done; click a
+card to answer a question, approve, reject, block, unblock, ask or comment. Writes go
+through the same store, with the same version checks as the MCP tools.
+
+- The server listens on loopback only by default. `--host 0.0.0.0` exposes it to your
+  network; only do that on a trusted machine.
+- There is no account system. Anyone who can reach the port acts as the human, which
+  is why the default is loopback.
+- `--port 8080` changes the port. Ctrl-C stops the server.
+
 ## Where the data lives
 
 - `.kanban/board.json` is the board. One board per repository. It is plain JSON and

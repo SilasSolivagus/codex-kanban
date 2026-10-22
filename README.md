@@ -8,8 +8,8 @@
 
 <p align="center">
   <a href="https://github.com/SilasSolivagus/codex-kanban/actions/workflows/ci.yml"><img src="https://github.com/SilasSolivagus/codex-kanban/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <a href="https://github.com/SilasSolivagus/codex-kanban"><img src="https://img.shields.io/badge/version-0.1.0-2F6FB2" alt="Version 0.1.0"></a>
-  <img src="https://img.shields.io/badge/tests-155%20passing-2ea043" alt="155 tests passing">
+  <a href="https://github.com/SilasSolivagus/codex-kanban"><img src="https://img.shields.io/badge/version-0.2.0-2F6FB2" alt="Version 0.2.0"></a>
+  <img src="https://img.shields.io/badge/tests-162%20passing-2ea043" alt="162 tests passing">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-2F6FB2" alt="MIT license"></a>
 </p>
 
@@ -112,6 +112,26 @@ cache. Writes to an existing task take the current `version` from
 | `kanban_task_comment` | Append a comment that stays with the task. |
 | `kanban_render` | Write `.kanban/board.html` and return its path plus the inline visual reference. |
 
+## Local web board
+
+For humans who would rather not work inside a terminal or a chat, the plugin ships
+a local board:
+
+```bash
+node plugin/bin/codex-kanban.mjs serve --open
+# Codex Kanban · http://127.0.0.1:4317
+```
+
+![The local web board with four columns and drag-and-drop](docs/assets/kanban-web.png)
+
+It reads and writes the same `.kanban/board.json`. Drag a card between Backlog,
+Running and Done; open a card to answer a question, approve, reject, block,
+unblock, ask, or comment. Needs you is never a drop target.
+
+The server binds to `127.0.0.1` by default, has no account system, and makes no
+outbound requests. `--port` changes the port; `--host 0.0.0.0` exposes it to your
+network and should only be used on a machine you trust.
+
 ## Architecture
 
 ```mermaid
@@ -120,6 +140,7 @@ flowchart LR
   A --> S[kanban skill<br/>when to read, ask or write]
   A --> M[MCP server<br/>13 kanban_* tools]
   S --> M
+  W[Web board<br/>127.0.0.1] --> M
   M --> B[".kanban/board.json<br/>atomic · versioned"]
   M --> H[".kanban/board.html<br/>self-contained view"]
 ```
@@ -226,7 +247,7 @@ cd codex-kanban
 node --test
 ```
 
-The suite has 155 tests at `v0.1.0` and uses only `node:test`. `npm test` runs the
+The suite has 162 tests at `v0.2.0` and uses only `node:test`. `npm test` runs the
 same command. There are no runtime or development dependencies to install.
 
 ```

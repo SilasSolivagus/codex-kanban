@@ -8,8 +8,8 @@
 
 <p align="center">
   <a href="https://github.com/SilasSolivagus/codex-kanban/actions/workflows/ci.yml"><img src="https://github.com/SilasSolivagus/codex-kanban/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <a href="https://github.com/SilasSolivagus/codex-kanban"><img src="https://img.shields.io/badge/version-0.1.0-2F6FB2" alt="版本 0.1.0"></a>
-  <img src="https://img.shields.io/badge/tests-155%20passing-2ea043" alt="155 项测试通过">
+  <a href="https://github.com/SilasSolivagus/codex-kanban"><img src="https://img.shields.io/badge/version-0.2.0-2F6FB2" alt="版本 0.1.0"></a>
+  <img src="https://img.shields.io/badge/tests-162%20passing-2ea043" alt="162 项测试通过">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-2F6FB2" alt="MIT 许可证"></a>
 </p>
 
@@ -106,6 +106,23 @@ Codex 记录答案、带上人类的确认完成审批、把任务移到 Done，
 | `kanban_task_reject` | 仅限人类：驳回并附备注，任务回到 Backlog。 |
 | `kanban_task_comment` | 追加一条跟随任务的评论。 |
 | `kanban_render` | 写出 `.kanban/board.html`，返回路径和内联视觉引用。 |
+
+## 本地 Web 看板
+
+不想在终端或对话里操作时，可以直接开一个本地看板：
+
+```bash
+node plugin/bin/codex-kanban.mjs serve --open
+# Codex Kanban · http://127.0.0.1:4317
+```
+
+![本地 Web 看板：四列、可拖拽](docs/assets/kanban-web.png)
+
+读写的是同一个 `.kanban/board.json`。卡片可在 Backlog、Running、Done 之间拖拽；
+点开卡片可以回答问题、批准、驳回、阻塞、解阻塞、提问或评论。Needs you 不能作为拖拽目标。
+
+服务默认只监听 `127.0.0.1`，没有账号体系，也不发起任何外部请求。`--port` 换端口；
+`--host 0.0.0.0` 会把看板暴露到局域网，只应在你信任的机器上使用。
 
 ## 架构
 
@@ -211,7 +228,7 @@ cd codex-kanban
 node --test
 ```
 
-`v0.1.0` 共有 155 项测试，只使用 `node:test`。`npm test` 执行同一条命令，没有运行时
+`v0.2.0` 共有 162 项测试，只使用 `node:test`。`npm test` 执行同一条命令，没有运行时
 或开发依赖需要安装。
 
 ```

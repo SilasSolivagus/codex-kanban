@@ -42,6 +42,7 @@ Usage:
   codex-kanban comment <id> --body TEXT
   codex-kanban render [--open]
   codex-kanban open
+  codex-kanban serve [--port 4317] [--host 127.0.0.1] [--open]
   codex-kanban help
 
 Every command accepts --root PATH, --as agent|user (default user), and
@@ -345,6 +346,24 @@ async function main() {
       const target = writeBoardHtml(store)
       process.stdout.write(`${target}\n`)
       if (flags.open) openInBrowser(target)
+      return
+    }
+    case 'serve': {
+      const { createWebServer } = await import('../server/web.mjs')
+      const port = flags.port === undefined ? 4317 : Number(flags.port)
+      if (!Number.isInteger(port) || port < 0 || port > 65535) {
+        return fail('--port must be an integer between 0 and 65535')
+      }
+      const host = typeof flags.host === 'string' ? flags.host : '127.0.0.1'
+      const web = createWebServer({ store, host, port })
+      const url = await web.listen()
+      process.stdout.write(`Codex Kanban · ${url}\n`)
+      if (flags.open) openInBrowser(url)
+      const shutdown = () => {
+        web.close().then(() => process.exit(0))
+      }
+      process.on('SIGINT', shutdown)
+      process.on('SIGTERM', shutdown)
       return
     }
     case 'open': {
