@@ -49,17 +49,35 @@ test('a project name cannot inject markup into the title', () => {
   assert.doesNotMatch(evil, /<b>demo/)
 })
 
+test('the light theme uses the dsh reference tokens and layout scale', () => {
+  for (const token of ['#f7f8fa', '#ffffff', '#111827', '#6b7280', '#f3f4f6', '#eff2f6', '#fff7e8', '#eef8f1', '#e5e7eb']) {
+    assert.ok(markup.includes(token), `light token ${token} is present`)
+  }
+  assert.match(markup, /--bg: light-dark\(#f7f8fa/)
+  assert.match(markup, /--panel-needs: light-dark\(#fff7e8/)
+  assert.match(markup, /--panel-done: light-dark\(#eef8f1/)
+  assert.match(markup, /border-radius: 14px/)
+  assert.match(markup, /max-width: 1400px/)
+  assert.match(markup, /gap: 14px/)
+  assert.doesNotMatch(markup, /text-transform: uppercase/)
+})
+
 // --- header, switcher, search, language ----------------------------------
 
-test('header has title, project switcher, search, language toggle, new task and refresh', () => {
+test('header has page title, project switcher, wide search, filters, running count, language toggle, refresh and projects', () => {
   assert.match(markup, /<h1 id="board-title">Codex Kanban<\/h1>/)
   assert.match(markup, /<select id="project-select"/)
   assert.match(markup, /<option value="all">All projects<\/option>/)
   assert.match(markup, /<input id="search" type="search"/)
+  assert.match(markup, /data-i18n-placeholder="header.searchPlaceholder"/)
+  assert.match(markup, /<button id="filter-toggle"[^>]*>Filters<\/button>/)
+  assert.match(markup, /<select id="filter-priority"/)
+  assert.match(markup, /<select id="filter-label"/)
+  assert.match(markup, /<select id="filter-assignee"/)
   assert.match(markup, /<button id="lang-toggle"[^>]*>中文<\/button>/)
-  assert.match(markup, /<button id="new-task"[^>]*>New task<\/button>/)
-  assert.match(markup, /<button id="refresh"[^>]*>Refresh<\/button>/)
+  assert.match(markup, /<button id="refresh"[^>]*aria-label="Refresh"/)
   assert.match(markup, /<button id="manage-projects"[^>]*>Projects<\/button>/)
+  assert.match(markup, /id="running-count"/)
   assert.match(markup, /id="counts" aria-live="polite"/)
 })
 
@@ -108,6 +126,58 @@ test('cards are keyboard accessible and open the drawer with Enter or Space', ()
   assert.match(script, /card\.setAttribute\('aria-haspopup', 'dialog'\)/)
   assert.match(script, /event\.key === 'Enter' \|\| event\.key === ' '/)
   assert.match(markup, /<aside class="drawer" id="drawer" role="dialog" aria-modal="true"/)
+})
+
+test('every column has a footer create button that creates in that column', () => {
+  const footers = [...markup.matchAll(/class="column-new-card"[^>]*data-create="([^"]+)"/g)]
+    .map((match) => match[1])
+  assert.deepEqual(footers, COLUMN_IDS)
+  const heads = [...markup.matchAll(/class="column-add"[^>]*data-create="([^"]+)"/g)]
+    .map((match) => match[1])
+  assert.deepEqual(heads, COLUMN_IDS)
+  assert.equal((markup.match(/data-i18n="columns\.add"/g) || []).length, 4)
+  assert.match(script, /querySelectorAll\('\[data-create\]'\)/)
+  assert.match(script, /openNewTask\(this\.getAttribute\('data-create'\)\)/)
+  assert.match(script, /status: COLUMN_STATUS\[state\.newTaskColumn\] \|\| 'backlog'/)
+})
+
+test('status dots and localized status labels are rendered on every card', () => {
+  assert.match(markup, /\.status-dot \{/)
+  assert.match(markup, /\.status-needs \.status-dot/)
+  assert.match(markup, /\.status-done \.status-dot/)
+  assert.match(script, /'status-dot'/)
+  assert.match(script, /function statusClass\(task\)/)
+  assert.match(script, /t\('status\.' \+ \(task\.status \|\| 'backlog'\)\)/)
+  for (const status of ['backlog', 'todo', 'in_progress', 'in_review', 'done', 'canceled']) {
+    assert.ok(I18N_KEYS.includes(`status.${status}`), `status.${status} is translated`)
+  }
+})
+
+test('needs-you cards carry an inline question panel with options, note and decisions', () => {
+  assert.match(markup, /<template id="question-panel-template">/)
+  assert.match(markup, /class="question-panel"/)
+  assert.match(markup, /data-question-options/)
+  assert.match(markup, /role="radiogroup"/)
+  assert.match(markup, /data-question-note/)
+  assert.match(markup, /data-question-approve/)
+  assert.match(markup, /data-question-reject/)
+  assert.match(markup, /data-i18n="question.inlineTitle"/)
+  assert.match(script, /function buildQuestionPanel\(task\)/)
+  assert.match(script, /function inlineDecide\(task, decision, panel\)/)
+  assert.match(script, /act\('task\.answer'/)
+  assert.match(script, /decision === 'approve' \? 'task\.approve' : 'task\.reject'/)
+  assert.match(script, /t\('card\.blockedPrefix'\) \+ task\.blockedReason/)
+})
+
+test('the reference search placeholder exists in both languages', () => {
+  assert.equal(STRINGS.en['header.searchPlaceholder'], 'Search title / summary / project / label')
+  assert.equal(STRINGS.zh['header.searchPlaceholder'], '搜索标题 / 摘要 / 项目 / 标签')
+  assert.match(markup, /data-i18n-placeholder="header.searchPlaceholder"/)
+  assert.match(markup, /placeholder="Search title \/ summary \/ project \/ label"/)
+  for (const key of ['question.inlineTitle', 'question.notePlaceholder', 'card.updatedAgo', 'card.blockedPrefix', 'columns.add', 'header.filter', 'counts.running']) {
+    assert.ok(I18N_KEYS.includes(key), `${key} is in both dictionaries`)
+    assert.notEqual(STRINGS.en[key], STRINGS.zh[key], `${key} differs by language`)
+  }
 })
 
 // --- drawer ---------------------------------------------------------------
@@ -199,7 +269,7 @@ test('an archived project renders a readonly banner and disables every write', (
   assert.match(markup, /<div class="banner" id="readonly-banner"/)
   assert.match(markup, /id="restore-selected"/)
   assert.match(script, /state\.readOnly = Boolean\(payload\.board && payload\.board\.project && payload\.board\.project\.archivedAt\)/)
-  assert.match(script, /newTaskButton\.disabled = state\.readOnly/)
+  assert.match(script, /createButtons\[i\]\.disabled = state\.readOnly/)
   assert.match(script, /writes\[i\]\.disabled = readOnly/)
   assert.match(script, /if \(state\.readOnly && action\.indexOf\('project\.'\) !== 0\)/)
   assert.match(script, /PROJECT_ARCHIVED/)
@@ -240,6 +310,11 @@ test('language, collapsed columns and the selected project persist in localStora
   assert.match(script, /storeSet\(STORAGE\.project, state\.projectId\)/)
   assert.match(script, /state\.lang = state\.lang === 'zh' \? 'en' : 'zh'/)
   assert.match(script, /document\.documentElement\.lang = state\.lang/)
+})
+
+test('the page defaults to zh for a Chinese browser and en otherwise', () => {
+  assert.match(script, /window\.navigator\.language/)
+  assert.match(script, /browser\.indexOf\('zh'\) === 0 \? 'zh' : 'en'/)
 })
 
 test('keyboard shortcuts cover /, n and Escape', () => {
