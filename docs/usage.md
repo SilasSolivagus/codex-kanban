@@ -246,9 +246,21 @@ node plugin/bin/codex-kanban.mjs serve --open
 - 没有账号体系，能访问端口的人就是以人类身份操作，所以默认只听回环。
 - `--port 8080` 换端口，Ctrl-C 停止。
 
+## 项目与附件
+
+每块看板一开始有一个项目，名字取自仓库目录。可以在网页看板的 **项目管理** 里继续添加，
+或调用 `kanban_project_create`；每个项目有独立的编号前缀，因此 `APP-1` 和 `WEB-1` 可以
+共存于同一块看板。
+
+- 有多个项目时，给 `kanban_board` 和任务工具传 `project`（id 或名称）。
+- 归档项目后，任何任务写入都会返回 `PROJECT_ARCHIVED`，恢复后才能继续编辑。
+- 附件从任务抽屉上传（单文件 10 MB），存放在 `.kanban/attachments/<id>`。agent 使用链接，
+  字节由网页看板负责搬运。
+
 ## 数据在哪里
 
 - `.kanban/board.json` 就是看板。一个仓库一块，普通 JSON，适合跟项目一起评审和提交。
 - `.kanban/board.html` 是生成的只读视图；不想提交就把它加进 `.gitignore`。
 - `.kanban/board.lock` 用于串行化写入，是临时文件；同样建议加入 `.gitignore`。
+- `.kanban/attachments/` 存上传的文件；不想把二进制提交进仓库就加入 `.gitignore`。
 - 已取消的任务仍保留在 `board.json`，也能按标识读取，但不会显示在任何一列。

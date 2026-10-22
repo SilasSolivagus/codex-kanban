@@ -8,8 +8,8 @@
 
 <p align="center">
   <a href="https://github.com/SilasSolivagus/codex-kanban/actions/workflows/ci.yml"><img src="https://github.com/SilasSolivagus/codex-kanban/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <a href="https://github.com/SilasSolivagus/codex-kanban"><img src="https://img.shields.io/badge/version-0.2.0-2F6FB2" alt="版本 0.1.0"></a>
-  <img src="https://img.shields.io/badge/tests-162%20passing-2ea043" alt="162 项测试通过">
+  <a href="https://github.com/SilasSolivagus/codex-kanban"><img src="https://img.shields.io/badge/version-0.3.0-2F6FB2" alt="版本 0.1.0"></a>
+  <img src="https://img.shields.io/badge/tests-213%20passing-2ea043" alt="213 项测试通过">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-2F6FB2" alt="MIT 许可证"></a>
 </p>
 
@@ -36,6 +36,9 @@ HTML 看板是附加的自包含视图，需要纵览整条队列时再用。
 | **阻塞项只写一件事** | 缺权限、缺依赖、环境不可用、等别人的交付物时使用阻塞。解除后任务回到原来的列。 |
 | **状态持久且可评审** | 仓库里的普通 JSON 文件，跟代码一起提交，任务变更可以直接出现在 diff 里。 |
 | **原子写入与版本校验** | 每次看板写入都经过锁、临时文件和原子重命名；任务更新必须带版本，旧版本写入会返回 `TASK_VERSION_CONFLICT`。 |
+| **多项目** | 一个仓库可以有多条工作流，各自独立的编号前缀与计数器；归档后只读，可恢复。 |
+| **附件** | 文件存在 `.kanban/attachments/`，从网页上传，单文件 10 MB。 |
+| **搜索与筛选** | 文本搜索，加上优先级、标签、负责人筛选；列可折叠。 |
 | **两种展示方式** | 终端和对话里用 Markdown；需要看整体时生成自包含的 HTML 看板。 |
 | **零运行时依赖** | 只需要 Node.js 22 或更高版本，ESM，无构建步骤，无需安装依赖。 |
 
@@ -123,6 +126,17 @@ node plugin/bin/codex-kanban.mjs serve --open
 
 服务默认只监听 `127.0.0.1`，没有账号体系，也不发起任何外部请求。`--port` 换端口；
 `--host 0.0.0.0` 会把看板暴露到局域网，只应在你信任的机器上使用。
+
+## 项目、归档与附件
+
+一块看板可以容纳多个项目。每个项目有自己的编号前缀与计数器，所以同一个仓库里可以同时有
+`APP-1` 和 `WEB-1`。
+
+- 在网页看板的 **项目管理** 里新建、重命名、归档、恢复，或使用 `kanban_project_*` 工具。
+- 归档在领域层强制生效：归档项目下的任何任务写入都会返回 `PROJECT_ARCHIVED`，直到恢复。
+- 附件存在 `.kanban/attachments/<id>`，元数据挂在任务上。抽屉里上传（单文件 10 MB），
+  下载就是 `GET /api/attachments/<id>`。不想把二进制提交进 git，就把
+  `.kanban/attachments/` 加进 `.gitignore`。
 
 ## 架构
 
@@ -228,7 +242,7 @@ cd codex-kanban
 node --test
 ```
 
-`v0.2.0` 共有 162 项测试，只使用 `node:test`。`npm test` 执行同一条命令，没有运行时
+`v0.3.0` 共有 213 项测试，只使用 `node:test`。`npm test` 执行同一条命令，没有运行时
 或开发依赖需要安装。
 
 ```

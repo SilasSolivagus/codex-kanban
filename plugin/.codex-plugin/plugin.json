@@ -1,7 +1,7 @@
 {
   "name": "codex-kanban",
-  "version": "0.2.0",
-  "description": "A Codex-native task board. Four columns, approvals, blockers and durable repository-local state, driven by MCP tools and a kanban skill.",
+  "version": "0.3.0",
+  "description": "A Codex-native task board: projects, four columns, approvals, blockers, attachments and durable repository-local state, exposed through MCP tools and a local web board.",
   "author": {
     "name": "Silas Solivagus",
     "url": "https://github.com/SilasSolivagus"
@@ -21,7 +21,7 @@
   "interface": {
     "displayName": "Codex Kanban",
     "shortDescription": "A task board Codex can read and write",
-    "longDescription": "Codex Kanban gives Codex a task layer that outlives the conversation. Four columns, automatic Needs you, blockers, questions with options, approvals, comments and activity, stored in a repository-local .kanban/board.json and exposed through native MCP tools. A local web board is included for humans who prefer a browser.",
+    "longDescription": "Codex Kanban gives Codex a task layer that outlives the conversation. Projects, four columns, automatic Needs you, blockers, questions with options, approvals, comments, activity and attachments, stored in a repository-local .kanban/board.json and exposed through native MCP tools. A local web board with search, filters and archive is included for humans.",
     "developerName": "Silas Solivagus",
     "category": "Productivity",
     "capabilities": [

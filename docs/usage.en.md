@@ -275,6 +275,19 @@ through the same store, with the same version checks as the MCP tools.
   is why the default is loopback.
 - `--port 8080` changes the port. Ctrl-C stops the server.
 
+## Projects and attachments
+
+Every repository board starts with one project named after the directory. Add more
+from the web board's **Projects** button or with `kanban_project_create`; each one has
+its own identifier prefix, so `APP-1` and `WEB-1` can live in the same board.
+
+- Pass `project` (id or name) to `kanban_board` and the task tools when there is more
+  than one project.
+- Archiving a project makes every task write fail with `PROJECT_ARCHIVED`; restore it
+  to edit again.
+- Attachments are uploaded from the task drawer (10 MB per file) and stored under
+  `.kanban/attachments/<id>`. Agents reference links; the web board moves the bytes.
+
 ## Where the data lives
 
 - `.kanban/board.json` is the board. One board per repository. It is plain JSON and
@@ -283,5 +296,7 @@ through the same store, with the same version checks as the MCP tools.
   `.gitignore` if you do not want it committed.
 - `.kanban/board.lock` serializes writes. It is temporary; add it to your
   `.gitignore` as well.
+- `.kanban/attachments/` holds uploaded files. Add it to `.gitignore` if you do not
+  want binaries in the repository.
 - Canceled tasks stay in `board.json` and remain reachable by identifier, but they
   are hidden from all four columns.

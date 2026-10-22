@@ -8,8 +8,8 @@
 
 <p align="center">
   <a href="https://github.com/SilasSolivagus/codex-kanban/actions/workflows/ci.yml"><img src="https://github.com/SilasSolivagus/codex-kanban/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <a href="https://github.com/SilasSolivagus/codex-kanban"><img src="https://img.shields.io/badge/version-0.2.0-2F6FB2" alt="Version 0.2.0"></a>
-  <img src="https://img.shields.io/badge/tests-162%20passing-2ea043" alt="162 tests passing">
+  <a href="https://github.com/SilasSolivagus/codex-kanban"><img src="https://img.shields.io/badge/version-0.3.0-2F6FB2" alt="Version 0.3.0"></a>
+  <img src="https://img.shields.io/badge/tests-213%20passing-2ea043" alt="213 tests passing">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-2F6FB2" alt="MIT license"></a>
 </p>
 
@@ -38,6 +38,9 @@ extra when you want to see the whole queue at once.
 | **Blockers with one clear reason** | Block a task when external work is missing: access, a dependency, an environment, or another person's deliverable. Unblock returns it to its normal column. |
 | **Durable, reviewable state** | A plain JSON file in the repository. Commit it with the code and review task changes in the same diff. |
 | **Atomic, versioned writes** | Every board write uses a lock, a temporary file and an atomic rename. Every task update carries a version; stale writes fail with `TASK_VERSION_CONFLICT`. |
+| **Projects** | Several workstreams per repository, each with its own prefix and task counter; archive makes a project read-only and restorable. |
+| **Attachments** | Files stored under `.kanban/attachments/`, uploaded from the web board, 10 MB per file. |
+| **Search and filters** | Text search plus priority, label and assignee filters; collapsible columns. |
 | **Two surfaces** | Markdown for the terminal and the conversation; a self-contained HTML board for a visual pass. |
 | **No runtime dependencies** | Node.js 22 or newer, ESM, no build step, no package install. |
 
@@ -111,6 +114,11 @@ cache. Writes to an existing task take the current `version` from
 | `kanban_task_reject` | Human-only: reject with a note and send the task back to Backlog. |
 | `kanban_task_comment` | Append a comment that stays with the task. |
 | `kanban_render` | Write `.kanban/board.html` and return its path plus the inline visual reference. |
+| `kanban_project_list` | List projects with prefix, archive state and task counts. |
+| `kanban_project_create` | Create a project (workstream) with an optional prefix and workspace path. |
+| `kanban_project_update` | Rename a project, change its prefix, or set its workspace path. |
+| `kanban_project_archive` | Archive a project; its tasks become read-only. |
+| `kanban_project_restore` | Restore an archived project. |
 
 ## Local web board
 
@@ -131,6 +139,19 @@ unblock, ask, or comment. Needs you is never a drop target.
 The server binds to `127.0.0.1` by default, has no account system, and makes no
 outbound requests. `--port` changes the port; `--host 0.0.0.0` exposes it to your
 network and should only be used on a machine you trust.
+
+## Projects, archive and attachments
+
+A board can hold several projects. Each has its own identifier prefix and counter,
+so `APP-1` and `WEB-1` can coexist in one repository.
+
+- Create, rename, archive and restore projects from the web board's **Projects**
+  button or with the `kanban_project_*` tools.
+- Archiving is enforced in the domain layer: every write to a task in an archived
+  project fails with `PROJECT_ARCHIVED` until it is restored.
+- Attachments live in `.kanban/attachments/<id>` with metadata on the task. Upload
+  from the drawer (10 MB per file); download is a plain `GET /api/attachments/<id>`.
+  Add `.kanban/attachments/` to `.gitignore` if you do not want binaries in git.
 
 ## Architecture
 
@@ -247,7 +268,7 @@ cd codex-kanban
 node --test
 ```
 
-The suite has 162 tests at `v0.2.0` and uses only `node:test`. `npm test` runs the
+The suite has 213 tests at `v0.3.0` and uses only `node:test`. `npm test` runs the
 same command. There are no runtime or development dependencies to install.
 
 ```
