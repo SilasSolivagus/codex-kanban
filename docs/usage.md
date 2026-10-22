@@ -153,7 +153,7 @@ Codex；在普通浏览器里仍然可以看，但按钮无法写入，界面会
 | `node plugin/bin/codex-kanban.mjs board --no-done` | 隐藏 Done。 |
 | `node plugin/bin/codex-kanban.mjs list` | 按列列出任务，一行一条。 |
 | `node plugin/bin/codex-kanban.mjs list --json` | 输出完整看板视图 JSON。 |
-| `node plugin/bin/codex-kanban.mjs get 1` | 查看任务详情和活动记录。 |
+| `node plugin/bin/codex-kanban.mjs get 1` | 查看任务详情、近期评论和活动记录。 |
 | `node plugin/bin/codex-kanban.mjs add "标题" --priority high --label auth` | 新建任务。 |
 | `node plugin/bin/codex-kanban.mjs update 1 --title "新标题"` | 修改字段，不移动任务。 |
 | `node plugin/bin/codex-kanban.mjs move 1 --to in_progress` | 移到某一列或状态。 |
@@ -199,8 +199,9 @@ Codex 主目录不在默认位置时，使用
 
 1. 先备份：`cp .kanban/board.json .kanban/board.json.bak`
 2. 恢复最后一次提交的版本：`git checkout -- .kanban/board.json`
-3. 如果文件从未提交过，就手工修 JSON。报错信息里会带解析失败的原因。最低结构只需要
-   `schema`、`project` 和 `tasks` 数组。
+3. 如果文件从未提交过，就手工修 JSON。报错信息里会带解析失败的原因。存储层要求顶层是
+   带 `tasks` 数组的 JSON 对象；缺少 `schema`、`project` 或 `nextTaskNumber` 时会用默认
+   值补齐。
 
 ### `VERSION_REQUIRED`
 

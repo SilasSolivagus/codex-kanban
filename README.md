@@ -9,7 +9,7 @@
 <p align="center">
   <a href="https://github.com/SilasSolivagus/codex-kanban/actions/workflows/ci.yml"><img src="https://github.com/SilasSolivagus/codex-kanban/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://github.com/SilasSolivagus/codex-kanban"><img src="https://img.shields.io/badge/version-0.1.0-2F6FB2" alt="Version 0.1.0"></a>
-  <img src="https://img.shields.io/badge/tests-146%20passing-2ea043" alt="146 tests passing">
+  <img src="https://img.shields.io/badge/tests-147%20passing-2ea043" alt="147 tests passing">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-2F6FB2" alt="MIT license"></a>
 </p>
 
@@ -32,7 +32,7 @@ extra when you want to see the whole queue at once.
 | | |
 | --- | --- |
 | **Four columns, six statuses** | Backlog (`backlog`, `todo`), Running (`in_progress`), Needs you (computed), Done (`done`). `in_review` also waits in Needs you; `canceled` is hidden from the board. |
-| **Needs you is automatic** | The column is computed from open questions, active blockers and review state. Priority is question, then blocked, then review. It is never a drag target. |
+| **Needs you is automatic** | The column is computed from open questions, active blockers and review state. Priority is question, then blocked, then review. It is not a move target. |
 | **Human approval boundary** | `kanban_task_approve` and `kanban_task_reject` require `as: "user"` plus `confirmed_by`. An agent cannot close an `in_review` task by moving it to Done. |
 | **Questions with options** | Ask with two to five real options. An answer is recorded, but the task stays in Needs you until a human approves or rejects it. |
 | **Blockers with one clear reason** | Block a task when external work is missing: access, a dependency, an environment, or another person's deliverable. Unblock returns it to its normal column. |
@@ -209,8 +209,6 @@ and applied by writing `board.json.tmp`, syncing it, then renaming it over
 
 - Persist the human's confirmation with an approval so the audit trail contains the
   exact decision, not just the fact that one was made.
-- Give the HTML board a supported write path outside Codex, or make the read-only
-  behavior explicit in the interface.
 - Add search and filtering for boards that grow beyond a screen or two.
 - Evaluate attachments and multi-repository boards after v0.1 feedback.
 
@@ -222,7 +220,7 @@ cd codex-kanban
 node --test
 ```
 
-The suite has 146 tests at `v0.1.0` and uses only `node:test`. `npm test` runs the
+The suite has 147 tests at `v0.1.0` and uses only `node:test`. `npm test` runs the
 same command. There are no runtime or development dependencies to install.
 
 ```

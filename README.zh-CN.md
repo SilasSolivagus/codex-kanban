@@ -9,7 +9,7 @@
 <p align="center">
   <a href="https://github.com/SilasSolivagus/codex-kanban/actions/workflows/ci.yml"><img src="https://github.com/SilasSolivagus/codex-kanban/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://github.com/SilasSolivagus/codex-kanban"><img src="https://img.shields.io/badge/version-0.1.0-2F6FB2" alt="版本 0.1.0"></a>
-  <img src="https://img.shields.io/badge/tests-146%20passing-2ea043" alt="146 项测试通过">
+  <img src="https://img.shields.io/badge/tests-147%20passing-2ea043" alt="147 项测试通过">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-2F6FB2" alt="MIT 许可证"></a>
 </p>
 
@@ -30,12 +30,12 @@ HTML 看板是附加的自包含视图，需要纵览整条队列时再用。
 | | |
 | --- | --- |
 | **四列，六种状态** | Backlog（`backlog`、`todo`）、Running（`in_progress`）、Needs you（计算得出）、Done（`done`）。`in_review` 也会停在 Needs you；`canceled` 不显示在看板上。 |
-| **Needs you 自动汇总** | 这一列由未决问题、生效中的阻塞和待评审状态计算得出，优先级为问题、阻塞、评审。它不能作为拖拽目标。 |
+| **Needs you 自动汇总** | 这一列由未决问题、生效中的阻塞和待评审状态计算得出，优先级依次为问题、阻塞、评审。它不能作为移动目标。 |
 | **人类审批边界** | `kanban_task_approve` 和 `kanban_task_reject` 必须带 `as: "user"` 和 `confirmed_by`；智能体不能把 `in_review` 任务直接移到 Done。 |
 | **带选项的问题** | 提问时给出 2 到 5 个真实选项。回答会被记录，但任务仍留在 Needs you，直到人类批准或驳回。 |
 | **阻塞项只写一件事** | 缺权限、缺依赖、环境不可用、等别人的交付物时使用阻塞。解除后任务回到原来的列。 |
 | **状态持久且可评审** | 仓库里的普通 JSON 文件，跟代码一起提交，任务变更可以直接出现在 diff 里。 |
-| **原子写入与版本控制** | 每次写入都经过锁、临时文件和原子重命名；任务更新必须带版本，旧版本写入会返回 `TASK_VERSION_CONFLICT`。 |
+| **原子写入与版本校验** | 每次写入都经过锁、临时文件和原子重命名；任务更新必须带版本，旧版本写入会返回 `TASK_VERSION_CONFLICT`。 |
 | **两种展示方式** | 终端和对话里用 Markdown；需要看整体时生成自包含的 HTML 看板。 |
 | **零运行时依赖** | 只需要 Node.js 22 或更高版本，ESM，无构建步骤，无需安装依赖。 |
 
@@ -197,7 +197,6 @@ node "$HOME/.codex/plugins/cache/silassolivagus/codex-kanban/0.1.0/bin/codex-kan
 ## 路线图
 
 - 审批时持久化人类的确认内容，让审计记录包含原话，而不只是“已批准”。
-- 为 HTML 看板提供受支持的站外写入方式，或者把只读行为做得更明确。
 - 为规模变大的看板增加搜索和筛选。
 - 收集 v0.1 反馈后再评估附件和多仓库看板。
 
@@ -209,7 +208,7 @@ cd codex-kanban
 node --test
 ```
 
-`v0.1.0` 共有 146 项测试，只使用 `node:test`。`npm test` 执行同一条命令，没有运行时
+`v0.1.0` 共有 147 项测试，只使用 `node:test`。`npm test` 执行同一条命令，没有运行时
 或开发依赖需要安装。
 
 ```

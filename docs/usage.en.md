@@ -171,7 +171,7 @@ These commands assume the current directory is the `codex-kanban` checkout. Add
 | `node plugin/bin/codex-kanban.mjs board --no-done` | Hide Done. |
 | `node plugin/bin/codex-kanban.mjs list` | One line per task, grouped by column. |
 | `node plugin/bin/codex-kanban.mjs list --json` | The full board view as JSON. |
-| `node plugin/bin/codex-kanban.mjs get 1` | Full task detail, including activity. |
+| `node plugin/bin/codex-kanban.mjs get 1` | Task detail with recent comments and activity. |
 | `node plugin/bin/codex-kanban.mjs add "Title" --priority high --label auth` | Create a task. |
 | `node plugin/bin/codex-kanban.mjs update 1 --title "New title"` | Update fields without moving. |
 | `node plugin/bin/codex-kanban.mjs move 1 --to in_progress` | Move to a column or status. |
@@ -220,7 +220,8 @@ command cannot silently destroy it.
 1. Back up the file: `cp .kanban/board.json .kanban/board.json.bak`
 2. Restore the last committed version: `git checkout -- .kanban/board.json`
 3. If the file was never committed, fix the JSON by hand. The error message names
-   the parse failure. The minimum shape is `schema`, `project` and a `tasks` array.
+   the parse failure. The store needs a JSON object with a `tasks` array; missing
+   `schema`, `project` or `nextTaskNumber` values are filled with defaults.
 
 ### `VERSION_REQUIRED`
 

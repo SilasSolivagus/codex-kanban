@@ -114,8 +114,9 @@ versioned for a reason.
 - Explain user-visible behavior and error-code changes in the pull request
   description. Include the Codex and Node versions you tested with for installation
   or packaging changes.
-- Do not commit `.kanban/`, `.tmp-codex-home/`, `node_modules/`, `*.tmp`, or
-  generated `board.html` files.
+- Commit `.kanban/board.json` alongside the code it describes.
+- Do not commit generated `.kanban/board.html` or `.kanban/board.lock`; both are
+  gitignored, as are `.tmp-codex-home/`, `node_modules/`, and `*.tmp`.
 
 ## Reporting a bug
 
