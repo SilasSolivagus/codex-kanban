@@ -166,11 +166,21 @@ otherwise the file still opens as a static board.
 
 ## 7. Plugin Packaging
 
+Measured constraint: a marketplace entry whose `source.path` is `"./"` is
+silently dropped by Codex 0.137.0 — `codex plugin list` reports no plugins.
+The plugin therefore lives in a subdirectory and the marketplace points at it.
+
 ```text
-.codex-plugin/plugin.json     name, version, skills, mcpServers, interface
-.mcp.json                     node ./server/index.mjs, cwd "."
-.agents/plugins/marketplace.json
-skills/kanban/SKILL.md        workflow + rendering rules
+.agents/plugins/marketplace.json   marketplace "silassolivagus",
+                                   source.path "./plugin"
+plugin/.codex-plugin/plugin.json   name, version, skills, mcpServers, interface
+plugin/.mcp.json                   ./bin/mcp-launcher.sh, cwd "."
+plugin/bin/mcp-launcher.sh         resolve Node 22+, then exec server/index.mjs
+plugin/server/                     protocol.mjs, tools.mjs, index.mjs
+plugin/src/                        rules, store, domain, render, html
+plugin/skills/kanban/SKILL.md      workflow + rendering rules
+plugin/assets/icon.svg
+test/                              node --test, imports ../plugin/src/*
 ```
 
 Install:
@@ -179,6 +189,10 @@ Install:
 codex plugin marketplace add <repo-or-local-path>
 codex plugin add codex-kanban@silassolivagus
 ```
+
+Verification never writes the real `~/.codex/config.toml`. It uses an isolated
+`CODEX_HOME` with a copied `auth.json`, runs the install and one `codex exec`,
+then deletes the directory.
 
 ## 8. Safety
 
