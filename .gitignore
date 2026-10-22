@@ -2,3 +2,6 @@
 .tmp-codex-home/
 node_modules/
 .DS_Store
+*.tmp
+.kanban/board.html
+.kanban/board.lock
