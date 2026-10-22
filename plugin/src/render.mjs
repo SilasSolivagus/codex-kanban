@@ -11,6 +11,7 @@ const MAX_TITLE = 120
 const MAX_PROMPT = 160
 const MAX_COMMENTS = 5
 const MAX_ACTIVITY = 12
+const MAX_FULL_ACTIVITY = 20
 const DISPLAY_ORDER = ['needs', 'running', 'backlog', 'done']
 const EMPTY_NEEDS = '_Nothing needs you right now._'
 const EMPTY_BOARD = 'The board is empty. Create the first task with `kanban_task_create`.'
@@ -161,7 +162,8 @@ export function renderMarkdown(board, { column, includeDone = true, now = Date.n
   return lines.join('\n').trimEnd()
 }
 
-export function renderTaskDetail(task, { now = Date.now() } = {}) {
+export function renderTaskDetail(task, { now = Date.now(), history = 'recent' } = {}) {
+  const full = history === 'full'
   const lines = [`# ${task.identifier} · ${shorten(task.title, MAX_TITLE)}`, '']
 
   const column = columnForTask(task) ?? 'hidden'
@@ -217,7 +219,8 @@ export function renderTaskDetail(task, { now = Date.now() } = {}) {
 
   if (Array.isArray(task.comments) && task.comments.length) {
     lines.push('', '## Comments')
-    for (const comment of task.comments.slice(-MAX_COMMENTS)) {
+    const comments = full ? task.comments : task.comments.slice(-MAX_COMMENTS)
+    for (const comment of comments) {
       const age = formatAge(comment.createdAt, now)
       const when = age ? ` (${age})` : ''
       lines.push(`- ${comment.author?.name ?? 'unknown'}${when}: ${inline(comment.body)}`)
@@ -226,11 +229,15 @@ export function renderTaskDetail(task, { now = Date.now() } = {}) {
 
   if (Array.isArray(task.activity) && task.activity.length) {
     lines.push('', '## Activity')
-    for (const entry of task.activity.slice(-MAX_ACTIVITY)) {
+    const limit = full ? MAX_FULL_ACTIVITY : MAX_ACTIVITY
+    const activity = task.activity.slice(-limit)
+    for (const entry of activity) {
       const parts = [formatAge(entry.at, now), entry.actor?.name, inline(entry.summary)]
         .filter(Boolean)
       lines.push(`- ${parts.join(' · ')}`)
     }
+    const omitted = full ? task.activity.length - activity.length : 0
+    if (omitted > 0) lines.push(`… ${omitted} older entries omitted`)
   }
 
   return lines.join('\n')
