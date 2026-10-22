@@ -28,7 +28,7 @@ test('the page is one complete self-contained document', () => {
   assert.match(html, /<meta charset="utf-8"\s*\/?>/)
   assert.match(html, /<meta name="viewport" content="width=device-width, initial-scale=1"\s*\/?>/)
   assert.match(html, /<title>Codex Kanban · demo-board<\/title>/)
-  assert.match(markup, /color-scheme: light dark/)
+  assert.match(markup, /color-scheme: light;/)
   assert.match(markup, /light-dark\(/)
   assert.match(markup, /font-size: 14px/)
   // No framework, no CDN, no stylesheet hop.

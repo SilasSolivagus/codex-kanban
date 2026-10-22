@@ -448,12 +448,12 @@ export function renderLiveHtml({ project = {} } = {}) {
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="color-scheme" content="light dark" />
+<meta name="color-scheme" content="light" />
 <meta name="referrer" content="no-referrer" />
 <title>${escapeHtml(title)}</title>
 <style>
   :root {
-    color-scheme: light dark;
+    color-scheme: light;
     --bg: light-dark(#f7f8fa, #0e1117);
     --surface: light-dark(#ffffff, #171b22);
     --surface-soft: light-dark(#fafbfc, #1b2029);
