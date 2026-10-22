@@ -1,5 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import { randomUUID } from 'node:crypto'
 import { taskPrefixFor } from './rules.mjs'
 
 export const BOARD_DIR = '.kanban'
@@ -115,55 +116,136 @@ export function createStore({ root, lockTimeoutMs = 5000 } = {}) {
     return normalized
   }
 
-  function removeStaleLock() {
+  function reclaimStaleLock() {
+    let staleContent
     let stats
     try {
+      staleContent = fs.readFileSync(lockFile, 'utf8')
       stats = fs.statSync(lockFile)
-    } catch {
-      return true
+    } catch (error) {
+      // only a vanished lock means the ordinary acquisition path can retry
+      return error.code === 'ENOENT'
     }
     const staleAfter = Math.max(timeout * 2, MIN_STALE_LOCK_MS)
     if (Date.now() - stats.mtimeMs <= staleAfter) return false
+
+    const claimedPath = `${lockFile}.claimed-${process.pid}-${randomUUID()}`
     try {
-      fs.unlinkSync(lockFile)
-      return true
+      fs.renameSync(lockFile, claimedPath)
+    } catch (error) {
+      return error.code === 'ENOENT'
+    }
+
+    let claimedContent
+    try {
+      claimedContent = fs.readFileSync(claimedPath, 'utf8')
     } catch {
+      try {
+        fs.renameSync(claimedPath, lockFile)
+      } catch {
+        // the path was taken again; leave ownership checks to the holder
+      }
       return false
     }
+
+    if (claimedContent !== staleContent) {
+      // A fresh holder replaced the lock between our read and the rename.
+      try {
+        fs.renameSync(claimedPath, lockFile)
+      } catch {
+        // best effort restoration
+      }
+      return false
+    }
+
+    try {
+      fs.unlinkSync(claimedPath)
+    } catch {
+      // the claimed file is unreachable; the lock itself is already gone
+    }
+    return true
   }
 
   async function acquireLock() {
     fs.mkdirSync(dir, { recursive: true })
     const deadline = Date.now() + timeout
+    const token = `${process.pid}-${randomUUID()}`
     for (;;) {
+      let handle
       try {
-        return fs.openSync(lockFile, 'wx')
+        handle = fs.openSync(lockFile, 'wx')
       } catch (error) {
         if (error.code !== 'EEXIST') throw error
         if (Date.now() >= deadline) {
-          if (removeStaleLock()) continue
-          throw boardError('BOARD_LOCKED', `board is locked by another process (${lockFile})`)
+          if (reclaimStaleLock()) continue
+          let age = 'unknown'
+          try {
+            age = `${Math.max(0, Math.round(Date.now() - fs.statSync(lockFile).mtimeMs))}ms`
+          } catch {
+            // the lock vanished while composing the error
+          }
+          throw boardError(
+            'BOARD_LOCKED',
+            `board is locked by another process (${lockFile}, age ${age})`,
+          )
         }
         await sleep(Math.min(LOCK_RETRY_MS, Math.max(1, deadline - Date.now())))
+        continue
       }
+      try {
+        fs.writeSync(handle, token)
+        fs.fsyncSync(handle)
+      } catch (error) {
+        try {
+          fs.closeSync(handle)
+        } catch {
+          // ignore a descriptor that is already gone
+        }
+        try {
+          fs.unlinkSync(lockFile)
+        } catch {
+          // nothing else to clean up
+        }
+        throw error
+      }
+      return { handle, token }
+    }
+  }
+
+  function ownershipLost() {
+    return boardError('BOARD_LOCKED', `board lock ownership was lost (${lockFile})`)
+  }
+
+  function assertLockOwned(token) {
+    let owner = null
+    try {
+      owner = fs.readFileSync(lockFile, 'utf8')
+    } catch {
+      // a missing lock is a lost lock
+    }
+    if (owner !== token) throw ownershipLost()
+  }
+
+  function releaseLock(handle, token) {
+    try {
+      fs.closeSync(handle)
+    } catch {
+      // the descriptor may already be closed
+    }
+    try {
+      const owner = fs.readFileSync(lockFile, 'utf8')
+      if (owner === token) fs.unlinkSync(lockFile)
+    } catch {
+      // the lock was reclaimed or already released; never remove a foreign lock
     }
   }
 
   async function withLock(fn) {
-    const handle = await acquireLock()
+    const { handle, token } = await acquireLock()
     try {
-      return await fn()
+      return await fn(() => assertLockOwned(token))
     } finally {
-      try {
-        fs.closeSync(handle)
-      } catch {
-        // the descriptor may already be closed
-      }
-      try {
-        fs.unlinkSync(lockFile)
-      } catch {
-        // another holder may have recovered a stale lock
-      }
+      releaseLock(handle, token)
     }
   }
 
@@ -178,9 +260,10 @@ export function createStore({ root, lockTimeoutMs = 5000 } = {}) {
       return writeToDisk(board)
     },
     async mutate(fn) {
-      return withLock(async () => {
+      return withLock(async (assertOwned) => {
         const board = readFromDisk()
         const result = await fn(board)
+        assertOwned()
         writeToDisk(board)
         return result
       })

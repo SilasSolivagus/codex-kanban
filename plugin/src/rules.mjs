@@ -60,7 +60,8 @@ export function canDrop(task, columnId) {
   if (columnId === 'needs') {
     return { ok: false, reason: 'Needs you is automatic' }
   }
-  if (attentionReason(task) && columnId !== 'backlog') {
+  const attention = attentionReason(task)
+  if ((attention === 'question' || attention === 'blocked') && columnId !== 'backlog') {
     return { ok: false, reason: 'Resolve attention before moving' }
   }
   return { ok: true }

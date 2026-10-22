@@ -56,6 +56,19 @@ test('mutate writes atomically and removes the lock', async () => {
   assert.equal(fs.existsSync(lockPath(store)), false)
 })
 
+test('a successful mutation leaves no lock file behind', async () => {
+  const root = tempRoot()
+  const store = createStore({ root })
+  let token
+  await store.mutate((board) => {
+    token = fs.readFileSync(lockPath(store), 'utf8')
+    board.tasks.push({ identifier: 'CK-1' })
+  })
+  assert.match(token, /^\d+-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/)
+  assert.equal(fs.existsSync(lockPath(store)), false)
+  assert.deepEqual(fs.readdirSync(store.dir), ['board.json'])
+})
+
 test('write persists a board directly and stays atomic', () => {
   const root = tempRoot()
   const store = createStore({ root })
@@ -157,17 +170,53 @@ test('a throwing mutation releases the lock and writes nothing', async () => {
   assert.equal(fs.existsSync(lockPath(store)), false)
 })
 
-test('a held lock times out with BOARD_LOCKED', async () => {
+test('a fresh foreign lock makes mutate time out and is left intact', async () => {
+  const root = tempRoot()
+  const store = createStore({ root, lockTimeoutMs: 50 })
+  const foreign = 'foreign-holder'
+  fs.mkdirSync(store.dir, { recursive: true })
+  fs.writeFileSync(lockPath(store), foreign, 'utf8')
+  await assert.rejects(
+    store.mutate(() => {}),
+    (error) => error.code === 'BOARD_LOCKED' && error.message.includes(store.dir),
+  )
+  assert.equal(fs.existsSync(store.path), false)
+  assert.equal(fs.readFileSync(lockPath(store), 'utf8'), foreign)
+  assert.deepEqual(fs.readdirSync(store.dir), ['board.lock'])
+})
+
+test('a stale lock is reclaimed and the mutation succeeds', async () => {
   const root = tempRoot()
   const store = createStore({ root, lockTimeoutMs: 50 })
   fs.mkdirSync(store.dir, { recursive: true })
-  fs.writeFileSync(lockPath(store), 'held', 'utf8')
+  fs.writeFileSync(lockPath(store), 'stale-holder', 'utf8')
+  const old = new Date(Date.now() - 60_000)
+  fs.utimesSync(lockPath(store), old, old)
+
+  await store.mutate((board) => {
+    board.tasks.push({ identifier: 'CK-1' })
+  })
+
+  const board = JSON.parse(fs.readFileSync(store.path, 'utf8'))
+  assert.equal(board.tasks.length, 1)
+  assert.equal(fs.existsSync(lockPath(store)), false)
+  assert.deepEqual(fs.readdirSync(store.dir), ['board.json'])
+})
+
+test('a mutation that loses lock ownership neither writes nor removes the foreign lock', async () => {
+  const root = tempRoot()
+  const store = createStore({ root })
+  const foreign = 'someone-else'
   await assert.rejects(
-    store.mutate(() => {}),
-    (error) => error.code === 'BOARD_LOCKED',
+    store.mutate((board) => {
+      fs.writeFileSync(lockPath(store), foreign, 'utf8')
+      board.tasks.push({ identifier: 'CK-1' })
+    }),
+    (error) => error.code === 'BOARD_LOCKED' && /ownership was lost/.test(error.message),
   )
   assert.equal(fs.existsSync(store.path), false)
-  assert.equal(fs.existsSync(lockPath(store)), true)
+  assert.equal(fs.readFileSync(lockPath(store), 'utf8'), foreign)
+  fs.unlinkSync(lockPath(store))
 })
 
 test('emptyBoard derives a usable name and prefix', () => {

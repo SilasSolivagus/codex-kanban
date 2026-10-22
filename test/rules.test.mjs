@@ -79,11 +79,22 @@ test('unknown columns are not drop targets', () => {
   assert.match(result.reason, /unknown column/i)
 })
 
-test('a task with attention can only fall back to backlog', () => {
-  const task = { ...base, status: 'in_progress', blockedReason: 'no key' }
-  assert.equal(canDrop(task, 'running').ok, false)
-  assert.equal(canDrop(task, 'done').ok, false)
+test('an open question or blocker can only fall back to backlog', () => {
+  const blocked = { ...base, status: 'in_progress', blockedReason: 'no key' }
+  const question = { ...base, status: 'in_progress', pendingQuestion: { createdAt: base.statusSince } }
+  for (const task of [blocked, question]) {
+    assert.equal(canDrop(task, 'running').ok, false)
+    assert.equal(canDrop(task, 'done').ok, false)
+    assert.equal(canDrop(task, 'backlog').ok, true)
+  }
+})
+
+test('review attention does not block running or done', () => {
+  const task = { ...base, status: 'in_review' }
+  assert.equal(canDrop(task, 'running').ok, true)
+  assert.equal(canDrop(task, 'done').ok, true)
   assert.equal(canDrop(task, 'backlog').ok, true)
+  assert.equal(canDrop(task, 'needs').ok, false)
 })
 
 test('a task without attention can move to any stored column', () => {
