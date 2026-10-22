@@ -431,7 +431,7 @@ test('buildView sorts each column with sortTasks', () => {
       task({ identifier: 'CK-3', priority: 'high', sortOrder: 3 }),
     ]),
   )
-  assert.deepEqual(view.columns.backlog.map((entry) => entry.identifier), ['CK-2', 'CK-3', 'CK-1'])
+  assert.deepEqual(view.columns.backlog.map((entry) => entry.identifier), ['CK-1', 'CK-2', 'CK-3'])
 })
 
 test('summarizeView renders the exact summary line', () => {
@@ -464,4 +464,20 @@ test('canceled tasks with an open question stay hidden', () => {
   assert.doesNotMatch(markdown, /Never mind/)
   assert.match(markdown, /1 task/)
   assert.match(markdown, /0 needs you/)
+})
+
+test('archived tasks stay out of buildView and markdown unless included', () => {
+  const value = board([
+    task({ identifier: 'CK-1', title: 'active' }),
+    task({ identifier: 'CK-2', title: 'archived work', archivedAt: '2026-10-22T11:30:00.000Z' }),
+  ])
+  const view = buildView(value)
+  assert.deepEqual(view.columns.backlog.map((entry) => entry.identifier), ['CK-1'])
+  assert.equal(view.summary.total, 1)
+  const markdown = renderMarkdown(value, { now })
+  assert.doesNotMatch(markdown, /archived work/)
+
+  const included = buildView(value, { includeArchived: true })
+  assert.deepEqual(included.columns.backlog.map((entry) => entry.identifier), ['CK-1', 'CK-2'])
+  assert.equal(included.summary.total, 2)
 })

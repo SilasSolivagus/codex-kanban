@@ -89,9 +89,10 @@ export function summarizeView(view) {
   return `${total} task${total === 1 ? '' : 's'} · ${needsYou} needs you · ${counts.running} running`
 }
 
-export function buildView(board, { includeDone = true, includeCanceled = false, projectId = null } = {}) {
+export function buildView(board, { includeDone = true, includeCanceled = false, includeArchived = false, projectId = null } = {}) {
   const allTasks = Array.isArray(board?.tasks) ? board.tasks : []
-  const tasks = projectId ? allTasks.filter((task) => task.projectId === projectId) : allTasks
+  const scoped = projectId ? allTasks.filter((task) => task.projectId === projectId) : allTasks
+  const tasks = includeArchived ? scoped : scoped.filter((task) => !task.archivedAt)
   const columns = Object.fromEntries(COLUMNS.map((column) => [column.id, []]))
   const counts = { backlog: 0, running: 0, needs: 0, done: 0, canceled: 0 }
 

@@ -16,6 +16,9 @@ export const UI_ACTIONS = Object.freeze([
   'task.approve',
   'task.reject',
   'task.comment',
+  'task.reorder',
+  'task.archive',
+  'task.restore',
   'attachment.add',
   'attachment.remove',
 ])
@@ -53,7 +56,9 @@ export const STRINGS = Object.freeze({
     'filter.assignee': 'All assignees',
     'filter.clear': 'Clear filters',
     'filter.showing': 'Showing {visible} of {total}',
-    'filter.none': 'No tasks match the current filters.',
+    'filter.none': 'No tasks match the current filters. Clear the filters to see the board.',
+    'filter.archived': 'Show archived',
+    'filter.archivedAria': 'Show archived tasks on the board',
     'priority.none': 'None',
     'priority.low': 'Low',
     'priority.medium': 'Medium',
@@ -81,6 +86,8 @@ export const STRINGS = Object.freeze({
     'card.attention.review': 'review',
     'card.unassigned': 'unassigned',
     'card.updatedAgo': 'Updated {time} ago',
+    'card.dwell': '{time} ago',
+    'card.archived': 'Archived',
     'card.blockedPrefix': 'Blocked: ',
     'card.attachments': '{n} attachments',
     'card.links': '{n} links',
@@ -144,7 +151,18 @@ export const STRINGS = Object.freeze({
     'drawer.close': 'Close',
     'drawer.version': 'Version {n}',
     'drawer.readOnly': 'This task belongs to an archived project and is read-only.',
+    'drawer.taskArchived': 'This task is archived. Restore it to edit it again.',
     'drawer.details': 'Details',
+    'drawer.attributes': 'Attributes',
+    'drawer.statusLabel': 'Status',
+    'drawer.updatedLabel': 'Updated',
+    'drawer.createdLabel': 'Created',
+    'drawer.versionLabel': 'Version',
+    'drawer.archive': 'Archive',
+    'drawer.restore': 'Restore',
+    'drawer.archiveConfirm': 'Archive {id}? It leaves the board until restored.',
+    'drawer.archived': 'Task archived',
+    'drawer.restored': 'Task restored',
     'drawer.titleField': 'Title',
     'drawer.description': 'Description',
     'drawer.priority': 'Priority',
@@ -254,16 +272,18 @@ export const STRINGS = Object.freeze({
     'filter.assignee': '全部负责人',
     'filter.clear': '清除筛选',
     'filter.showing': '显示 {visible} / {total}',
-    'filter.none': '没有任务匹配当前筛选。',
+    'filter.none': '没有任务匹配当前筛选，清除筛选即可查看全部任务。',
+    'filter.archived': '显示已归档',
+    'filter.archivedAria': '在看板中显示已归档任务',
     'priority.none': '无',
     'priority.low': '低',
     'priority.medium': '中',
     'priority.high': '高',
     'priority.urgent': '紧急',
-    'columns.backlog': '待办',
-    'columns.running': '进行中',
-    'columns.needs': '需要你',
-    'columns.done': '已完成',
+    'columns.backlog': 'Backlog',
+    'columns.running': 'Running',
+    'columns.needs': 'Needs you',
+    'columns.done': 'Done',
     'columns.empty.backlog': '尚未开始。',
     'columns.empty.running': '进行中的工作会显示在这里。',
     'columns.empty.needs': '当前没有需要你处理的事项。',
@@ -282,6 +302,8 @@ export const STRINGS = Object.freeze({
     'card.attention.review': '待审核',
     'card.unassigned': '未分配',
     'card.updatedAgo': '更新于 {time}前',
+    'card.dwell': '{time}前',
+    'card.archived': '已归档',
     'card.blockedPrefix': '受阻：',
     'card.attachments': '{n} 个附件',
     'card.links': '{n} 个链接',
@@ -294,10 +316,10 @@ export const STRINGS = Object.freeze({
     'status.in_review': '等你确认',
     'status.done': '完成',
     'status.canceled': '已取消',
-    'age.seconds': '{n} 秒',
-    'age.minutes': '{n} 分钟',
-    'age.hours': '{n} 小时',
-    'age.days': '{n} 天',
+    'age.seconds': '{n}秒',
+    'age.minutes': '{n}分钟',
+    'age.hours': '{n}小时',
+    'age.days': '{n}天',
     'toast.networkError': '看板没有响应，请检查服务后重试。',
     'toast.refreshed': '看板已刷新',
     'toast.projectCreated': '项目已创建',
@@ -345,7 +367,18 @@ export const STRINGS = Object.freeze({
     'drawer.close': '关闭',
     'drawer.version': '版本 {n}',
     'drawer.readOnly': '此任务属于已归档项目，为只读状态。',
+    'drawer.taskArchived': '此任务已归档，恢复后才能继续编辑。',
     'drawer.details': '详情',
+    'drawer.attributes': '属性',
+    'drawer.statusLabel': '状态',
+    'drawer.updatedLabel': '更新时间',
+    'drawer.createdLabel': '创建时间',
+    'drawer.versionLabel': '版本',
+    'drawer.archive': '归档',
+    'drawer.restore': '恢复',
+    'drawer.archiveConfirm': '归档 {id}？恢复前它将从看板隐藏。',
+    'drawer.archived': '任务已归档',
+    'drawer.restored': '任务已恢复',
     'drawer.titleField': '标题',
     'drawer.description': '描述',
     'drawer.priority': '优先级',
@@ -480,6 +513,7 @@ export function renderLiveHtml({ project = {} } = {}) {
     font-synthesis: none;
   }
   * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
   html { scroll-behavior: smooth; }
   body {
     margin: 0; background: var(--bg); color: var(--text);
@@ -508,7 +542,7 @@ export function renderLiveHtml({ project = {} } = {}) {
   }
   .topbar-inner {
     display: flex; align-items: center; gap: 10px;
-    max-width: 1400px; margin: 0 auto; padding: 14px 24px; min-height: 68px;
+    max-width: 1400px; margin: 0 auto; padding: 9px 24px; min-height: 56px;
   }
   .project-chip {
     position: relative; display: inline-flex; align-items: center; gap: 8px;
@@ -549,6 +583,16 @@ export function renderLiveHtml({ project = {} } = {}) {
   }
   #filter-toggle:hover { border-color: var(--border-strong); background: var(--surface-soft); }
   #filter-toggle[aria-expanded="true"] { border-color: var(--border-strong); background: var(--surface-soft); }
+  .archived-toggle {
+    display: inline-flex; align-items: center; gap: 5px; height: 30px; flex: none;
+    padding: 0 9px; border: 1px solid var(--border); border-radius: 8px;
+    background: var(--surface); color: var(--muted); font-size: 11.5px; font-weight: 600;
+  }
+  .archived-toggle:hover { border-color: var(--border-strong); color: var(--text); }
+  .archived-toggle[aria-pressed="true"] {
+    border-color: var(--border-strong); background: var(--surface-soft); color: var(--text);
+  }
+  .archived-toggle .status-dot { background: var(--muted-soft); }
   .filters-popover {
     position: absolute; top: calc(100% + 8px); left: 0; z-index: 40;
     display: grid; gap: 10px; width: 300px; padding: 12px;
@@ -596,9 +640,9 @@ export function renderLiveHtml({ project = {} } = {}) {
 
   /* ---- page head ------------------------------------------------------- */
   .shell { max-width: 1400px; margin: 0 auto; padding: 0 24px 48px; }
-  .board-head { padding: 18px 0 14px; }
-  .board-head h1 { margin: 0; font-size: 22px; line-height: 1.2; font-weight: 650; letter-spacing: -0.02em; }
-  .board-meta { display: flex; align-items: center; gap: 8px; margin: 5px 0 0; color: var(--muted); font-size: 12.5px; }
+  .board-head { padding: 10px 0 10px; }
+  .board-head h1 { margin: 0; font-size: 21px; line-height: 1.2; font-weight: 650; letter-spacing: -0.02em; }
+  .board-meta { display: flex; align-items: center; gap: 8px; margin: 3px 0 0; color: var(--muted); font-size: 12.5px; }
   .board-context { color: var(--muted-soft); }
   .board-context:empty { display: none; }
   .hint { color: var(--muted); font-size: 11.5px; margin: 0; }
@@ -616,11 +660,11 @@ export function renderLiveHtml({ project = {} } = {}) {
   }
 
   /* ---- board ----------------------------------------------------------- */
-  .board { display: grid; grid-template-columns: repeat(1, minmax(0, 1fr)); gap: 14px; align-items: start; }
+  .board { display: grid; grid-template-columns: repeat(1, minmax(0, 1fr)); gap: 10px; align-items: start; }
   @media (min-width: 600px) { .board { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   @media (min-width: 980px) { .board { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
   section.column {
-    display: flex; flex-direction: column; gap: 10px; min-height: 190px;
+    display: flex; flex-direction: column; gap: 8px; min-height: 180px;
     padding: 10px; border: 1px solid var(--border); border-radius: var(--radius);
     background: var(--panel-backlog);
   }
@@ -660,8 +704,8 @@ export function renderLiveHtml({ project = {} } = {}) {
   .column-toggle:hover, .column-add:hover { background: light-dark(rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.08)); color: var(--text); }
   .column-toggle svg { transition: transform 0.14s ease; }
   section.column[data-collapsed="true"] .column-toggle svg { transform: rotate(-90deg); }
-  .cards { display: flex; flex-direction: column; gap: 10px; }
-  .column-empty { color: var(--muted); font-size: 12px; padding: 18px 6px; margin: 0; text-align: center; }
+  .cards { display: flex; flex-direction: column; gap: 8px; }
+  .column-empty { color: var(--muted); font-size: 12px; padding: 12px 6px; margin: 0; text-align: center; }
   .column-empty[hidden] { display: none; }
   .column-foot { margin-top: auto; padding-top: 2px; }
   .column-new-card {
@@ -676,10 +720,11 @@ export function renderLiveHtml({ project = {} } = {}) {
 
   /* ---- cards ----------------------------------------------------------- */
   article.card {
-    display: flex; flex-direction: column; gap: 8px;
-    padding: 13px 13px 11px; border: 1px solid var(--border); border-radius: 12px;
+    display: flex; flex-direction: column; gap: 7px;
+    padding: 11px; border: 1px solid var(--border); border-radius: 12px;
     background: var(--surface); box-shadow: none;
     transition: border-color 0.12s ease, box-shadow 0.12s ease;
+    position: relative;
   }
   article.card:hover {
     border-color: var(--border-strong);
@@ -689,16 +734,25 @@ export function renderLiveHtml({ project = {} } = {}) {
   article.card[draggable="true"] { cursor: grab; }
   article.card[draggable="true"]:active { cursor: grabbing; }
   article.card.dragging { opacity: 0.5; }
+  article.card.archived { opacity: 0.58; }
+  article.card.drop-before::before {
+    content: ''; position: absolute; left: 0; right: 0; top: -5px; height: 2px;
+    border-radius: 2px; background: light-dark(#111827, #e8ecf2); z-index: 2;
+  }
+  article.card.drop-after::after {
+    content: ''; position: absolute; left: 0; right: 0; bottom: -5px; height: 2px;
+    border-radius: 2px; background: light-dark(#111827, #e8ecf2); z-index: 2;
+  }
   .card-top { display: flex; align-items: center; gap: 8px; min-height: 18px; }
   .card-identifier { font-size: 12px; font-weight: 600; color: var(--muted); letter-spacing: 0.01em; }
   .card-chevron { display: inline-flex; margin-left: auto; color: var(--muted-soft); }
   .card-title {
-    margin: 0; font-size: 15px; line-height: 1.35; font-weight: 600; letter-spacing: -0.01em;
+    margin: 0; font-size: 14.5px; line-height: 1.3; font-weight: 600; letter-spacing: -0.01em;
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
     overflow: hidden; overflow-wrap: anywhere;
   }
   .card-desc {
-    margin: 0; font-size: 13px; line-height: 1.45; color: var(--muted);
+    margin: 0; font-size: 12.5px; line-height: 1.4; color: var(--muted);
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
     overflow: hidden; overflow-wrap: anywhere;
   }
@@ -712,6 +766,7 @@ export function renderLiveHtml({ project = {} } = {}) {
   }
   .chip.project { border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); }
   .chip.tag { padding: 0 4px; color: var(--muted); }
+  .chip.archived { border: 1px solid var(--border-strong); background: var(--surface-soft); color: var(--muted); }
   .chip.priority-high { background: light-dark(#fef3c7, #3a2f16); color: light-dark(#92400e, #f2c46a); }
   .chip.priority-urgent { background: light-dark(#fee2e2, #3d1d1d); color: light-dark(#b91c1c, #f19a92); }
   .chip.priority-medium { background: light-dark(#f3f4f6, #2a3039); color: light-dark(#4b5563, #b8c1cd); }
@@ -726,9 +781,12 @@ export function renderLiveHtml({ project = {} } = {}) {
   }
   .card-footer {
     display: flex; align-items: center; justify-content: space-between; gap: 8px;
-    margin-top: 1px; padding-top: 8px; border-top: 1px solid light-dark(#f0f1f3, #242a33);
+    margin-top: 1px; padding-top: 7px; border-top: 1px solid light-dark(#f0f1f3, #242a33);
   }
-  .card-status { display: inline-flex; align-items: center; gap: 5px; min-width: 0; color: var(--muted); font-size: 12px; white-space: nowrap; }
+  .card-status { display: inline-flex; align-items: center; gap: 5px; min-width: 0; color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; }
+  .card-status-label { overflow: hidden; text-overflow: ellipsis; }
+  .card-dwell { color: var(--muted-soft); }
+  .card-archived { color: var(--muted); }
   .status-dot { width: 6px; height: 6px; flex: none; border-radius: 50%; background: var(--muted-soft); }
   .status-backlog .status-dot { background: var(--text); }
   .status-running .status-dot { background: var(--text); }
@@ -743,7 +801,7 @@ export function renderLiveHtml({ project = {} } = {}) {
 
   /* ---- inline question panel ------------------------------------------ */
   .question-panel {
-    display: flex; flex-direction: column; gap: 7px; padding: 10px;
+    display: flex; flex-direction: column; gap: 6px; padding: 8px;
     border: 1px solid var(--warn-border); border-radius: 10px; background: var(--warn-bg);
   }
   .question-panel-head {
@@ -752,14 +810,14 @@ export function renderLiveHtml({ project = {} } = {}) {
   }
   .question-panel-prompt { margin: 0; color: var(--text); font-size: 12.5px; font-weight: 500; line-height: 1.45; overflow-wrap: anywhere; }
   .question-context { margin: 0; color: var(--muted); font-size: 11.5px; line-height: 1.4; }
-  .question-options { display: flex; flex-direction: column; gap: 4px; }
+  .question-options { display: flex; flex-direction: column; gap: 3px; }
   .question-option { display: flex; align-items: flex-start; gap: 6px; color: var(--text); font-size: 12px; line-height: 1.35; cursor: pointer; }
   .question-option input { margin: 2px 0 0; padding: 0; accent-color: light-dark(#111827, #e8ecf2); }
   .question-option-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
   .question-option-label { overflow-wrap: anywhere; }
   .question-option-detail { color: var(--muted); font-size: 11px; overflow-wrap: anywhere; }
   .question-note {
-    width: 100%; height: 30px; padding: 0 8px; border: 1px solid var(--warn-border);
+    width: 100%; height: 28px; padding: 0 8px; border: 1px solid var(--warn-border);
     border-radius: 7px; background: var(--surface); font-size: 12px;
   }
   .question-actions { display: flex; justify-content: flex-end; gap: 8px; }
@@ -811,6 +869,24 @@ export function renderLiveHtml({ project = {} } = {}) {
   .panel h4 { margin: 4px 0 0; color: var(--muted); font-size: 12px; font-weight: 500; }
   .panel label { display: grid; gap: 4px; color: var(--muted); font-size: 12px; }
   .panel input, .panel select, .panel textarea { font-size: 13px; }
+  .attr-grid {
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 10px 14px; align-items: start;
+  }
+  .attr { display: grid; gap: 4px; min-width: 0; }
+  .attr.full { grid-column: 1 / -1; }
+  .attr-label { color: var(--muted); font-size: 12px; }
+  .attr-value { color: var(--text); font-size: 13px; overflow-wrap: anywhere; }
+  .attr > h4 { margin: 2px 0 0; }
+  .attr-static {
+    display: flex; align-items: center; min-height: 34px; padding: 0 2px;
+    color: var(--text); font-size: 13px;
+  }
+  .attr-static .status-dot { margin-right: 6px; }
+  .attr-status { display: inline-flex; align-items: center; gap: 6px; }
+  .drawer-section { display: grid; gap: 8px; padding-top: 12px; border-top: 1px solid var(--border); }
+  .drawer-section h4 { margin: 0; color: var(--text); font-size: 13px; font-weight: 650; }
+  .drawer-section[hidden] { display: none; }
   .row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
   .actions { display: flex; flex-wrap: wrap; gap: 8px; }
   .actions button, .panel > button {
@@ -935,6 +1011,7 @@ export function renderLiveHtml({ project = {} } = {}) {
         </div>
       </div>
     </div>
+    <button id="archived-toggle" class="archived-toggle" type="button" aria-pressed="false" data-i18n="filter.archived" data-i18n-aria="filter.archivedAria" aria-label="Show archived tasks on the board" title="Show archived">Show archived</button>
     <div class="topbar-actions">
       <span class="running-chip"><span class="live-dot" aria-hidden="true"></span><span id="running-count">0 running</span></span>
       <button id="lang-toggle" type="button" data-i18n="header.langToggle" data-i18n-aria="header.langLabel" aria-label="Switch to Chinese">中文</button>
@@ -1086,78 +1163,109 @@ export function renderLiveHtml({ project = {} } = {}) {
     <p class="banner" id="drawer-readonly" hidden data-i18n="drawer.readOnly">This task belongs to an archived project and is read-only.</p>
 
     <section class="panel">
-      <h3 data-i18n="drawer.details">Details</h3>
-      <label for="edit-title" data-i18n="drawer.titleField">Title</label>
-      <input id="edit-title" type="text" maxlength="240" data-write />
-      <label for="edit-description" data-i18n="drawer.description">Description</label>
-      <textarea id="edit-description" data-write></textarea>
-      <div class="row">
-        <label for="edit-priority"><span data-i18n="drawer.priority">Priority</span>
-          <select id="edit-priority" data-write>
-            <option value="none" data-i18n="priority.none">None</option>
-            <option value="low" data-i18n="priority.low">Low</option>
-            <option value="medium" data-i18n="priority.medium">Medium</option>
-            <option value="high" data-i18n="priority.high">High</option>
-            <option value="urgent" data-i18n="priority.urgent">Urgent</option>
-          </select>
-        </label>
-        <label for="edit-labels"><span data-i18n="drawer.labels">Labels (comma separated)</span>
-          <input id="edit-labels" type="text" data-i18n-placeholder="drawer.labelsPlaceholder" placeholder="ui, docs" data-write />
-        </label>
+      <h3 data-i18n="drawer.attributes">Attributes</h3>
+      <div class="attr-grid">
+        <div class="attr full">
+          <label for="edit-title" data-i18n="drawer.titleField">Title</label>
+          <input id="edit-title" type="text" maxlength="240" data-write />
+        </div>
+        <div class="attr">
+          <span class="attr-label" data-i18n="drawer.statusLabel">Status</span>
+          <span class="attr-static" id="attr-status"></span>
+        </div>
+        <div class="attr">
+          <label for="edit-priority"><span data-i18n="drawer.priority">Priority</span>
+            <select id="edit-priority" data-write>
+              <option value="none" data-i18n="priority.none">None</option>
+              <option value="low" data-i18n="priority.low">Low</option>
+              <option value="medium" data-i18n="priority.medium">Medium</option>
+              <option value="high" data-i18n="priority.high">High</option>
+              <option value="urgent" data-i18n="priority.urgent">Urgent</option>
+            </select>
+          </label>
+        </div>
+        <div class="attr">
+          <span class="attr-label" data-i18n="drawer.assignee">Assignee</span>
+          <span class="attr-static" id="attr-assignee"></span>
+        </div>
+        <div class="attr">
+          <span class="attr-label" data-i18n="drawer.updatedLabel">Updated</span>
+          <span class="attr-static" id="attr-updated"></span>
+        </div>
+        <div class="attr">
+          <span class="attr-label" data-i18n="drawer.createdLabel">Created</span>
+          <span class="attr-static" id="attr-created"></span>
+        </div>
+        <div class="attr">
+          <span class="attr-label" data-i18n="drawer.versionLabel">Version</span>
+          <span class="attr-static" id="attr-version"></span>
+        </div>
+        <div class="attr full">
+          <label for="edit-description" data-i18n="drawer.description">Description</label>
+          <textarea id="edit-description" data-write></textarea>
+        </div>
+        <div class="attr full">
+          <label for="edit-labels"><span data-i18n="drawer.labels">Labels (comma separated)</span>
+            <input id="edit-labels" type="text" data-i18n-placeholder="drawer.labelsPlaceholder" placeholder="ui, docs" data-write />
+          </label>
+        </div>
+        <div class="attr full">
+          <div class="actions">
+            <button id="save-task" class="primary" type="button" data-write data-i18n="drawer.save">Save changes</button>
+            <button id="archive-task" class="danger" type="button" data-write data-i18n="drawer.archive">Archive</button>
+            <button id="restore-task" class="primary" type="button" hidden data-i18n="drawer.restore">Restore</button>
+          </div>
+        </div>
+        <div class="attr full drawer-section">
+          <h4 data-i18n="drawer.links">Links</h4>
+          <div id="edit-links" class="feed"></div>
+          <div class="actions">
+            <button id="add-link" type="button" data-write data-i18n="drawer.addLink">Add link</button>
+          </div>
+        </div>
+        <div class="attr full drawer-section" id="blocker-section" hidden>
+          <h4 data-i18n="drawer.blocker">Blocker</h4>
+          <p class="feed-summary" id="blocker-reason"></p>
+          <p class="hint" id="blocker-since"></p>
+        </div>
+        <div class="attr full drawer-section" id="question-section" hidden>
+          <h4 data-i18n="drawer.question">Needs your decision</h4>
+          <p class="feed-summary" id="question-prompt"></p>
+          <p class="hint" id="question-note" hidden></p>
+          <div id="question-options" class="feed" role="radiogroup" data-i18n-aria="drawer.question" aria-label="Needs your decision"></div>
+          <textarea id="answer-note" data-i18n-placeholder="drawer.answerNotePlaceholder" placeholder="Optional note" data-write></textarea>
+          <p class="hint" id="answer-hint" data-i18n="drawer.answerHint">Record an answer, then approve or reject.</p>
+          <p class="hint" id="resolution" hidden></p>
+          <div class="actions">
+            <button id="answer-question" type="button" data-write data-i18n="drawer.answer">Record answer</button>
+            <button id="approve" class="primary" type="button" data-write data-i18n="drawer.approve">Approve</button>
+            <button id="reject" class="danger" type="button" data-write data-i18n="drawer.reject">Reject</button>
+          </div>
+        </div>
+        <div class="attr full drawer-section">
+          <h4 data-i18n="drawer.attachments">Attachments</h4>
+          <ul id="attachment-list" class="feed"></ul>
+          <p id="attachment-empty" class="hint" hidden data-i18n="drawer.attachmentsEmpty">No attachments.</p>
+          <label for="attachment-input" data-i18n="drawer.upload">Upload file</label>
+          <input id="attachment-input" type="file" data-write />
+          <p class="hint" data-i18n="drawer.attachmentHint">Up to 10 MB per file.</p>
+          <p class="error" id="attachment-error" role="alert" hidden></p>
+        </div>
+        <div class="attr full drawer-section">
+          <h4 data-i18n="drawer.comments">Comments</h4>
+          <ul id="comment-list" class="feed"></ul>
+          <p id="comments-empty" class="hint" hidden data-i18n="drawer.commentsEmpty">No comments yet.</p>
+          <textarea id="comment-body" data-i18n-placeholder="drawer.commentPlaceholder" placeholder="Add a comment" data-write></textarea>
+          <div class="actions">
+            <button id="add-comment" type="button" data-write data-i18n="drawer.addComment">Add comment</button>
+          </div>
+        </div>
+        <div class="attr full drawer-section">
+          <h4 data-i18n="drawer.activity">Activity</h4>
+          <ol id="activity-list" class="feed"></ol>
+          <p id="activity-empty" class="hint" hidden data-i18n="drawer.activityEmpty">No activity yet.</p>
+        </div>
       </div>
-      <h4 data-i18n="drawer.links">Links</h4>
-      <div id="edit-links" class="feed"></div>
-      <div class="actions">
-        <button id="add-link" type="button" data-write data-i18n="drawer.addLink">Add link</button>
-        <button id="save-task" class="primary" type="button" data-write data-i18n="drawer.save">Save changes</button>
-      </div>
-    </section>
-
-    <section class="panel">
-      <h3 data-i18n="drawer.activity">Activity</h3>
-      <ol id="activity-list" class="feed"></ol>
-      <p id="activity-empty" class="hint" hidden data-i18n="drawer.activityEmpty">No activity yet.</p>
-    </section>
-
-    <section class="panel">
-      <h3 data-i18n="drawer.comments">Comments</h3>
-      <ul id="comment-list" class="feed"></ul>
-      <p id="comments-empty" class="hint" hidden data-i18n="drawer.commentsEmpty">No comments yet.</p>
-      <textarea id="comment-body" data-i18n-placeholder="drawer.commentPlaceholder" placeholder="Add a comment" data-write></textarea>
-      <div class="actions">
-        <button id="add-comment" type="button" data-write data-i18n="drawer.addComment">Add comment</button>
-      </div>
-    </section>
-
-    <section class="panel">
-      <h3 data-i18n="drawer.attachments">Attachments</h3>
-      <ul id="attachment-list" class="feed"></ul>
-      <p id="attachment-empty" class="hint" hidden data-i18n="drawer.attachmentsEmpty">No attachments.</p>
-      <label for="attachment-input" data-i18n="drawer.upload">Upload file</label>
-      <input id="attachment-input" type="file" data-write />
-      <p class="hint" data-i18n="drawer.attachmentHint">Up to 10 MB per file.</p>
-      <p class="error" id="attachment-error" role="alert" hidden></p>
-    </section>
-
-    <section class="panel" id="question-section" hidden>
-      <h3 data-i18n="drawer.question">Needs your decision</h3>
-      <p class="feed-summary" id="question-prompt"></p>
-      <p class="hint" id="question-note" hidden></p>
-      <div id="question-options" class="feed" role="radiogroup" data-i18n-aria="drawer.question" aria-label="Needs your decision"></div>
-      <textarea id="answer-note" data-i18n-placeholder="drawer.answerNotePlaceholder" placeholder="Optional note" data-write></textarea>
-      <p class="hint" id="answer-hint" data-i18n="drawer.answerHint">Record an answer, then approve or reject.</p>
-      <p class="hint" id="resolution" hidden></p>
-      <div class="actions">
-        <button id="answer-question" type="button" data-write data-i18n="drawer.answer">Record answer</button>
-        <button id="approve" class="primary" type="button" data-write data-i18n="drawer.approve">Approve</button>
-        <button id="reject" class="danger" type="button" data-write data-i18n="drawer.reject">Reject</button>
-      </div>
-    </section>
-
-    <section class="panel" id="blocker-section" hidden>
-      <h3 data-i18n="drawer.blocker">Blocker</h3>
-      <p class="feed-summary" id="blocker-reason"></p>
-      <p class="hint" id="blocker-since"></p>
     </section>
 
     <section class="panel">
@@ -1168,7 +1276,7 @@ export function renderLiveHtml({ project = {} } = {}) {
         <button id="block-task" type="button" data-write data-i18n="drawer.block">Block</button>
         <button id="unblock-task" type="button" data-write data-i18n="drawer.unblock">Unblock</button>
       </div>
-      <p class="hint" id="drawer-status"></p>
+      <p class="hint" id="drawer-status" hidden></p>
     </section>
   </div>
 </aside>
@@ -1273,7 +1381,8 @@ export function renderLiveHtml({ project = {} } = {}) {
   var STORAGE = {
     lang: 'codex-kanban.lang',
     collapsed: 'codex-kanban.collapsed',
-    project: 'codex-kanban.project'
+    project: 'codex-kanban.project',
+    archived: 'codex-kanban.archived'
   };
   var I18N = ${JSON.stringify(STRINGS)};
 
@@ -1298,6 +1407,18 @@ export function renderLiveHtml({ project = {} } = {}) {
     return value || 'all';
   }
 
+  function readArchived() {
+    return storeGet(STORAGE.archived, '0') === '1';
+  }
+
+  function readTaskRef() {
+    try {
+      return new URLSearchParams(window.location.search).get('task') || '';
+    } catch (error) {
+      return '';
+    }
+  }
+
   function storeGet(key, fallback) {
     try {
       var value = window.localStorage.getItem(key);
@@ -1313,7 +1434,7 @@ export function renderLiveHtml({ project = {} } = {}) {
 
   var state = {
     data: null,
-    projectId: readProject(),
+    projectId: readTaskRef() ? 'all' : readProject(),
     search: '',
     priority: '',
     label: '',
@@ -1323,7 +1444,11 @@ export function renderLiveHtml({ project = {} } = {}) {
     selectedId: null,
     selectedOption: null,
     newTaskColumn: 'backlog',
-    readOnly: false
+    readOnly: false,
+    includeArchived: readArchived() || Boolean(readTaskRef()),
+    pendingTaskRef: readTaskRef(),
+    dragTask: null,
+    focusReturn: null
   };
 
   var boardTitle = document.getElementById('board-title');
@@ -1336,6 +1461,7 @@ export function renderLiveHtml({ project = {} } = {}) {
   var refreshButton = document.getElementById('refresh');
   var filterToggle = document.getElementById('filter-toggle');
   var filtersPopover = document.getElementById('filters-popover');
+  var archivedToggle = document.getElementById('archived-toggle');
   var langToggle = document.getElementById('lang-toggle');
   var readonlyBanner = document.getElementById('readonly-banner');
   var restoreSelected = document.getElementById('restore-selected');
@@ -1361,6 +1487,13 @@ export function renderLiveHtml({ project = {} } = {}) {
   var editLinks = document.getElementById('edit-links');
   var addLinkButton = document.getElementById('add-link');
   var saveTaskButton = document.getElementById('save-task');
+  var archiveButton = document.getElementById('archive-task');
+  var restoreButton = document.getElementById('restore-task');
+  var attrStatus = document.getElementById('attr-status');
+  var attrAssignee = document.getElementById('attr-assignee');
+  var attrUpdated = document.getElementById('attr-updated');
+  var attrCreated = document.getElementById('attr-created');
+  var attrVersion = document.getElementById('attr-version');
   var activityList = document.getElementById('activity-list');
   var activityEmpty = document.getElementById('activity-empty');
   var commentList = document.getElementById('comment-list');
@@ -1541,8 +1674,17 @@ export function renderLiveHtml({ project = {} } = {}) {
 
   function isWritable(task) {
     if (state.readOnly) return false;
+    if (task && task.archivedAt) return false;
     if (task && projectArchived(task.projectId)) return false;
     return true;
+  }
+
+  function cardForTask(id) {
+    var cards = document.querySelectorAll('article.card');
+    for (var i = 0; i < cards.length; i += 1) {
+      if (cards[i].getAttribute('data-task-id') === id) return cards[i];
+    }
+    return null;
   }
 
   function currentTask() {
@@ -1580,6 +1722,7 @@ export function renderLiveHtml({ project = {} } = {}) {
     runningCount.textContent = t('counts.running', { n: columnCounts.running || 0 });
     boardContext.textContent = '';
     readonlyBanner.hidden = !state.readOnly;
+    archivedToggle.setAttribute('aria-pressed', state.includeArchived ? 'true' : 'false');
     var createButtons = document.querySelectorAll('[data-create]');
     for (var i = 0; i < createButtons.length; i += 1) {
       createButtons[i].disabled = state.readOnly;
@@ -1706,6 +1849,36 @@ export function renderLiveHtml({ project = {} } = {}) {
     return 'status-backlog';
   }
 
+  function attentionOf(task) {
+    if (!task || task.archivedAt) return null;
+    if (task.pendingQuestion && !task.questionResolution) return 'question';
+    if (task.blockedReason) return 'blocked';
+    if (task.status === 'in_review') return 'review';
+    return null;
+  }
+
+  function taskStatusLabel(task) {
+    var attention = attentionOf(task);
+    if (attention) return t('card.attention.' + attention);
+    return t('status.' + (task.status || 'backlog'));
+  }
+
+  function taskElapsed(task) {
+    var attention = attentionOf(task);
+    var since = task.attentionSince;
+    if (!since) {
+      if (attention === 'question') since = task.pendingQuestion && task.pendingQuestion.createdAt;
+      else if (attention === 'blocked') since = task.blockedSince || task.statusSince;
+      else since = task.statusSince;
+    }
+    return age(since);
+  }
+
+  function dwellLabel(iso) {
+    var value = age(iso);
+    return value ? t('card.dwell', { time: value }) : '';
+  }
+
   function metric(name, count, label) {
     var node = el('span', 'metric');
     node.setAttribute('title', label);
@@ -1804,7 +1977,9 @@ export function renderLiveHtml({ project = {} } = {}) {
   }
 
   function renderCard(task, columnId) {
+    var archived = Boolean(task.archivedAt);
     var card = el('article', 'card');
+    if (archived) card.classList.add('archived');
     card.tabIndex = 0;
     card.setAttribute('role', 'button');
     card.setAttribute('aria-haspopup', 'dialog');
@@ -1813,6 +1988,7 @@ export function renderLiveHtml({ project = {} } = {}) {
     card.setAttribute('data-task-id', task.id || '');
     card.setAttribute('data-identifier', task.identifier || '');
     card.setAttribute('data-version', String(task.version));
+    card.setAttribute('data-archived', archived ? 'true' : 'false');
     var draggable = DRAG_COLUMNS.indexOf(columnId) !== -1 && isWritable(task);
     card.draggable = draggable;
 
@@ -1835,6 +2011,7 @@ export function renderLiveHtml({ project = {} } = {}) {
     }
     var labels = Array.isArray(task.labels) ? task.labels : [];
     for (var i = 0; i < labels.length; i += 1) chips.appendChild(el('span', 'chip tag', labels[i]));
+    if (archived) chips.appendChild(el('span', 'chip archived', t('card.archived')));
     if (chips.childElementCount) card.appendChild(chips);
 
     var updated = age(task.updatedAt || task.statusSince);
@@ -1854,7 +2031,9 @@ export function renderLiveHtml({ project = {} } = {}) {
     var footer = el('div', 'card-footer');
     var status = el('span', 'card-status ' + statusClass(task));
     status.appendChild(el('span', 'status-dot'));
-    status.appendChild(el('span', 'card-status-label', t('status.' + (task.status || 'backlog'))));
+    status.appendChild(el('span', 'card-status-label', taskStatusLabel(task)));
+    var elapsed = taskElapsed(task);
+    if (elapsed) status.appendChild(el('span', 'card-dwell', ' · ' + t('card.dwell', { time: elapsed })));
     footer.appendChild(status);
     var metrics = el('span', 'card-metrics');
     var comments = Array.isArray(task.comments) ? task.comments.length : (task.commentCount || 0);
@@ -1889,11 +2068,59 @@ export function renderLiveHtml({ project = {} } = {}) {
           event.dataTransfer.setData('text/plain', JSON.stringify({ id: task.id, version: task.version }));
           event.dataTransfer.effectAllowed = 'move';
         } catch (error) { /* drag payload is best effort */ }
+        state.dragTask = { id: task.id, version: task.version, column: columnId };
         card.classList.add('dragging');
       });
-      card.addEventListener('dragend', function () { card.classList.remove('dragging'); });
+      card.addEventListener('dragend', function () {
+        card.classList.remove('dragging');
+        state.dragTask = null;
+        clearDropMarkers();
+      });
+    }
+    if (!archived && DRAG_COLUMNS.indexOf(columnId) !== -1) {
+      card.addEventListener('dragover', function (event) {
+        if (!state.dragTask || state.dragTask.column !== columnId) return;
+        if (state.dragTask.id === task.id) return;
+        event.preventDefault();
+        event.stopPropagation();
+        clearDropMarkers();
+        card.classList.add('drop-before');
+        if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
+      });
+      card.addEventListener('dragleave', function (event) {
+        if (event.relatedTarget && card.contains(event.relatedTarget)) return;
+        card.classList.remove('drop-before');
+      });
+      card.addEventListener('drop', function (event) {
+        if (!state.dragTask || state.dragTask.column !== columnId) return;
+        if (state.dragTask.id === task.id) return;
+        event.preventDefault();
+        event.stopPropagation();
+        var dragged = state.dragTask;
+        state.dragTask = null;
+        clearDropMarkers();
+        reorderTask(dragged, task.id);
+      });
     }
     return card;
+  }
+
+  function clearDropMarkers() {
+    var marked = document.querySelectorAll('article.card.drop-before');
+    for (var i = 0; i < marked.length; i += 1) marked[i].classList.remove('drop-before');
+  }
+
+  function reorderTask(dragged, beforeId) {
+    var task = findTask(dragged.id);
+    if (task && !isWritable(task)) {
+      notify(t('project.readOnly'), true);
+      return;
+    }
+    act('task.reorder', {
+      id: dragged.id,
+      version: dragged.version,
+      beforeId: beforeId || undefined
+    });
   }
 
   function bindDropTargets() {
@@ -1926,8 +2153,15 @@ export function renderLiveHtml({ project = {} } = {}) {
     try { payload = JSON.parse(raw); } catch (error) { return; }
     if (!payload || !payload.id) return;
     var task = findTask(payload.id);
+    state.dragTask = null;
+    clearDropMarkers();
     if (task && !isWritable(task)) {
       notify(t('project.readOnly'), true);
+      return;
+    }
+    if (task && task.column === columnId) {
+      // Same column, empty space: append the card.
+      act('task.reorder', { id: payload.id, version: payload.version });
       return;
     }
     act('task.move', { id: payload.id, version: payload.version, to: columnId }).then(function (body) {
@@ -1953,6 +2187,20 @@ export function renderLiveHtml({ project = {} } = {}) {
     state.data = payload;
     state.readOnly = Boolean(payload.board && payload.board.project && payload.board.project.archivedAt);
     renderAll();
+    openDeepLink();
+  }
+
+  function apiQuery() {
+    return '?project=' + encodeURIComponent(state.projectId)
+      + (state.includeArchived ? '&include_archived=1' : '');
+  }
+
+  function openDeepLink() {
+    if (!state.pendingTaskRef || state.selectedId) return;
+    var task = findTask(state.pendingTaskRef);
+    if (!task) return;
+    state.pendingTaskRef = null;
+    openTask(task.id);
   }
 
   function act(action, payload) {
@@ -1966,7 +2214,7 @@ export function renderLiveHtml({ project = {} } = {}) {
         if (Object.prototype.hasOwnProperty.call(payload, key)) body[key] = payload[key];
       }
     }
-    return fetch(API_ACTION + '?project=' + encodeURIComponent(state.projectId), {
+    return fetch(API_ACTION + apiQuery(), {
       method: 'POST',
       headers: { 'content-type': 'application/json', accept: 'application/json' },
       body: JSON.stringify(body)
@@ -1995,14 +2243,14 @@ export function renderLiveHtml({ project = {} } = {}) {
       state.projectId = 'all';
       storeSet(STORAGE.project, 'all');
       load(false);
-    } else if (code === 'TASK_VERSION_CONFLICT' || code === 'PROJECT_ARCHIVED') {
+    } else if (code === 'TASK_VERSION_CONFLICT' || code === 'PROJECT_ARCHIVED' || code === 'TASK_ARCHIVED') {
       load(false);
     }
     return null;
   }
 
   function load(showToast) {
-    return fetch(API_BOARD + '?project=' + encodeURIComponent(state.projectId), {
+    return fetch(API_BOARD + apiQuery(), {
       cache: 'no-store',
       headers: { accept: 'application/json' }
     }).then(function (response) {
@@ -2023,6 +2271,7 @@ export function renderLiveHtml({ project = {} } = {}) {
   function openTask(ref) {
     var task = findTask(ref);
     if (!task) return;
+    state.focusReturn = document.activeElement && document.activeElement.focus ? document.activeElement : null;
     state.selectedId = task.id;
     state.selectedOption = null;
     renderDrawer(task);
@@ -2034,12 +2283,20 @@ export function renderLiveHtml({ project = {} } = {}) {
   }
 
   function closeDrawer() {
+    var taskId = state.selectedId;
+    var focusReturn = state.focusReturn;
     state.selectedId = null;
     state.selectedOption = null;
+    state.focusReturn = null;
     drawer.classList.remove('open');
     drawer.setAttribute('aria-hidden', 'true');
     backdrop.classList.remove('open');
     document.body.classList.remove('drawer-open');
+    var target = taskId ? cardForTask(taskId) : null;
+    if (!target && focusReturn && document.contains(focusReturn)) target = focusReturn;
+    if (target && typeof target.focus === 'function') {
+      target.focus({ preventScroll: true });
+    }
   }
 
   function renderDrawer(task) {
@@ -2048,16 +2305,26 @@ export function renderLiveHtml({ project = {} } = {}) {
       return;
     }
     var readOnly = !isWritable(task);
+    var archived = Boolean(task.archivedAt);
     var pendingQuestion = task.pendingQuestion && !task.questionResolution;
     drawerTitle.textContent = task.title || t('drawer.title');
     drawerIdentifier.textContent = task.identifier || '';
     drawerVersion.textContent = t('drawer.version', { n: task.version });
     drawerProject.textContent = task.projectName ? t('drawer.project') + ': ' + task.projectName : '';
     drawerReadonly.hidden = !readOnly;
+    drawerReadonly.textContent = t(archived ? 'drawer.taskArchived' : 'drawer.readOnly');
     editTitle.value = task.title || '';
     editDescription.value = task.description || '';
     editPriority.value = task.priority || 'none';
     editLabels.value = (Array.isArray(task.labels) ? task.labels : []).join(', ');
+    attrStatus.textContent = '';
+    attrStatus.appendChild(el('span', 'status-dot'));
+    attrStatus.appendChild(el('span', '', t('status.' + (task.status || 'backlog'))));
+    attrStatus.className = 'attr-static attr-status ' + statusClass(task);
+    attrAssignee.textContent = (task.assignee && task.assignee.name) || t('card.unassigned');
+    attrUpdated.textContent = formatTime(task.updatedAt);
+    attrCreated.textContent = formatTime(task.createdAt);
+    attrVersion.textContent = String(task.version);
     renderLinks(task);
     renderActivity(task);
     renderComments(task);
@@ -2070,6 +2337,10 @@ export function renderLiveHtml({ project = {} } = {}) {
     }) + ' · ' + t('drawer.assignee') + ': '
       + ((task.assignee && task.assignee.name) || t('card.unassigned'))
       + ' · ' + t('drawer.created', { time: formatTime(task.createdAt) });
+    archiveButton.hidden = archived;
+    restoreButton.hidden = !archived;
+    archiveButton.disabled = readOnly;
+    restoreButton.disabled = projectArchived(task.projectId);
     var writes = drawer.querySelectorAll('[data-write]');
     for (var i = 0; i < writes.length; i += 1) writes[i].disabled = readOnly;
     if (readOnly) {
@@ -2138,7 +2409,7 @@ export function renderLiveHtml({ project = {} } = {}) {
       item.appendChild(el('span', 'feed-summary', entry.summary || entry.kind || ''));
       var meta = el('span', 'hint');
       var actor = entry.actor && entry.actor.name ? entry.actor.name : '';
-      meta.textContent = (actor ? actor + ' · ' : '') + formatTime(entry.at);
+      meta.textContent = (actor ? actor + ' · ' : '') + dwellLabel(entry.at);
       item.appendChild(meta);
       activityList.appendChild(item);
     }
@@ -2325,6 +2596,23 @@ export function renderLiveHtml({ project = {} } = {}) {
       links: links
     }).then(function (body) {
       if (body) notify(t('drawer.saved'));
+    });
+  }
+
+  function archiveCurrentTask() {
+    var task = currentTask();
+    if (!task || !isWritable(task)) return;
+    if (!window.confirm(t('drawer.archiveConfirm', { id: task.identifier }))) return;
+    act('task.archive', { id: task.id, version: task.version }).then(function (body) {
+      if (body) notify(t('drawer.archived'));
+    });
+  }
+
+  function restoreCurrentTask() {
+    var task = currentTask();
+    if (!task || !task.archivedAt) return;
+    act('task.restore', { id: task.id, version: task.version }).then(function (body) {
+      if (body) notify(t('drawer.restored'));
     });
   }
 
@@ -2662,6 +2950,12 @@ export function renderLiveHtml({ project = {} } = {}) {
       renderBoard();
     });
     clearFilters.addEventListener('click', clearAllFilters);
+    archivedToggle.addEventListener('click', function () {
+      state.includeArchived = !state.includeArchived;
+      storeSet(STORAGE.archived, state.includeArchived ? '1' : '0');
+      archivedToggle.setAttribute('aria-pressed', state.includeArchived ? 'true' : 'false');
+      load(false);
+    });
     refreshButton.addEventListener('click', function () { load(true); });
     filterToggle.addEventListener('click', function () {
       var open = filtersPopover.hidden;
@@ -2695,6 +2989,8 @@ export function renderLiveHtml({ project = {} } = {}) {
     drawerClose.addEventListener('click', closeDrawer);
     backdrop.addEventListener('click', closeDrawer);
     saveTaskButton.addEventListener('click', saveTask);
+    archiveButton.addEventListener('click', archiveCurrentTask);
+    restoreButton.addEventListener('click', restoreCurrentTask);
     addLinkButton.addEventListener('click', addLink);
     addCommentButton.addEventListener('click', addComment);
     answerButton.addEventListener('click', answerQuestion);

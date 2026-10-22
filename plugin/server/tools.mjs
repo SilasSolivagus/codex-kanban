@@ -4,6 +4,7 @@ import {
   addComment,
   answerTask,
   archiveProject,
+  archiveTask,
   approveTask,
   askTask,
   blockTask,
@@ -14,6 +15,7 @@ import {
   moveTask,
   rejectTask,
   restoreProject,
+  restoreTask,
   unblockTask,
   updateProject,
   updateTask,
@@ -248,6 +250,19 @@ export const TOOLS = [
       body: { type: 'string', maxLength: 10000 },
       as: ACTOR,
     }, ['id', 'version', 'body']),
+  },
+  {
+    name: 'kanban_task_archive',
+    title: 'Archive a task',
+    description:
+      'Archive a task: it leaves the board and becomes read-only until restored. Archiving is reversible; use a comment instead when the history should stay visible.',
+    inputSchema: schema({ root: ROOT, id: TASK_REF, version: VERSION, as: ACTOR }, ['id', 'version']),
+  },
+  {
+    name: 'kanban_task_restore',
+    title: 'Restore a task',
+    description: 'Restore an archived task to its column so it can be edited again.',
+    inputSchema: schema({ root: ROOT, id: TASK_REF, version: VERSION, as: ACTOR }, ['id', 'version']),
   },
   {
     name: 'kanban_render',
@@ -489,6 +504,26 @@ export const HANDLERS = {
     requireVersion(args)
     const result = await addComment(store, args)
     return text(`Comment added to ${describeTask(result.task)}.`)
+  },
+
+  async kanban_task_archive(args) {
+    const store = storeFor(args)
+    assertTaskProject(store, args)
+    requireVersion(args)
+    const result = await archiveTask(store, args)
+    return text(
+      result.unchanged
+        ? `${describeTask(result.task)} · already archived`
+        : `Archived ${describeTask(result.task)}. It is hidden from the board; restore it with kanban_task_restore.`,
+    )
+  },
+
+  async kanban_task_restore(args) {
+    const store = storeFor(args)
+    assertTaskProject(store, args)
+    requireVersion(args)
+    const result = await restoreTask(store, args)
+    return text(`Restored ${describeTask(result.task)}.`)
   },
 
   async kanban_render(args) {

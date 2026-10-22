@@ -6,6 +6,7 @@ import {
   answerTask,
   approveTask,
   archiveProject,
+  archiveTask,
   askTask,
   blockTask,
   boardView,
@@ -16,7 +17,9 @@ import {
   readAttachment,
   rejectTask,
   removeAttachment,
+  reorderTask,
   restoreProject,
+  restoreTask,
   summarizeBoard,
   unblockTask,
   updateProject,
@@ -98,6 +101,12 @@ function projectFilter(url) {
   return value
 }
 
+function includeArchived(url) {
+  const raw = url.searchParams.get('include_archived')
+  if (raw === null) return false
+  return ['1', 'true', 'yes', 'on'].includes(raw.trim().toLowerCase())
+}
+
 function projectSummaries(board) {
   const tasks = Array.isArray(board.tasks) ? board.tasks : []
   return listProjects(board).map((project) => {
@@ -135,14 +144,14 @@ function collectFilters(tasks) {
   }
 }
 
-function boardPayload(store, projectId) {
+function boardPayload(store, projectId, withArchived = false) {
   const board = store.read()
-  const view = boardView(board, { projectId })
+  const view = boardView(board, { projectId, includeArchived: withArchived })
   return {
     ok: true,
     projects: projectSummaries(board),
     board: { project: view.project, columns: view.columns, tasks: view.tasks },
-    summary: summarizeBoard(board, { projectId }),
+    summary: summarizeBoard(board, { projectId, includeArchived: withArchived }),
     filters: collectFilters(view.tasks),
   }
 }
@@ -238,6 +247,24 @@ const ACTIONS = {
     version: input.version,
     body: input.body,
   }),
+  'task.reorder': (store, input) => reorderTask(store, {
+    ...HUMAN,
+    id: input.id,
+    version: input.version,
+    beforeId: input.beforeId,
+    afterId: input.afterId,
+    position: input.position,
+  }),
+  'task.archive': (store, input) => archiveTask(store, {
+    ...HUMAN,
+    id: input.id,
+    version: input.version,
+  }),
+  'task.restore': (store, input) => restoreTask(store, {
+    ...HUMAN,
+    id: input.id,
+    version: input.version,
+  }),
 
   'attachment.add': (store, input) => addAttachment(store, {
     ...HUMAN,
@@ -255,7 +282,7 @@ const ACTIONS = {
   }),
 }
 
-const CONFLICT_CODES = new Set(['TASK_VERSION_CONFLICT', 'PROJECT_ARCHIVED'])
+const CONFLICT_CODES = new Set(['TASK_VERSION_CONFLICT', 'PROJECT_ARCHIVED', 'TASK_ARCHIVED'])
 
 export function createWebServer({ store, host = '127.0.0.1', port = 4317 }) {
   const server = http.createServer(async (req, res) => {
@@ -268,7 +295,7 @@ export function createWebServer({ store, host = '127.0.0.1', port = 4317 }) {
       }
 
       if (req.method === 'GET' && url.pathname === '/api/board') {
-        sendJson(res, 200, boardPayload(store, projectFilter(url)))
+        sendJson(res, 200, boardPayload(store, projectFilter(url), includeArchived(url)))
         return
       }
 
@@ -317,7 +344,7 @@ export function createWebServer({ store, host = '127.0.0.1', port = 4317 }) {
           return
         }
         await handler(store, input)
-        sendJson(res, 200, boardPayload(store, projectFilter(url)))
+        sendJson(res, 200, boardPayload(store, projectFilter(url), includeArchived(url)))
         return
       }
 

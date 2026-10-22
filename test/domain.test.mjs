@@ -10,6 +10,7 @@ import {
   answerTask,
   approveTask,
   archiveProject,
+  archiveTask,
   askTask,
   blockTask,
   boardView,
@@ -21,7 +22,9 @@ import {
   listProjects,
   moveTask,
   rejectTask,
+  reorderTask,
   restoreProject,
+  restoreTask,
   summarizeBoard,
   unblockTask,
   updateProject,
@@ -686,7 +689,7 @@ test('boardView groups by column, sorts each group and puts needs first in the f
   assert.deepEqual(Object.keys(view.columns), ['backlog', 'running', 'needs', 'done'])
   assert.deepEqual(
     view.columns.backlog.map((task) => task.identifier),
-    [backlogUrgent.identifier, backlogLow.identifier],
+    [backlogLow.identifier, backlogUrgent.identifier],
   )
   assert.equal(view.columns.running[0].identifier, running.identifier)
   assert.deepEqual(view.columns.needs.map((task) => task.identifier), [waiting.identifier])
@@ -696,7 +699,7 @@ test('boardView groups by column, sorts each group and puts needs first in the f
   assert.equal(view.tasks[0].identifier, waiting.identifier)
   assert.deepEqual(
     view.tasks.map((task) => task.identifier),
-    [waiting.identifier, running.identifier, backlogUrgent.identifier, backlogLow.identifier, 'CK-5'],
+    [waiting.identifier, running.identifier, backlogLow.identifier, backlogUrgent.identifier, 'CK-5'],
   )
 
   assert.equal(view.summary.counts.needs, 1)
@@ -1008,4 +1011,132 @@ test('decorateTask adds projectId and projectName when a project is available', 
   const withoutProject = decorateTask(task)
   assert.equal(withoutProject.projectId, project.id)
   assert.equal(withoutProject.projectName, undefined)
+})
+
+test('reorderTask moves a task before and after another with 1024 steps', async (t) => {
+  const { store } = fixture(t)
+  const first = await newTask(store, { title: 'first' })
+  const second = await newTask(store, { title: 'second' })
+  const third = await newTask(store, { title: 'third' })
+
+  const beforeFirst = await reorderTask(store, {
+    id: third.identifier,
+    version: 1,
+    beforeId: first.identifier,
+  })
+  assert.equal(beforeFirst.ok, true)
+  assert.equal(beforeFirst.task.version, 2)
+  assert.equal(beforeFirst.task.activity.at(-1).kind, 'reordered')
+  assert.deepEqual(
+    boardView(store.read()).columns.backlog.map((task) => task.identifier),
+    [third.identifier, first.identifier, second.identifier],
+  )
+
+  const middle = await reorderTask(store, {
+    id: third.identifier,
+    version: 2,
+    beforeId: second.identifier,
+  })
+  assert.equal(middle.task.sortOrder, (1024 + 2048) / 2)
+  assert.deepEqual(
+    boardView(store.read()).columns.backlog.map((task) => task.identifier),
+    [first.identifier, third.identifier, second.identifier],
+  )
+
+  const append = await reorderTask(store, {
+    id: first.identifier,
+    version: 1,
+  })
+  assert.equal(append.task.sortOrder, 2048 + 1024)
+  assert.deepEqual(
+    boardView(store.read()).columns.backlog.map((task) => task.identifier),
+    [third.identifier, second.identifier, first.identifier],
+  )
+
+  await rejectsCode(
+    reorderTask(store, { id: first.identifier, version: 1, beforeId: second.identifier }),
+    'TASK_VERSION_CONFLICT',
+  )
+})
+
+test('reorderTask only accepts anchors in the task column and demands a version', async (t) => {
+  const { store } = fixture(t)
+  const backlog = await newTask(store, { title: 'backlog' })
+  const running = await newTask(store, { title: 'running', status: 'in_progress' })
+
+  await rejectsCode(
+    reorderTask(store, { id: backlog.identifier, version: 1, beforeId: running.identifier }),
+    'TASK_NOT_FOUND',
+  )
+  await rejectsCode(reorderTask(store, { id: backlog.identifier }), 'VERSION_REQUIRED')
+})
+
+test('archiveTask hides a task, removes attention and rejects every write', async (t) => {
+  const { store } = fixture(t)
+  const quiet = await newTask(store, { title: 'quiet' })
+  const blocked = await newTask(store, { title: 'blocked', status: 'in_progress' })
+  const blockedResult = await blockTask(store, {
+    id: blocked.identifier,
+    version: 1,
+    reason: 'need access',
+  })
+
+  const archivedQuiet = await archiveTask(store, {
+    id: quiet.identifier,
+    version: 1,
+    as: 'user',
+  })
+  assert.ok(archivedQuiet.task.archivedAt)
+  assert.equal(archivedQuiet.task.version, 2)
+  assert.equal(archivedQuiet.task.activity.at(-1).kind, 'archived')
+
+  await archiveTask(store, {
+    id: blocked.identifier,
+    version: blockedResult.task.version,
+  })
+
+  const view = boardView(store.read())
+  assert.deepEqual(view.tasks, [])
+  assert.equal(view.summary.total, 0)
+  assert.equal(summarizeBoard(store.read()).total, 0)
+
+  const included = boardView(store.read(), { includeArchived: true })
+  assert.equal(included.summary.total, 2)
+  assert.equal(included.columns.backlog.length, 1)
+  assert.equal(included.columns.running.length, 1)
+  assert.equal(included.columns.needs.length, 0)
+  assert.equal(included.columns.backlog[0].attention, null)
+  assert.equal(included.columns.running[0].attention, null)
+  assert.ok(findTask(store.read(), blocked.identifier).archivedAt)
+
+  await rejectsCode(
+    updateTask(store, { id: quiet.identifier, version: 2, title: 'nope' }),
+    'TASK_ARCHIVED',
+  )
+  await rejectsCode(
+    moveTask(store, { id: quiet.identifier, version: 2, to: 'running' }),
+    'TASK_ARCHIVED',
+  )
+  await rejectsCode(
+    reorderTask(store, { id: quiet.identifier, version: 2 }),
+    'TASK_ARCHIVED',
+  )
+  await rejectsCode(
+    addComment(store, { id: quiet.identifier, version: 2, body: 'hello' }),
+    'TASK_ARCHIVED',
+  )
+  await rejectsCode(
+    blockTask(store, { id: quiet.identifier, version: 2, reason: 'nope' }),
+    'TASK_ARCHIVED',
+  )
+
+  const restored = await restoreTask(store, { id: quiet.identifier, version: 2, as: 'user' })
+  assert.equal(restored.task.archivedAt, null)
+  assert.equal(restored.task.version, 3)
+  assert.equal(restored.task.activity.at(-1).kind, 'restored')
+  assert.equal(summarizeBoard(store.read()).total, 1)
+  await rejectsCode(
+    restoreTask(store, { id: quiet.identifier, version: 3 }),
+    'TASK_NOT_ARCHIVED',
+  )
 })

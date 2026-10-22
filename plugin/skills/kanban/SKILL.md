@@ -68,6 +68,13 @@ then blocker, then review.
 4. Record the outcome with `kanban_task_move`, `kanban_task_ask`,
    `kanban_task_block`, `kanban_task_comment`, or the approval tools.
 
+## Archive and restore
+
+`kanban_task_archive` hides a task from the board without deleting its history;
+every later write fails with `TASK_ARCHIVED`. `kanban_task_restore` puts it back
+in its column. Archive only when the human asks to clear the board; a comment or
+Done usually says the same thing with less state.
+
 ## Ask or block
 
 Use `kanban_task_ask` when a human decision is needed:
@@ -111,6 +118,7 @@ Approval and rejection belong to the human.
 | Error | Meaning | Recovery |
 | --- | --- | --- |
 | `TASK_VERSION_CONFLICT` | The task changed since you read it. | Call `kanban_task_get` again and retry with the new version. Never force. |
+| `TASK_ARCHIVED` | The task was archived and is read-only. | Call `kanban_task_restore` only if the human wants it back; otherwise leave it. |
 | `BLOCKER_ACTIVE` | The task still has an active blocker. | Resolve the external work, call `kanban_task_unblock`, then retry. |
 | `ANSWER_REQUIRED` | Approval needs a selected option first. | Ask the human to choose, record it with `kanban_task_answer`, then approve. |
 | `HUMAN_DECISION_REQUIRED` | You tried a human-only action without one. | Ask the human for an explicit decision, then retry with `as: "user"` and `confirmed_by`. |

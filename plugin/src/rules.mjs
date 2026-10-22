@@ -36,6 +36,7 @@ function rankOf(priority) {
 
 export function attentionReason(task) {
   if (!task) return null
+  if (task.archivedAt) return null
   if (task.status === 'canceled') return null
   if (task.pendingQuestion && !task.questionResolution) return 'question'
   if (task.blockedReason) return 'blocked'
@@ -78,17 +79,30 @@ function sortOrderOf(task) {
   return Number.isFinite(task.sortOrder) ? task.sortOrder : Number.MAX_SAFE_INTEGER
 }
 
+// Manual order is the column order: sortOrder comes first so a dragged card
+// stays exactly where the human put it. Priority, then recency, break ties.
 export function sortTasks(a, b) {
-  const byPriority = rankOf(a.priority) - rankOf(b.priority)
-  if (byPriority !== 0) return byPriority
   const byOrder = sortOrderOf(a) - sortOrderOf(b)
   if (byOrder !== 0) return byOrder
+  const byPriority = rankOf(a.priority) - rankOf(b.priority)
+  if (byPriority !== 0) return byPriority
   const updatedA = typeof a.updatedAt === 'string' ? a.updatedAt : ''
   const updatedB = typeof b.updatedAt === 'string' ? b.updatedAt : ''
   if (updatedA === updatedB) return 0
   // Newest first.
   return updatedA < updatedB ? 1 : -1
 }
+
+// Stable version of the manual order, used when resolving reorder anchors.
+export function sortByOrder(a, b) {
+  const byOrder = sortOrderOf(a) - sortOrderOf(b)
+  if (byOrder !== 0) return byOrder
+  const idA = String(a?.id ?? a?.identifier ?? '')
+  const idB = String(b?.id ?? b?.identifier ?? '')
+  return idA.localeCompare(idB)
+}
+
+export { sortOrderOf }
 
 function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')

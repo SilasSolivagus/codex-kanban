@@ -111,7 +111,7 @@ test('status for column picks the canonical status', () => {
   assert.equal(statusForColumn('nope'), null)
 })
 
-test('sorting prefers priority rank, then sort order, then newest update', () => {
+test('sorting prefers manual order, then priority, then newest update', () => {
   const tasks = [
     { ...base, identifier: 'CK-2', priority: 'low', sortOrder: 1 },
     { ...base, identifier: 'CK-3', priority: 'urgent', sortOrder: 9 },
@@ -119,7 +119,7 @@ test('sorting prefers priority rank, then sort order, then newest update', () =>
     { ...base, identifier: 'CK-5', priority: 'urgent', sortOrder: 9, updatedAt: '2026-10-22T01:00:00.000Z' },
     { ...base, identifier: 'CK-6', priority: 'medium', sortOrder: 5 },
   ]
-  assert.deepEqual(tasks.sort(sortTasks).map((task) => task.identifier), ['CK-5', 'CK-3', 'CK-6', 'CK-4', 'CK-2'])
+  assert.deepEqual(tasks.sort(sortTasks).map((task) => task.identifier), ['CK-4', 'CK-2', 'CK-6', 'CK-5', 'CK-3'])
 })
 
 test('sorting treats missing priority as none and equal tasks as tied', () => {
@@ -173,4 +173,10 @@ test('canceled tasks never surface attention or a column', () => {
   const canceled = { ...base, status: 'canceled', pendingQuestion: {}, blockedReason: 'still blocked' }
   assert.equal(attentionReason(canceled), null)
   assert.equal(columnForTask(canceled), null)
+})
+
+test('archived tasks never surface attention or a column', () => {
+  const archived = { ...base, archivedAt: '2026-10-22T05:00:00.000Z', blockedReason: 'still blocked' }
+  assert.equal(attentionReason(archived), null)
+  assert.equal(columnForTask(archived), 'backlog')
 })

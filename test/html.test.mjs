@@ -165,7 +165,7 @@ test('boardPayload is deterministic with an injected clock and sorts with sortTa
 
   assert.equal(payload.generatedAt, '2026-10-22T12:00:00.000Z')
   assert.deepEqual(payload.columns.map((column) => column.id), ['backlog', 'running', 'needs', 'done'])
-  assert.deepEqual(payload.columns[0].tasks.map((entry) => entry.identifier), ['CK-2', 'CK-3', 'CK-1'])
+  assert.deepEqual(payload.columns[0].tasks.map((entry) => entry.identifier), ['CK-1', 'CK-2', 'CK-3'])
 })
 
 test('attention tasks land in Needs you with their reason', () => {

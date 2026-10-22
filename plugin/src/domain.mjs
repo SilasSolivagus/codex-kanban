@@ -14,6 +14,8 @@ import {
   columnForTask,
   elapsedStart,
   nextIdentifier,
+  sortByOrder,
+  sortOrderOf,
   sortTasks,
   statusForColumn,
   taskPrefixFor,
@@ -40,6 +42,7 @@ const DEFAULT_CONTENT_TYPE = 'application/octet-stream'
 const MAX_PROJECT_NAME = 120
 const PROJECT_PREFIX = /^[A-Z0-9]{2,6}$/
 const DISPLAY_ORDER = ['needs', 'running', 'backlog', 'done']
+const ORDER_GAP = 1024
 
 export class KanbanError extends Error {
   constructor(code, message) {
@@ -226,6 +229,12 @@ function projectForTask(board, task) {
 function mustFindWritableTask(board, ref) {
   const task = mustFindTask(board, ref)
   assertProjectWritable(projectForTask(board, task))
+  if (task.archivedAt) {
+    throw new KanbanError(
+      'TASK_ARCHIVED',
+      `task ${task.identifier} is archived; restore it before writing`,
+    )
+  }
   return task
 }
 
@@ -400,6 +409,7 @@ export async function createTask(store, input = {}) {
       links,
       attachments: [],
       comments: [],
+      archivedAt: null,
       activity: [
         {
           at: createdAt,
@@ -525,6 +535,87 @@ export async function moveTask(store, input = {}) {
     task.statusSince = nowIso()
     touch(task, actor, 'moved', `moved ${task.identifier} from ${before} to ${status}`, [
       { field: 'status', before, after: status },
+    ])
+    return { ok: true, task }
+  })
+}
+
+function sameTaskRef(task, ref) {
+  if (typeof ref !== 'string' || !ref.trim()) return false
+  const needle = ref.trim().toLowerCase()
+  return task?.id?.toLowerCase() === needle
+    || String(task?.identifier ?? '').toLowerCase() === needle
+}
+
+function reorderIndex(siblings, input) {
+  if (input.beforeId !== undefined && input.beforeId !== null) {
+    const index = siblings.findIndex((entry) => sameTaskRef(entry, input.beforeId))
+    if (index === -1) {
+      throw new KanbanError(
+        'TASK_NOT_FOUND',
+        `beforeId must name a task in the same column: ${input.beforeId}`,
+      )
+    }
+    return index
+  }
+  if (input.afterId !== undefined && input.afterId !== null) {
+    const index = siblings.findIndex((entry) => sameTaskRef(entry, input.afterId))
+    if (index === -1) {
+      throw new KanbanError(
+        'TASK_NOT_FOUND',
+        `afterId must name a task in the same column: ${input.afterId}`,
+      )
+    }
+    return index + 1
+  }
+  if (input.position !== undefined && input.position !== null) {
+    const position = Number(input.position)
+    if (!Number.isInteger(position) || position < 0) {
+      throw new KanbanError('INVALID_INPUT', 'position must be a non-negative integer')
+    }
+    return Math.min(position, siblings.length)
+  }
+  // No anchor: append to the end of the column.
+  return siblings.length
+}
+
+export async function reorderTask(store, input = {}) {
+  const actor = actorOf(input)
+  return store.mutate((board) => {
+    const task = mustFindWritableTask(board, input.id ?? input.identifier)
+    checkVersion(task, input.version)
+    const column = columnForTask(task)
+    if (!column) {
+      throw new KanbanError('INVALID_INPUT', `task ${task.identifier} is not on the board`)
+    }
+    const siblings = board.tasks
+      .filter((entry) => entry.id !== task.id && !entry.archivedAt && columnForTask(entry) === column)
+      .sort(sortByOrder)
+    const index = reorderIndex(siblings, input)
+
+    let sortOrder
+    if (siblings.length === 0) {
+      sortOrder = ORDER_GAP
+    } else if (index <= 0) {
+      sortOrder = sortOrderOf(siblings[0]) - ORDER_GAP
+    } else if (index >= siblings.length) {
+      sortOrder = sortOrderOf(siblings[siblings.length - 1]) + ORDER_GAP
+    } else {
+      const previous = sortOrderOf(siblings[index - 1])
+      const next = sortOrderOf(siblings[index])
+      sortOrder = previous + (next - previous) / 2
+      if (!(Number.isFinite(sortOrder) && sortOrder > previous && sortOrder < next)) {
+        throw new KanbanError(
+          'ORDER_CONFLICT',
+          `no sort order fits between ${previous} and ${next}; rebalance the column first`,
+        )
+      }
+    }
+
+    const before = sortOrderOf(task)
+    task.sortOrder = sortOrder
+    touch(task, actor, 'reordered', `reordered ${task.identifier} in ${column}`, [
+      { field: 'sortOrder', before, after: sortOrder },
     ])
     return { ok: true, task }
   })
@@ -706,6 +797,39 @@ export async function rejectTask(store, input = {}) {
   })
 }
 
+export async function archiveTask(store, input = {}) {
+  const actor = actorOf(input)
+  return store.mutate((board) => {
+    const task = mustFindTask(board, input.id ?? input.identifier)
+    assertProjectWritable(projectForTask(board, task))
+    checkVersion(task, input.version)
+    if (task.archivedAt) return { ok: true, task, unchanged: true }
+    task.archivedAt = nowIso()
+    touch(task, actor, 'archived', `archived ${task.identifier}`, [
+      { field: 'archivedAt', before: null, after: task.archivedAt },
+    ])
+    return { ok: true, task }
+  })
+}
+
+export async function restoreTask(store, input = {}) {
+  const actor = actorOf(input)
+  return store.mutate((board) => {
+    const task = mustFindTask(board, input.id ?? input.identifier)
+    assertProjectWritable(projectForTask(board, task))
+    checkVersion(task, input.version)
+    if (!task.archivedAt) {
+      throw new KanbanError('TASK_NOT_ARCHIVED', `task ${task.identifier} is not archived`)
+    }
+    const before = task.archivedAt
+    task.archivedAt = null
+    touch(task, actor, 'restored', `restored ${task.identifier}`, [
+      { field: 'archivedAt', before, after: null },
+    ])
+    return { ok: true, task }
+  })
+}
+
 export async function addComment(store, input = {}) {
   const actor = actorOf(input)
   const body = requireString(input.body, 'body', MAX_COMMENT)
@@ -862,8 +986,9 @@ export function decorateTask(task, project) {
   return decorated
 }
 
-export function summarizeBoard(board, { projectId } = {}) {
+export function summarizeBoard(board, { projectId, includeArchived = false } = {}) {
   const tasks = tasksForProject(board, projectId)
+    .filter((task) => includeArchived || !task.archivedAt)
   const counts = { backlog: 0, running: 0, needs: 0, done: 0, canceled: 0 }
   for (const task of tasks) {
     const column = columnForTask(task)
@@ -881,9 +1006,10 @@ export function summarizeBoard(board, { projectId } = {}) {
 
 export function boardView(
   board,
-  { column, includeDone = true, includeCanceled = false, projectId } = {},
+  { column, includeDone = true, includeCanceled = false, includeArchived = false, projectId } = {},
 ) {
   const tasks = tasksForProject(board, projectId)
+    .filter((task) => includeArchived || !task.archivedAt)
   const project = projectId === undefined || projectId === null
     ? null
     : findProject(board, projectId) ?? null
@@ -913,7 +1039,7 @@ export function boardView(
   return {
     project,
     projects: listProjects(board),
-    summary: summarizeBoard(board, { projectId }),
+    summary: summarizeBoard(board, { projectId, includeArchived }),
     columns: Object.fromEntries(groups),
     tasks: selected,
   }

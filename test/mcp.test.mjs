@@ -22,6 +22,8 @@ const TOOL_NAMES = [
   'kanban_task_approve',
   'kanban_task_reject',
   'kanban_task_comment',
+  'kanban_task_archive',
+  'kanban_task_restore',
   'kanban_render',
   'kanban_project_list',
   'kanban_project_create',
@@ -177,14 +179,14 @@ test('initialize negotiates the protocol version and advertises the kanban serve
   assert.equal(fallback.result.protocolVersion, '2025-06-18')
 })
 
-test('tools/list exposes exactly the 18 kanban tools', async (t) => {
+test('tools/list exposes exactly the 20 kanban tools', async (t) => {
   const client = startServer(t)
   await client.request('initialize', { protocolVersion: '2025-06-18' })
   client.notify('notifications/initialized')
 
   const response = await client.request('tools/list')
   const tools = response.result.tools
-  assert.equal(tools.length, 18)
+  assert.equal(tools.length, 20)
   assert.deepEqual(tools.map((tool) => tool.name).sort(), [...TOOL_NAMES].sort())
 
   for (const tool of tools) {
@@ -249,6 +251,34 @@ test('kanban_task_get returns the full history without truncating comments', asy
   assert.match(text, /activity 2\b/)
   assert.doesNotMatch(text, /activity 1\b/)
   assert.match(text, /… 2 older entries omitted/)
+})
+
+test('kanban_task_archive hides the task until kanban_task_restore', async (t) => {
+  const client = startServer(t)
+  await client.request('initialize', { protocolVersion: '2025-06-18' })
+  const created = await client.call('kanban_task_create', { title: 'Archive the old card' })
+  const identifier = identifierFrom(created)
+
+  const archived = await client.call('kanban_task_archive', { id: identifier, version: 1 })
+  assert.equal(archived.isError, undefined)
+  assert.match(archived.content[0].text, new RegExp(`Archived ${identifier}`))
+
+  const hidden = await client.call('kanban_board', {})
+  assert.doesNotMatch(hidden.content[0].text, /Archive the old card/)
+
+  const blocked = await client.call('kanban_task_update', {
+    id: identifier,
+    version: 2,
+    title: 'nope',
+  })
+  expectError(blocked, 'TASK_ARCHIVED')
+
+  const restored = await client.call('kanban_task_restore', { id: identifier, version: 2 })
+  assert.equal(restored.isError, undefined)
+  assert.match(restored.content[0].text, new RegExp(`Restored ${identifier}`))
+
+  const visible = await client.call('kanban_board', {})
+  assert.match(visible.content[0].text, /Archive the old card/)
 })
 
 test('a missing task is a tool error, not a protocol error', async (t) => {

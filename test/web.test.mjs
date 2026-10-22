@@ -442,3 +442,95 @@ test('approving a reviewed task from the web ui uses the human actor', async (t)
   assert.equal(done.assignee.type, 'user')
   assert.equal(done.activity.at(-1).actor.type, 'user')
 })
+
+test('task reorder round-trips through the api and drives the column order', async (t) => {
+  const { url } = await fixture(t)
+  const first = column((await act(url, { action: 'task.create', title: 'first' })).body, 'backlog')[0]
+  const second = column((await act(url, { action: 'task.create', title: 'second' })).body, 'backlog')
+    .find((task) => task.id !== first.id)
+  const third = column((await act(url, { action: 'task.create', title: 'third' })).body, 'backlog')
+    .find((task) => task.id !== first.id && task.id !== second.id)
+
+  const before = await act(url, {
+    action: 'task.reorder',
+    id: third.identifier,
+    version: 1,
+    beforeId: first.identifier,
+  })
+  assert.equal(before.status, 200)
+  assert.deepEqual(
+    column(before.body, 'backlog').map((task) => task.identifier),
+    [third.identifier, first.identifier, second.identifier],
+  )
+  const reordered = column(before.body, 'backlog')[0]
+  assert.equal(reordered.version, 2)
+  assert.equal(reordered.sortOrder, 0)
+
+  const middle = await act(url, {
+    action: 'task.reorder',
+    id: third.identifier,
+    version: 2,
+    beforeId: second.identifier,
+  })
+  assert.equal(middle.status, 200)
+  assert.deepEqual(
+    column(middle.body, 'backlog').map((task) => task.identifier),
+    [first.identifier, third.identifier, second.identifier],
+  )
+  assert.equal(column(middle.body, 'backlog')[1].sortOrder, (1024 + 2048) / 2)
+
+  const stale = await act(url, {
+    action: 'task.reorder',
+    id: third.identifier,
+    version: 1,
+    beforeId: second.identifier,
+  })
+  assert.equal(stale.status, 409)
+  assert.equal(stale.body.error.code, 'TASK_VERSION_CONFLICT')
+})
+
+test('task archive and restore round-trip through the api and include_archived', async (t) => {
+  const { url } = await fixture(t)
+  const created = await act(url, { action: 'task.create', title: 'Archive me' })
+  const task = column(created.body, 'backlog')[0]
+
+  const archived = await act(url, {
+    action: 'task.archive',
+    id: task.identifier,
+    version: 1,
+  })
+  assert.equal(archived.status, 200)
+  assert.deepEqual(column(archived.body, 'backlog'), [])
+  assert.equal(archived.body.summary.total, 0)
+  assert.ok(archived.body.board.tasks.every((entry) => entry.id !== task.id))
+
+  const hidden = await board(url)
+  assert.equal(hidden.summary.total, 0)
+  const response = await fetch(`${url}/api/board?include_archived=1`)
+  const included = await response.json()
+  assert.equal(included.summary.total, 1)
+  const shown = column(included, 'backlog')[0]
+  assert.equal(shown.id, task.id)
+  assert.ok(shown.archivedAt)
+  assert.equal(shown.attention, null)
+
+  const blocked = await act(url, {
+    action: 'task.update',
+    id: task.identifier,
+    version: 2,
+    title: 'nope',
+  })
+  assert.equal(blocked.status, 409)
+  assert.equal(blocked.body.error.code, 'TASK_ARCHIVED')
+
+  const restored = await act(url, {
+    action: 'task.restore',
+    id: task.identifier,
+    version: 2,
+  })
+  assert.equal(restored.status, 200)
+  const back = column(restored.body, 'backlog')[0]
+  assert.equal(back.id, task.id)
+  assert.equal(back.archivedAt, null)
+  assert.equal(restored.body.summary.total, 1)
+})

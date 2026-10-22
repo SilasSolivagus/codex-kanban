@@ -58,7 +58,7 @@ test('the light theme uses the dsh reference tokens and layout scale', () => {
   assert.match(markup, /--panel-done: light-dark\(#eef8f1/)
   assert.match(markup, /border-radius: 14px/)
   assert.match(markup, /max-width: 1400px/)
-  assert.match(markup, /gap: 14px/)
+  assert.match(markup, /gap: 10px/)
   assert.doesNotMatch(markup, /text-transform: uppercase/)
 })
 
@@ -214,10 +214,10 @@ test('drawer contains editable details, links, activity, comments and attachment
   assert.match(script, /t\('drawer\.version', \{ n: task\.version \}\)/)
 })
 
-test('activity feeds the latest twelve events with actor and time', () => {
+test('activity feeds the latest twelve events with actor and relative time', () => {
   assert.match(script, /var latest = activity\.slice\(-12\)/)
   assert.match(script, /entry\.actor && entry\.actor\.name/)
-  assert.match(script, /formatTime\(entry\.at\)/)
+  assert.match(script, /dwellLabel\(entry\.at\)/)
   assert.match(script, /entry\.summary \|\| entry\.kind/)
 })
 
@@ -286,7 +286,7 @@ test('both dictionaries cover every key and every static translated label', () =
     assert.ok(STRINGS.en[key].length > 0, `en ${key} is not empty`)
     assert.ok(STRINGS.zh[key].length > 0, `zh ${key} is not empty`)
   }
-  assert.notEqual(STRINGS.en['columns.needs'], STRINGS.zh['columns.needs'])
+  assert.equal(STRINGS.zh['columns.needs'], 'Needs you')
   assert.notEqual(STRINGS.en['header.newTask'], STRINGS.zh['header.newTask'])
 
   const attributes = ['data-i18n', 'data-i18n-placeholder', 'data-i18n-aria']
@@ -375,12 +375,15 @@ test('UI_ACTIONS matches the v0.3 action vocabulary and is used by the script', 
     'project.update',
     'task.answer',
     'task.approve',
+    'task.archive',
     'task.ask',
     'task.block',
     'task.comment',
     'task.create',
     'task.move',
     'task.reject',
+    'task.reorder',
+    'task.restore',
     'task.unblock',
     'task.update',
   ])
@@ -398,4 +401,123 @@ test('the new task dialog creates through the api with project and priority', ()
   assert.match(script, /act\('task\.create'/)
   assert.match(script, /projectId: newTaskProject\.value/)
   assert.match(script, /priority: newTaskPriority\.value/)
+})
+
+// --- parity gaps ----------------------------------------------------------
+
+test('the card footer shows status, dwell time and the metric counts', () => {
+  assert.match(markup, /\.card-dwell \{/)
+  assert.match(script, /function taskStatusLabel\(task\)/)
+  assert.match(script, /function taskElapsed\(task\)/)
+  assert.match(script, /'card\.dwell'/)
+  assert.match(script, /' · ' \+ t\('card\.dwell'/)
+  assert.match(script, /task\.attentionSince/)
+  assert.match(script, /pendingQuestion\.createdAt/)
+  assert.match(script, /blockedSince \|\| task\.statusSince/)
+  assert.match(script, /metric\('comment'/)
+  assert.match(script, /metric\('attachment'/)
+  assert.match(script, /metric\('link'/)
+  assert.equal(STRINGS.en['card.dwell'], '{time} ago')
+  assert.equal(STRINGS.zh['card.dwell'], '{time}前')
+})
+
+test('same-column drag shows an insertion line and reorders before the target', () => {
+  assert.match(markup, /\.drop-before::before/)
+  assert.match(markup, /\.drop-before::before \{[^}]*top: -5px/)
+  assert.match(script, /classList\.add\('drop-before'\)/)
+  assert.match(script, /function clearDropMarkers\(\)/)
+  assert.match(script, /state\.dragTask = \{ id: task\.id, version: task\.version, column: columnId \}/)
+  assert.match(script, /act\('task\.reorder'/)
+  assert.match(script, /beforeId: beforeId \|\| undefined/)
+  assert.match(script, /task\.column === columnId/)
+  assert.match(script, /act\('task\.move'/)
+})
+
+test('archived tasks can be shown, dimmed and restored from the drawer', () => {
+  assert.match(markup, /<button id="archived-toggle"[^>]*aria-pressed="false"/)
+  assert.match(markup, /data-i18n="filter\.archived"/)
+  assert.match(markup, /<button id="archive-task"[^>]*data-i18n="drawer\.archive"/)
+  assert.match(markup, /<button id="restore-task"[^>]*data-i18n="drawer\.restore"/)
+  assert.match(script, /includeArchived: readArchived\(\) \|\| Boolean\(readTaskRef\(\)\)/)
+  assert.match(script, /'&include_archived=1'/)
+  assert.match(script, /state\.includeArchived = !state\.includeArchived/)
+  assert.match(script, /storeSet\(STORAGE\.archived/)
+  assert.match(script, /act\('task\.archive'/)
+  assert.match(script, /act\('task\.restore'/)
+  assert.match(script, /archiveButton\.hidden = archived/)
+  assert.match(script, /restoreButton\.hidden = !archived/)
+  assert.match(markup, /\[hidden\] \{ display: none !important; \}/)
+  assert.match(markup, /article\.card\.archived \{ opacity/)
+  assert.match(script, /if \(task && task\.archivedAt\) return false/)
+  assert.match(script, /task\.id\) return/)
+  assert.match(script, /'chip archived'/)
+})
+
+test('the drawer uses the two-column attribute grid with full-width sections', () => {
+  assert.match(markup, /class="attr-grid"/)
+  assert.match(markup, /grid-template-columns: minmax\(0, 1fr\) minmax\(0, 1fr\)/)
+  assert.match(markup, /\.attr\.full \{ grid-column: 1 \/ -1; \}/)
+  for (const id of ['attr-status', 'attr-assignee', 'attr-updated', 'attr-created', 'attr-version']) {
+    assert.match(markup, new RegExp(`id="${id}"`), `${id} is an attribute cell`)
+  }
+  const order = [...markup.matchAll(/data-i18n="(drawer\.(?:description|labels|links|blocker|question|attachments|comments|activity))"/g)]
+    .map((match) => match[1])
+  assert.deepEqual(order, [
+    'drawer.description',
+    'drawer.labels',
+    'drawer.links',
+    'drawer.blocker',
+    'drawer.question',
+    'drawer.attachments',
+    'drawer.comments',
+    'drawer.activity',
+  ])
+  assert.match(script, /attrStatus\.appendChild/)
+  assert.match(script, /attrUpdated\.textContent = formatTime\(task\.updatedAt\)/)
+  assert.match(script, /attrCreated\.textContent = formatTime\(task\.createdAt\)/)
+  assert.match(script, /attrVersion\.textContent = String\(task\.version\)/)
+})
+
+test('column headings stay English in both locales while statuses are localized', () => {
+  for (const [key, value] of Object.entries({
+    'columns.backlog': 'Backlog',
+    'columns.running': 'Running',
+    'columns.needs': 'Needs you',
+    'columns.done': 'Done',
+  })) {
+    assert.equal(STRINGS.en[key], value)
+    assert.equal(STRINGS.zh[key], value)
+  }
+  assert.equal(STRINGS.zh['status.backlog'], '待立项')
+  assert.equal(STRINGS.zh['status.in_progress'], '处理中')
+  assert.equal(STRINGS.zh['filter.archived'], '显示已归档')
+})
+
+test('the drawer takes focus, restores it and supports the ?task= deep link', () => {
+  assert.match(script, /drawerClose\.focus\(/)
+  assert.match(script, /state\.focusReturn = document\.activeElement/)
+  assert.match(script, /function cardForTask\(id\)/)
+  assert.match(script, /target\.focus\(\{ preventScroll: true \}\)/)
+  assert.match(script, /new URLSearchParams\(window\.location\.search\)\.get\('task'\)/)
+  assert.match(script, /pendingTaskRef: readTaskRef\(\)/)
+  assert.match(script, /function openDeepLink\(\)/)
+  assert.match(script, /event\.key === 'Escape'/)
+})
+
+test('the fold trims header, padding and gaps without cramping cards', () => {
+  assert.match(markup, /min-height: 56px/)
+  assert.match(markup, /padding: 9px 24px/)
+  assert.match(markup, /section\.column \{[^}]*gap: 8px/)
+  assert.match(markup, /section\.column \{[^}]*padding: 10px/)
+  assert.match(markup, /article\.card \{[^}]*gap: 7px/)
+  assert.match(markup, /article\.card \{[^}]*padding: 11px/)
+  assert.match(markup, /\.cards \{ display: flex; flex-direction: column; gap: 8px; \}/)
+  assert.match(markup, /\.card-footer \{[^}]*padding-top: 7px/)
+})
+
+test('filter and empty states tell the user how to clear the filters', () => {
+  assert.match(STRINGS.en['filter.none'], /Clear the filters/)
+  assert.match(STRINGS.zh['filter.none'], /清除筛选/)
+  assert.match(script, /empty\.textContent = hasFilters\(\) \? t\('filter\.none'\) : t\('columns\.empty\.' \+ id\)/)
+  assert.match(script, /function clearAllFilters\(\)/)
 })
