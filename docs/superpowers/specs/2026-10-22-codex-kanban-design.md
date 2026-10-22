@@ -147,13 +147,14 @@ Errors are structured: `{ "ok": false, "code": "TASK_VERSION_CONFLICT", "message
 ### Markdown
 
 ```markdown
-# Codex Kanban · 3 open · 1 needs you
+# Codex Kanban · my-repo
+3 tasks · 1 needs you · 1 running
 
 ## Needs you
-- **CK-4** Which deploy target? · question · 12m
+- **CK-4** Which deploy target? · question: Ship today?
 
 ## Running
-- **CK-3** Ship the MCP server · medium · in_progress
+- **CK-3** Ship the MCP server · medium · in progress
 ```
 
 ### HTML
