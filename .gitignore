@@ -2,3 +2,4 @@ node_modules/
 .kanban/
 *.log
 .DS_Store
+.tmp-codex-home/
