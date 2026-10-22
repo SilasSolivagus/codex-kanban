@@ -1,6 +1,11 @@
 import { randomUUID } from 'node:crypto'
 import path from 'node:path'
 import {
+  deleteAttachmentFile,
+  readAttachmentFile,
+  writeAttachmentFile,
+} from './store.mjs'
+import {
   COLUMNS,
   PRIORITIES,
   STATUSES,
@@ -28,6 +33,10 @@ const MAX_LINKS = 50
 const MAX_LABELS = 20
 const MAX_ACTOR = 80
 const MAX_ACTIVITY = 200
+const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024
+const MAX_FILENAME = 255
+const MAX_CONTENT_TYPE = 200
+const DEFAULT_CONTENT_TYPE = 'application/octet-stream'
 const MAX_PROJECT_NAME = 120
 const PROJECT_PREFIX = /^[A-Z0-9]{2,6}$/
 const DISPLAY_ORDER = ['needs', 'running', 'backlog', 'done']
@@ -715,6 +724,122 @@ export async function addComment(store, input = {}) {
   })
 }
 
+function decodeAttachmentData(value) {
+  if (typeof value !== 'string') {
+    throw new KanbanError('INVALID_INPUT', 'data must be a base64 string')
+  }
+  const encoded = value.replace(/\s+/g, '')
+  if (encoded.length % 4 === 1 || !/^[A-Za-z0-9+/]*={0,2}$/.test(encoded)) {
+    throw new KanbanError('INVALID_INPUT', 'data must be a base64 string')
+  }
+  const buffer = Buffer.from(encoded, 'base64')
+  if (buffer.length > MAX_ATTACHMENT_BYTES) {
+    throw new KanbanError(
+      'ATTACHMENT_TOO_LARGE',
+      `attachment must be at most ${MAX_ATTACHMENT_BYTES / (1024 * 1024)} MB`,
+    )
+  }
+  return buffer
+}
+
+function normalizeContentType(value) {
+  if (value === undefined || value === null) return DEFAULT_CONTENT_TYPE
+  if (typeof value !== 'string') {
+    throw new KanbanError('INVALID_INPUT', 'contentType must be a string')
+  }
+  const type = value.trim()
+  if (!type) return DEFAULT_CONTENT_TYPE
+  if (type.length > MAX_CONTENT_TYPE) {
+    throw new KanbanError(
+      'INVALID_INPUT',
+      `contentType must be at most ${MAX_CONTENT_TYPE} characters`,
+    )
+  }
+  if (/[\u0000-\u001f\u007f]/.test(type)) {
+    throw new KanbanError('INVALID_INPUT', 'contentType must not contain control characters')
+  }
+  return type
+}
+
+export async function addAttachment(store, input = {}) {
+  const filename = requireString(input.filename, 'filename', MAX_FILENAME)
+  const contentType = normalizeContentType(input.contentType)
+  const buffer = decodeAttachmentData(input.data)
+  const actor = actorOf(input)
+  let writtenId = null
+
+  try {
+    return await store.mutate((board) => {
+      const task = mustFindWritableTask(board, input.id ?? input.identifier)
+      checkVersion(task, input.version)
+      if (!Array.isArray(task.attachments)) task.attachments = []
+      let attachmentId
+      do {
+        attachmentId = `att_${randomUUID()}`
+      } while (task.attachments.some((entry) => entry?.id === attachmentId))
+      const attachment = {
+        id: attachmentId,
+        filename,
+        contentType,
+        size: buffer.length,
+        createdAt: nowIso(),
+      }
+      // Bytes first: the metadata never points at a file that is not there.
+      writeAttachmentFile(store, attachment.id, buffer)
+      writtenId = attachment.id
+      task.attachments.push(attachment)
+      touch(task, actor, 'attached', `attached ${filename}`)
+      return { ok: true, task, attachment }
+    })
+  } catch (error) {
+    if (writtenId) {
+      try {
+        deleteAttachmentFile(store, writtenId)
+      } catch {
+        // the board write failed; leave the orphan for a manual cleanup
+      }
+    }
+    throw error
+  }
+}
+
+export async function removeAttachment(store, input = {}) {
+  const actor = actorOf(input)
+  const attachmentId = typeof input.attachmentId === 'string' ? input.attachmentId.trim() : ''
+  if (!attachmentId) {
+    throw new KanbanError('INVALID_INPUT', 'attachmentId is required')
+  }
+  return store.mutate((board) => {
+    const task = mustFindWritableTask(board, input.id ?? input.identifier)
+    checkVersion(task, input.version)
+    const attachments = Array.isArray(task.attachments) ? task.attachments : []
+    const index = attachments.findIndex((entry) => entry?.id === attachmentId)
+    if (index === -1) {
+      throw new KanbanError('ATTACHMENT_NOT_FOUND', `no attachment matches ${attachmentId}`)
+    }
+    const [attachment] = attachments.splice(index, 1)
+    deleteAttachmentFile(store, attachment.id)
+    touch(task, actor, 'detached', `removed attachment ${attachment.filename}`)
+    return { ok: true, task, attachment }
+  })
+}
+
+export function readAttachment(store, attachmentId) {
+  const id = typeof attachmentId === 'string' ? attachmentId.trim() : ''
+  if (!id) return null
+  const board = store.read()
+  for (const task of Array.isArray(board.tasks) ? board.tasks : []) {
+    if (!Array.isArray(task?.attachments)) continue
+    const attachment = task.attachments.find((entry) => entry?.id === id)
+    if (!attachment) continue
+    const buffer = readAttachmentFile(store, attachment.id)
+    if (!buffer) return null
+    const project = listProjects(board).find((entry) => entry?.id === task.projectId) ?? null
+    return { attachment, buffer, task, project }
+  }
+  return null
+}
+
 export function decorateTask(task, project) {
   const attention = attentionReason(task)
   const decorated = {
@@ -723,6 +848,7 @@ export function decorateTask(task, project) {
     attention,
     attentionSince: attention ? elapsedStart(task) : null,
   }
+  if (!Array.isArray(decorated.attachments)) decorated.attachments = []
   let resolved = null
   if (project && typeof project === 'object' && !Array.isArray(project)) {
     resolved = Array.isArray(project.projects)

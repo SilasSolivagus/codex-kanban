@@ -146,6 +146,64 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
+const ATTACHMENT_ID = /^[A-Za-z0-9][A-Za-z0-9._-]*$/
+
+function attachmentPath(store, attachmentId) {
+  if (typeof attachmentId !== 'string' || !ATTACHMENT_ID.test(attachmentId)) {
+    throw boardError('INVALID_INPUT', 'attachment id must be a plain file name')
+  }
+  return path.join(store.attachmentsDir, attachmentId)
+}
+
+// Attachment bytes use the same mkdir + tmp + rename pattern as board.json, so
+// a failed write never leaves a partial file at the final path.
+export function writeAttachmentFile(store, attachmentId, buffer) {
+  if (!Buffer.isBuffer(buffer)) {
+    throw boardError('INVALID_INPUT', 'attachment data must be a Buffer')
+  }
+  const target = attachmentPath(store, attachmentId)
+  fs.mkdirSync(path.dirname(target), { recursive: true })
+  const tmp = `${target}.tmp-${process.pid}-${randomUUID()}`
+  try {
+    const handle = fs.openSync(tmp, 'wx')
+    try {
+      fs.writeFileSync(handle, buffer)
+      fs.fsyncSync(handle)
+    } finally {
+      fs.closeSync(handle)
+    }
+    fs.renameSync(tmp, target)
+  } catch (error) {
+    try {
+      fs.unlinkSync(tmp)
+    } catch {
+      // the target was never touched
+    }
+    throw error
+  }
+  return target
+}
+
+export function deleteAttachmentFile(store, attachmentId) {
+  try {
+    fs.unlinkSync(attachmentPath(store, attachmentId))
+    return true
+  } catch (error) {
+    if (error.code === 'ENOENT') return false
+    throw error
+  }
+}
+
+export function readAttachmentFile(store, attachmentId) {
+  if (typeof attachmentId !== 'string' || !ATTACHMENT_ID.test(attachmentId)) return null
+  try {
+    return fs.readFileSync(path.join(store.attachmentsDir, attachmentId))
+  } catch (error) {
+    if (error.code === 'ENOENT') return null
+    throw error
+  }
+}
+
 export function createStore({ root, lockTimeoutMs = 5000 } = {}) {
   const base = path.resolve(root || process.cwd())
   const dir = path.join(base, BOARD_DIR)
