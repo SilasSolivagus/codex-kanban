@@ -311,5 +311,8 @@ test('a resolved question is not shown as open', () => {
   const payload = boardPayload(resolved, { now })
   const card = payload.columns.find((column) => column.id === 'needs').tasks[0]
   assert.equal(card.question, null)
-  assert.equal(renderHtml(resolved, { now }).includes('Ship?'), false)
+  const html = renderHtml(resolved, { now })
+  assert.equal(html.includes('Ship?'), false)
+  // The action label stays in the script, but the render condition must exclude attention tasks.
+  assert.match(html, /task\.status !== 'done' && !task\.attention/)
 })

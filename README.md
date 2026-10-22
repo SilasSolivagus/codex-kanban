@@ -90,9 +90,11 @@ moves the task to Done, and renders `.kanban/board.html`.
 
 ## Tools
 
-All tools accept an optional `root` (absolute repository path). Writes to an
-existing task take the current `version` from `kanban_task_get`; approve and reject
-also require `as: "user"` and `confirmed_by`.
+Every tool takes `root`, the absolute repository path. It is required unless the
+`CODEX_KANBAN_ROOT` environment variable is set; there is deliberately no fallback
+to the server's working directory, because an installed plugin runs from the plugin
+cache. Writes to an existing task take the current `version` from
+`kanban_task_get`; approve and reject also require `as: "user"` and `confirmed_by`.
 
 | Tool | What it does |
 | --- | --- |

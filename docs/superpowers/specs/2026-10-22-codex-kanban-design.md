@@ -137,8 +137,10 @@ uses `O_EXCL` with a 5s timeout to serialize concurrent tool calls.
 | `kanban_render` | Write `board.html`, return path and inline reference |
 
 All write tools take `root` (absolute repository path) and `as` (`agent` or
-`user`). `root` defaults to `CODEX_KANBAN_ROOT`, then the nearest git root from
-`process.cwd()`.
+`user`). `root` is required unless `CODEX_KANBAN_ROOT` is set; MCP calls do not
+fall back to the server's working directory, because an installed plugin runs from
+the plugin cache. The CLI keeps its own fallback to the nearest git root above the
+current directory.
 
 Tool errors are MCP results with `isError: true` and text `ERROR <CODE>: <message>`,
 for example `ERROR TASK_VERSION_CONFLICT: task KAN-3 is at version 4, not 3; read it again`.
