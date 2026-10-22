@@ -93,6 +93,9 @@ Codex 以 `as: "user"` 调用 `kanban_task_approve`，把 `confirmed_by` 写成�
 - `confirmed_by` 非空，并且确实来自你的决定；
 - 如果问题还开着，先用 `kanban_task_answer` 记录一个选项。
 
+这是一条协作约定，不是身份认证：`as` 和 `confirmed_by` 都由调用方声明，刻意撒谎、
+直接运行 CLI 或手改 `board.json` 都能绕过。真正的保护是看板本身就是可评审的普通 JSON。
+
 驳回同理，只是带一条说明：
 
 > “驳回。重试路径没有测试。把这条备注写进去，然后打回 Backlog。”
@@ -233,6 +236,6 @@ Codex 主目录不在默认位置时，使用
 ## 数据在哪里
 
 - `.kanban/board.json` 就是看板。一个仓库一块，普通 JSON，适合跟项目一起评审和提交。
-- `.kanban/board.html` 是生成的只读视图，已被 git 忽略。
-- `.kanban/board.lock` 用于串行化写入，是临时文件，已被 git 忽略。
+- `.kanban/board.html` 是生成的只读视图；不想提交就把它加进 `.gitignore`。
+- `.kanban/board.lock` 用于串行化写入，是临时文件；同样建议加入 `.gitignore`。
 - 已取消的任务仍保留在 `board.json`，也能按标识读取，但不会显示在任何一列。

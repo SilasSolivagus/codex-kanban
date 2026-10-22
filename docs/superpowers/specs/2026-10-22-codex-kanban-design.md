@@ -140,7 +140,8 @@ All write tools take `root` (absolute repository path) and `as` (`agent` or
 `user`). `root` defaults to `CODEX_KANBAN_ROOT`, then the nearest git root from
 `process.cwd()`.
 
-Errors are structured: `{ "ok": false, "code": "TASK_VERSION_CONFLICT", "message": "..." }`.
+Tool errors are MCP results with `isError: true` and text `ERROR <CODE>: <message>`,
+for example `ERROR TASK_VERSION_CONFLICT: task KAN-3 is at version 4, not 3; read it again`.
 
 ## 6. Rendering
 
@@ -197,7 +198,9 @@ then deletes the directory.
 
 ## 8. Safety
 
-- Approve/reject require `as: "user"` and a non-empty `confirmed_by` note.
+- Approve/reject require `as: "user"` and a non-empty `confirmed_by` note. This is a
+  cooperative boundary, not authentication: the values are caller-declared and the
+  JSON file is editable, so review of `board.json` is the real audit surface.
 - The skill forbids an agent from answering or approving its own question.
 - Writes use optimistic concurrency; no blind overwrite.
 - The store is plain JSON so a human can review changes in a diff.

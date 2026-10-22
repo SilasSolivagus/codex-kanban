@@ -22,7 +22,7 @@ const BOARD_COLUMNS = ['needs', 'running', 'backlog', 'done']
 const ROOT = {
   type: 'string',
   description:
-    'Absolute path of the repository that owns the board. Defaults to CODEX_KANBAN_ROOT, then the nearest git root above the current directory.',
+    'Absolute path of the repository that owns the board. Required unless CODEX_KANBAN_ROOT is set.',
 }
 const ACTOR = {
   type: 'string',
@@ -265,7 +265,11 @@ function inputError(code, message) {
 }
 
 function storeFor(args) {
-  return createStore({ root: resolveRoot(args?.root) })
+  const explicit = args?.root ?? process.env.CODEX_KANBAN_ROOT
+  if (!explicit) {
+    throw inputError('ROOT_REQUIRED', 'pass the absolute repository path as root (or set CODEX_KANBAN_ROOT)')
+  }
+  return createStore({ root: resolveRoot(explicit) })
 }
 
 function requireVersion(args) {

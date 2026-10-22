@@ -93,7 +93,10 @@ Be explicit:
 
 Codex calls `kanban_task_approve` with `as: "user"` and a `confirmed_by` value that
 summarizes your decision, then the task moves to Done. A vague "sounds good" is not
-a decision; say "approve" or "reject" if that is what you mean.
+a decision; say "approve" or "reject" if that is what you mean. This is a
+cooperative boundary, not authentication: the actor and the confirmation are
+self-declared, and an agent that lies or edits `board.json` can bypass it. The
+protection is that the board is plain JSON you review.
 
 Approval through the MCP server fails unless all three are true:
 
@@ -260,7 +263,9 @@ the task; rejecting sends it back to Backlog.
 
 - `.kanban/board.json` is the board. One board per repository. It is plain JSON and
   intended to be reviewed and committed with the project.
-- `.kanban/board.html` is a generated, read-only view. It is ignored by git.
-- `.kanban/board.lock` serializes writes. It is temporary and ignored by git.
+- `.kanban/board.html` is a generated, read-only view. Add it to your
+  `.gitignore` if you do not want it committed.
+- `.kanban/board.lock` serializes writes. It is temporary; add it to your
+  `.gitignore` as well.
 - Canceled tasks stay in `board.json` and remain reachable by identifier, but they
   are hidden from all four columns.

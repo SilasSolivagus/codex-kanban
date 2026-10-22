@@ -716,3 +716,38 @@ test('boardView honours the column, includeDone and includeCanceled options', as
   assert.equal(withCanceled.columns.done.length, 2)
   assert.ok(withCanceled.tasks.some((task) => task.status === 'canceled'))
 })
+
+test('canceling a task with an open question hides it from Needs you', async (t) => {
+  const { store } = fixture(t)
+  const task = await newTask(store)
+  const asked = await askTask(store, {
+    id: task.identifier,
+    version: 1,
+    prompt: 'Which target?',
+    options: [{ label: 'Staging' }, { label: 'Production' }],
+  })
+  const canceled = await moveTask(store, {
+    id: task.identifier,
+    version: asked.task.version,
+    to: 'canceled',
+  })
+  assert.equal(canceled.task.status, 'canceled')
+
+  const board = store.read()
+  const summary = summarizeBoard(board)
+  assert.equal(summary.counts.needs, 0)
+  assert.equal(summary.counts.canceled, 1)
+  const view = boardView(board)
+  assert.equal(Object.values(view.columns).flat().length, 0)
+  assert.equal(getTaskView(store, { id: task.identifier }).task.attention, null)
+})
+
+test('canceling a blocked task also leaves Needs you', async (t) => {
+  const { store } = fixture(t)
+  const task = await newTask(store)
+  const blocked = await blockTask(store, { id: task.identifier, version: 1, reason: 'no access' })
+  await moveTask(store, { id: task.identifier, version: blocked.task.version, to: 'canceled' })
+  const summary = summarizeBoard(store.read())
+  assert.equal(summary.counts.needs, 0)
+  assert.equal(summary.counts.canceled, 1)
+})

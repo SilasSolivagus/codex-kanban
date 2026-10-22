@@ -36,6 +36,7 @@ function rankOf(priority) {
 
 export function attentionReason(task) {
   if (!task) return null
+  if (task.status === 'canceled') return null
   if (task.pendingQuestion && !task.questionResolution) return 'question'
   if (task.blockedReason) return 'blocked'
   if (task.status === 'in_review') return 'review'

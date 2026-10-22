@@ -168,3 +168,9 @@ test('elapsed start follows the active attention signal', () => {
   assert.equal(elapsedStart({ ...base, blockedReason: 'x' }), base.statusSince)
   assert.equal(elapsedStart({ ...base }), base.statusSince)
 })
+
+test('canceled tasks never surface attention or a column', () => {
+  const canceled = { ...base, status: 'canceled', pendingQuestion: {}, blockedReason: 'still blocked' }
+  assert.equal(attentionReason(canceled), null)
+  assert.equal(columnForTask(canceled), null)
+})

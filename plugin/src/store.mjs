@@ -298,6 +298,10 @@ export function resolveRoot(explicit) {
   if (process.env.CODEX_KANBAN_ROOT) {
     const resolved = resolveDirectory(process.env.CODEX_KANBAN_ROOT)
     if (resolved) return resolved
+    throw boardError(
+      'ROOT_NOT_FOUND',
+      `CODEX_KANBAN_ROOT does not exist: ${process.env.CODEX_KANBAN_ROOT}`,
+    )
   }
 
   let current = process.cwd()

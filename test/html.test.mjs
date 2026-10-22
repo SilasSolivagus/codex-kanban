@@ -271,3 +271,45 @@ test('a 50-task board stays under 60KB', () => {
 
   assert.ok(html.length < 60 * 1024, `document is ${html.length} bytes`)
 })
+
+test('canceled tasks stay out of every column', () => {
+  const payload = boardPayload(
+    board([
+      task({
+        identifier: 'CK-9',
+        status: 'canceled',
+        pendingQuestion: {
+          prompt: 'Gone?',
+          note: '',
+          options: [{ id: 'opt_1', label: 'A', detail: '' }],
+          selected: null,
+          createdAt: '2026-10-22T11:00:00.000Z',
+        },
+      }),
+    ]),
+    { now },
+  )
+  assert.equal(payload.columns.flatMap((column) => column.tasks).length, 0)
+  assert.deepEqual(payload.canceled.map((card) => card.identifier), ['CK-9'])
+})
+
+test('a resolved question is not shown as open', () => {
+  const resolved = board([
+    task({
+      identifier: 'CK-8',
+      status: 'in_review',
+      pendingQuestion: {
+        prompt: 'Ship?',
+        note: '',
+        options: [{ id: 'opt_1', label: 'Yes', detail: '' }],
+        selected: 'opt_1',
+        createdAt: '2026-10-22T11:00:00.000Z',
+      },
+      questionResolution: { decision: 'approve', optionId: 'opt_1', optionLabel: 'Yes', note: '', at: '2026-10-22T11:30:00.000Z' },
+    }),
+  ])
+  const payload = boardPayload(resolved, { now })
+  const card = payload.columns.find((column) => column.id === 'needs').tasks[0]
+  assert.equal(card.question, null)
+  assert.equal(renderHtml(resolved, { now }).includes('Ship?'), false)
+})

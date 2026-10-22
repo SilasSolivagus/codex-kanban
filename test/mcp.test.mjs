@@ -42,11 +42,14 @@ async function waitFor(predicate, timeoutMs = 5000) {
  * Spawn the real MCP server over pipes and speak newline-delimited JSON-RPC.
  * The child uses the temp directory as both cwd and CODEX_KANBAN_ROOT.
  */
-function startServer(t) {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'codex-kanban-mcp-'))
+function startServer(t, options = {}) {
+  const root = options.root ?? fs.mkdtempSync(path.join(os.tmpdir(), 'codex-kanban-mcp-'))
+  const env = { ...process.env }
+  if (options.envRoot === null) delete env.CODEX_KANBAN_ROOT
+  else env.CODEX_KANBAN_ROOT = options.envRoot ?? root
   const child = spawn(process.execPath, [SERVER], {
     cwd: root,
-    env: { ...process.env, CODEX_KANBAN_ROOT: root },
+    env,
     stdio: ['pipe', 'pipe', 'pipe'],
   })
 
@@ -360,4 +363,20 @@ test('notifications produce no response and malformed JSON is a parse error', as
 
   const ping = await client.request('ping')
   assert.deepEqual(ping.result, {})
+})
+
+test('a tool call without root or CODEX_KANBAN_ROOT fails with ROOT_REQUIRED', async (t) => {
+  const client = startServer(t, { envRoot: null })
+  await client.request('initialize', { protocolVersion: '2025-06-18' })
+  const result = await client.call('kanban_task_create', { title: 'nowhere' })
+  expectError(result, 'ROOT_REQUIRED')
+  assert.equal(fs.existsSync(path.join(client.root, '.kanban')), false)
+})
+
+test('an invalid CODEX_KANBAN_ROOT fails with ROOT_NOT_FOUND', async (t) => {
+  const missing = path.join(os.tmpdir(), `codex-kanban-missing-${Date.now()}`)
+  const client = startServer(t, { envRoot: missing })
+  await client.request('initialize', { protocolVersion: '2025-06-18' })
+  const result = await client.call('kanban_board', {})
+  expectError(result, 'ROOT_NOT_FOUND')
 })

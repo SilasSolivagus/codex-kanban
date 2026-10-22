@@ -443,3 +443,25 @@ test('summarizeView renders the exact summary line', () => {
   )
   assert.equal(summarizeView(view), '2 tasks · 1 needs you · 1 running')
 })
+
+test('canceled tasks with an open question stay hidden', () => {
+  const pinned = board([
+    task({
+      identifier: 'DM-9',
+      title: 'canceled question',
+      status: 'canceled',
+      pendingQuestion: {
+        prompt: 'Never mind?',
+        note: '',
+        options: [{ id: 'opt_1', label: 'A', detail: '' }],
+        selected: null,
+        createdAt: '2026-10-22T11:00:00.000Z',
+      },
+    }),
+  ])
+  const markdown = renderMarkdown(pinned, { now })
+  assert.doesNotMatch(markdown, /DM-9/)
+  assert.doesNotMatch(markdown, /Never mind/)
+  assert.match(markdown, /1 task/)
+  assert.match(markdown, /0 needs you/)
+})

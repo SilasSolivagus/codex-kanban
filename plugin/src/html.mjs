@@ -98,7 +98,7 @@ function cleanNullable(value) {
 
 function cardModel(task, now) {
   const attention = attentionReason(task)
-  const question = task.pendingQuestion
+  const question = attention === 'question' && task.pendingQuestion
     ? {
       prompt: clean(task.pendingQuestion.prompt),
       note: clean(task.pendingQuestion.note),
@@ -969,7 +969,7 @@ ${sections}
     actions.appendChild(action('Comment', false, function () {
       sendToHost('Add a comment to ' + task.identifier + ' (' + task.title + '): ', 'Comment on ' + task.identifier);
     }));
-    if (task.status !== 'done') {
+    if (task.status !== 'done' && !task.attention) {
       actions.appendChild(action('Move to Done', false, function () {
         sendToHost('Move ' + task.identifier + ' (' + task.title + ') to Done.', 'Move ' + task.identifier);
       }));

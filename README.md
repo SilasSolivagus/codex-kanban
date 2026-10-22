@@ -9,7 +9,7 @@
 <p align="center">
   <a href="https://github.com/SilasSolivagus/codex-kanban/actions/workflows/ci.yml"><img src="https://github.com/SilasSolivagus/codex-kanban/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://github.com/SilasSolivagus/codex-kanban"><img src="https://img.shields.io/badge/version-0.1.0-2F6FB2" alt="Version 0.1.0"></a>
-  <img src="https://img.shields.io/badge/tests-147%20passing-2ea043" alt="147 tests passing">
+  <img src="https://img.shields.io/badge/tests-155%20passing-2ea043" alt="155 tests passing">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-2F6FB2" alt="MIT license"></a>
 </p>
 
@@ -37,7 +37,7 @@ extra when you want to see the whole queue at once.
 | **Questions with options** | Ask with two to five real options. An answer is recorded, but the task stays in Needs you until a human approves or rejects it. |
 | **Blockers with one clear reason** | Block a task when external work is missing: access, a dependency, an environment, or another person's deliverable. Unblock returns it to its normal column. |
 | **Durable, reviewable state** | A plain JSON file in the repository. Commit it with the code and review task changes in the same diff. |
-| **Atomic, versioned writes** | Every write uses a lock, a temporary file and an atomic rename. Every task update carries a version; stale writes fail with `TASK_VERSION_CONFLICT`. |
+| **Atomic, versioned writes** | Every board write uses a lock, a temporary file and an atomic rename. Every task update carries a version; stale writes fail with `TASK_VERSION_CONFLICT`. |
 | **Two surfaces** | Markdown for the terminal and the conversation; a self-contained HTML board for a visual pass. |
 | **No runtime dependencies** | Node.js 22 or newer, ESM, no build step, no package install. |
 
@@ -194,6 +194,10 @@ and applied by writing `board.json.tmp`, syncing it, then renaming it over
 
 ## Known limitations
 
+- **The approval boundary is cooperative, not authenticated.** `as: "user"` and
+  `confirmed_by` are declarations enforced by the tools and the skill. An agent
+  that deliberately lies, runs the CLI, or edits `board.json` can bypass them, so
+  the real protection is that the board is plain JSON you review in the diff.
 - **`confirmed_by` is a gate, not an audit field.** Approval and rejection require
   it, but it is not persisted as a distinct field. The resolution note and activity
   record that a decision happened; store the human's exact words in the note if you
@@ -220,7 +224,7 @@ cd codex-kanban
 node --test
 ```
 
-The suite has 147 tests at `v0.1.0` and uses only `node:test`. `npm test` runs the
+The suite has 155 tests at `v0.1.0` and uses only `node:test`. `npm test` runs the
 same command. There are no runtime or development dependencies to install.
 
 ```

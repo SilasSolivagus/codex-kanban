@@ -9,7 +9,7 @@
 <p align="center">
   <a href="https://github.com/SilasSolivagus/codex-kanban/actions/workflows/ci.yml"><img src="https://github.com/SilasSolivagus/codex-kanban/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://github.com/SilasSolivagus/codex-kanban"><img src="https://img.shields.io/badge/version-0.1.0-2F6FB2" alt="版本 0.1.0"></a>
-  <img src="https://img.shields.io/badge/tests-147%20passing-2ea043" alt="147 项测试通过">
+  <img src="https://img.shields.io/badge/tests-155%20passing-2ea043" alt="155 项测试通过">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-2F6FB2" alt="MIT 许可证"></a>
 </p>
 
@@ -186,6 +186,7 @@ node "$HOME/.codex/plugins/cache/silassolivagus/codex-kanban/0.1.0/bin/codex-kan
 
 ## 已知限制
 
+- **审批边界是协作约定，不是身份认证。** `as: "user"` 和 `confirmed_by` 是由工具和技能执行的声明；刻意撒谎、直接运行 CLI 或手改 `board.json` 都能绕过。真正的保护是看板本身就是可评审的普通 JSON。
 - **`confirmed_by` 只是门槛，不是审计字段。** 审批和驳回必须提供它，但它不会作为独立
   字段保存。解决记录和活动日志能证明“做过决定”，如果需要保留原话，请写进备注。
 - **HTML 看板只读，且依赖宿主。** 按钮通过 `window.openai.sendFollowUpMessage` 把动作
@@ -208,7 +209,7 @@ cd codex-kanban
 node --test
 ```
 
-`v0.1.0` 共有 147 项测试，只使用 `node:test`。`npm test` 执行同一条命令，没有运行时
+`v0.1.0` 共有 155 项测试，只使用 `node:test`。`npm test` 执行同一条命令，没有运行时
 或开发依赖需要安装。
 
 ```
