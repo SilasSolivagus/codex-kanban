@@ -239,13 +239,42 @@ test('moving between stored statuses updates statusSince and activity', async (t
   assert.equal(noop.task.version, 2)
 })
 
-test('in_review may move back to running', async (t) => {
+test('an agent cannot move a task out of review', async (t) => {
   const { store } = fixture(t)
   const task = await newTask(store, { status: 'in_review' })
-  const running = await moveTask(store, { id: task.identifier, version: 1, to: 'running' })
-  assert.equal(running.task.status, 'in_progress')
-  const review = await moveTask(store, { id: task.identifier, version: 2, to: 'in_review' })
-  assert.equal(review.task.status, 'in_review')
+  const before = fs.readFileSync(store.path, 'utf8')
+
+  for (const to of ['running', 'canceled', 'backlog', 'done']) {
+    await assert.rejects(
+      moveTask(store, { id: task.identifier, version: 1, to, as: 'agent' }),
+      (error) => {
+        assert.equal(error.code, 'HUMAN_DECISION_REQUIRED')
+        assert.match(error.message, /ask the human to approve, reject, or move it/i)
+        return true
+      },
+    )
+  }
+  // Every rejected move left no trace: no version bump, no activity, no rewrite.
+  assert.equal(fs.readFileSync(store.path, 'utf8'), before)
+  assert.equal(store.read().tasks[0].version, 1)
+  assert.equal(store.read().tasks[0].status, 'in_review')
+})
+
+test('a human may move a task out of review to any target', async (t) => {
+  const { store } = fixture(t)
+  const targets = [
+    ['backlog', 'backlog'],
+    ['running', 'in_progress'],
+    ['done', 'done'],
+    ['canceled', 'canceled'],
+  ]
+  for (const [to, expected] of targets) {
+    const task = await newTask(store, { title: `review to ${to}`, status: 'in_review' })
+    const moved = await moveTask(store, { id: task.identifier, version: 1, to, as: 'user' })
+    assert.equal(moved.task.status, expected)
+    assert.equal(moved.task.activity.at(-1).kind, 'moved')
+    assert.deepEqual(moved.task.activity.at(-1).actor, { type: 'user', name: 'you' })
+  }
 })
 
 test('an agent cannot close a task that is in review', async (t) => {

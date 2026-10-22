@@ -307,6 +307,14 @@ export async function moveTask(store, input = {}) {
     }
     if (status === task.status) return { ok: true, task, unchanged: true }
 
+    // Review is a human gate: an agent may not move a reviewed task anywhere.
+    if (task.status === 'in_review' && actor.type !== 'user' && status !== 'in_review') {
+      throw new KanbanError(
+        'HUMAN_DECISION_REQUIRED',
+        `${task.identifier} is in review; ask the human to approve, reject, or move it`,
+      )
+    }
+
     // Canceled has no column, so the column guard does not apply to it.
     if (status !== 'canceled') {
       if (status === 'done') {
@@ -315,12 +323,6 @@ export async function moveTask(store, input = {}) {
         }
         if (task.pendingQuestion && !task.questionResolution) {
           throw new KanbanError('QUESTION_OPEN', `answer or reject the question on ${task.identifier} first`)
-        }
-        if (task.status === 'in_review' && actor.type !== 'user') {
-          throw new KanbanError(
-            'HUMAN_DECISION_REQUIRED',
-            `${task.identifier} is in review; ask the human to approve it instead of moving it to Done`,
-          )
         }
       }
       const next = { ...task, status }
