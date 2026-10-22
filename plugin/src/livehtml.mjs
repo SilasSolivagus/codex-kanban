@@ -41,6 +41,7 @@ export const STRINGS = Object.freeze({
     'counts.needs': '{n} needs you',
     'counts.done': '{n} done',
     'counts.contextAll': 'All projects · {n} projects',
+    'counts.contextAllOne': 'All projects · {n} project',
     'counts.contextProject': '{name} · {path}',
     'counts.contextProjectNoPath': '{name} · {n} tasks',
     'project.archivedSuffix': ' (archived)',
@@ -231,6 +232,7 @@ export const STRINGS = Object.freeze({
     'counts.needs': '{n} 个需要你',
     'counts.done': '{n} 个已完成',
     'counts.contextAll': '全部项目 · {n} 个项目',
+    'counts.contextAllOne': '全部项目 · {n} 个项目',
     'counts.contextProject': '{name} · {path}',
     'counts.contextProjectNoPath': '{name} · {n} 个任务',
     'project.archivedSuffix': '（已归档）',
@@ -1192,7 +1194,9 @@ export function renderLiveHtml({ project = {} } = {}) {
       ? (project.workspacePath
         ? t('counts.contextProject', { name: project.name, path: project.workspacePath })
         : t('counts.contextProjectNoPath', { name: project.name, n: summary.total || 0 }))
-      : t('counts.contextAll', { n: (data.projects || []).length });
+      : (data.projects || []).length === 1
+        ? t('counts.contextAllOne', { n: 1 })
+        : t('counts.contextAll', { n: (data.projects || []).length });
     readonlyBanner.hidden = !state.readOnly;
     newTaskButton.disabled = state.readOnly;
     document.body.classList.toggle('readonly', state.readOnly);
