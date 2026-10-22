@@ -8,7 +8,7 @@
 
 <p align="center">
   <a href="https://github.com/SilasSolivagus/codex-kanban/actions/workflows/ci.yml"><img src="https://github.com/SilasSolivagus/codex-kanban/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <a href="https://github.com/SilasSolivagus/codex-kanban"><img src="https://img.shields.io/badge/version-0.3.1-2F6FB2" alt="Version 0.3.1"></a>
+  <a href="https://github.com/SilasSolivagus/codex-kanban"><img src="https://img.shields.io/badge/version-0.4.0-2F6FB2" alt="Version 0.4.0"></a>
   <img src="https://img.shields.io/badge/tests-213%20passing-2ea043" alt="213 tests passing">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-2F6FB2" alt="MIT license"></a>
 </p>
@@ -132,6 +132,8 @@ node plugin/bin/codex-kanban.mjs serve --open
 
 ![The local web board with four columns and drag-and-drop](docs/assets/kanban-web.png)
 
+![The task drawer: two-column attributes, links, attachments, activity](docs/assets/kanban-drawer.png)
+
 It reads and writes the same `.kanban/board.json`. Drag a card between Backlog,
 Running and Done; open a card to answer a question, approve, reject, block,
 unblock, ask, or comment. Needs you is never a drop target.
@@ -145,6 +147,9 @@ network and should only be used on a machine you trust.
 A board can hold several projects. Each has its own identifier prefix and counter,
 so `APP-1` and `WEB-1` can coexist in one repository.
 
+- Reorder cards inside a column by dragging; the order is stored in `sortOrder`.
+- Archive a task as well as a project; archived tasks are hidden until you toggle
+  **Show archived**, and writes to them are rejected with `TASK_ARCHIVED`.
 - Create, rename, archive and restore projects from the web board's **Projects**
   button or with the `kanban_project_*` tools.
 - Archiving is enforced in the domain layer: every write to a task in an archived

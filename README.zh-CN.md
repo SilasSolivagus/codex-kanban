@@ -8,7 +8,7 @@
 
 <p align="center">
   <a href="https://github.com/SilasSolivagus/codex-kanban/actions/workflows/ci.yml"><img src="https://github.com/SilasSolivagus/codex-kanban/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <a href="https://github.com/SilasSolivagus/codex-kanban"><img src="https://img.shields.io/badge/version-0.3.1-2F6FB2" alt="版本 0.1.0"></a>
+  <a href="https://github.com/SilasSolivagus/codex-kanban"><img src="https://img.shields.io/badge/version-0.4.0-2F6FB2" alt="版本 0.1.0"></a>
   <img src="https://img.shields.io/badge/tests-213%20passing-2ea043" alt="213 项测试通过">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-2F6FB2" alt="MIT 许可证"></a>
 </p>
@@ -121,6 +121,8 @@ node plugin/bin/codex-kanban.mjs serve --open
 
 ![本地 Web 看板：四列、可拖拽](docs/assets/kanban-web.png)
 
+![任务抽屉：两列属性、链接、附件、活动](docs/assets/kanban-drawer.png)
+
 读写的是同一个 `.kanban/board.json`。卡片可在 Backlog、Running、Done 之间拖拽；
 点开卡片可以回答问题、批准、驳回、阻塞、解阻塞、提问或评论。Needs you 不能作为拖拽目标。
 
@@ -132,6 +134,8 @@ node plugin/bin/codex-kanban.mjs serve --open
 一块看板可以容纳多个项目。每个项目有自己的编号前缀与计数器，所以同一个仓库里可以同时有
 `APP-1` 和 `WEB-1`。
 
+- 列内可以拖拽排序，顺序存在 `sortOrder` 里。
+- 任务也能单独归档：归档后默认隐藏，打开 **显示已归档** 才能看到，写入返回 `TASK_ARCHIVED`。
 - 在网页看板的 **项目管理** 里新建、重命名、归档、恢复，或使用 `kanban_project_*` 工具。
 - 归档在领域层强制生效：归档项目下的任何任务写入都会返回 `PROJECT_ARCHIVED`，直到恢复。
 - 附件存在 `.kanban/attachments/<id>`，元数据挂在任务上。抽屉里上传（单文件 10 MB），
