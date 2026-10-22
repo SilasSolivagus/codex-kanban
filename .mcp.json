@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "codex-kanban": {
+      "command": "./bin/mcp-launcher.sh",
+      "args": [],
+      "cwd": ".",
+      "env_vars": ["CODEX_KANBAN_ROOT"]
+    }
+  }
+}

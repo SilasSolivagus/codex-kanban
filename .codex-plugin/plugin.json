@@ -1,0 +1,33 @@
+{
+  "name": "codex-kanban",
+  "version": "0.1.0",
+  "description": "A Codex-native task board. Four columns, approvals, blockers and durable repository-local state, driven by MCP tools and a kanban skill.",
+  "author": {
+    "name": "Silas Solivagus",
+    "url": "https://github.com/SilasSolivagus"
+  },
+  "homepage": "https://github.com/SilasSolivagus/codex-kanban",
+  "repository": "https://github.com/SilasSolivagus/codex-kanban",
+  "license": "MIT",
+  "keywords": ["kanban", "task-board", "project-management", "mcp", "tasks"],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "Codex Kanban",
+    "shortDescription": "A task board Codex can read and write",
+    "longDescription": "Codex Kanban gives Codex a task layer that outlives the conversation. Four columns, automatic Needs you, blockers, questions with options, approvals, comments and activity, stored in a repository-local .kanban/board.json and exposed through native MCP tools.",
+    "developerName": "Silas Solivagus",
+    "category": "Productivity",
+    "capabilities": ["Interactive", "Read", "Write"],
+    "websiteURL": "https://github.com/SilasSolivagus/codex-kanban",
+    "brandColor": "#2F6FB2",
+    "composerIcon": "./assets/icon.svg",
+    "logo": "./assets/icon.svg",
+    "defaultPrompt": [
+      "Show me what needs my attention on the kanban board",
+      "Add a task for the login bug and put it in Backlog",
+      "Render the kanban board"
+    ],
+    "screenshots": []
+  }
+}

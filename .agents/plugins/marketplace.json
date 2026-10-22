@@ -1,0 +1,20 @@
+{
+  "name": "silassolivagus",
+  "interface": {
+    "displayName": "Silas Solivagus"
+  },
+  "plugins": [
+    {
+      "name": "codex-kanban",
+      "source": {
+        "source": "local",
+        "path": "./"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_USE"
+      },
+      "category": "Productivity"
+    }
+  ]
+}
