@@ -9,17 +9,22 @@ import {
   addComment,
   answerTask,
   approveTask,
+  archiveProject,
   askTask,
   blockTask,
   boardView,
+  createProject,
   createTask,
   decorateTask,
   findTask,
   getTaskView,
+  listProjects,
   moveTask,
   rejectTask,
+  restoreProject,
   summarizeBoard,
   unblockTask,
+  updateProject,
   updateTask,
 } from '../plugin/src/domain.mjs'
 
@@ -67,7 +72,7 @@ test('creating a task assigns CK-1, a version and a created activity entry', asy
   assert.equal(task.activity.length, 1)
   assert.deepEqual(Object.keys(task.activity[0]).sort(), ['actor', 'at', 'changes', 'kind', 'summary'])
   assert.equal(task.activity[0].kind, 'created')
-  assert.equal(store.read().nextTaskNumber, 2)
+  assert.equal(store.read().projects[0].nextTaskNumber, 2)
 })
 test('identifiers keep counting up and a created task can start in another status', async (t) => {
   const { store } = fixture(t)
@@ -76,7 +81,7 @@ test('identifiers keep counting up and a created task can start in another statu
   assert.equal(second.identifier, 'CK-2')
   assert.equal(second.status, 'in_progress')
   assert.equal(second.sortOrder, 2048)
-  assert.equal(store.read().nextTaskNumber, 3)
+  assert.equal(store.read().projects[0].nextTaskNumber, 3)
 })
 
 test('every write requires the current version', async (t) => {
@@ -664,7 +669,8 @@ test('summarizeBoard counts every column and needs-you', async (t) => {
   assert.deepEqual(summary.counts, { backlog: 1, running: 1, needs: 2, done: 1, canceled: 1 })
   assert.equal(summary.total, 6)
   assert.equal(summary.needsYou, 2)
-  assert.equal(summary.project.prefix, 'CK')
+  assert.equal(summary.project, null)
+  assert.equal(summary.projects[0].prefix, 'CK')
 })
 
 test('boardView groups by column, sorts each group and puts needs first in the flat list', async (t) => {
@@ -695,7 +701,9 @@ test('boardView groups by column, sorts each group and puts needs first in the f
 
   assert.equal(view.summary.counts.needs, 1)
   assert.equal(view.summary.total, 6)
-  assert.equal(view.project.prefix, 'CK')
+  assert.equal(view.project, null)
+  assert.equal(view.projects[0].prefix, 'CK')
+  assert.equal(view.tasks[0].projectName, view.projects[0].name)
 })
 
 test('boardView honours the column, includeDone and includeCanceled options', async (t) => {
@@ -750,4 +758,254 @@ test('canceling a blocked task also leaves Needs you', async (t) => {
   const summary = summarizeBoard(store.read())
   assert.equal(summary.counts.needs, 0)
   assert.equal(summary.counts.canceled, 1)
+})
+
+// --- projects --------------------------------------------------------------
+
+test('project lifecycle: create, update, archive and restore', async (t) => {
+  const { store } = fixture(t)
+  const created = await createProject(store, {
+    name: '  Web app  ',
+    prefix: 'WEB',
+    workspacePath: '/tmp/web',
+  })
+  assert.equal(created.ok, true)
+  const project = created.project
+  assert.match(project.id, /^prj_[0-9a-f]{8}$/)
+  assert.equal(project.name, 'Web app')
+  assert.equal(project.prefix, 'WEB')
+  assert.equal(project.workspacePath, '/tmp/web')
+  assert.equal(project.nextTaskNumber, 1)
+  assert.equal(project.archivedAt, null)
+  assert.match(project.createdAt, /^\d{4}-\d{2}-\d{2}T/)
+  assert.equal(project.createdAt, project.updatedAt)
+
+  assert.deepEqual(
+    listProjects(store.read()).map((entry) => entry.name),
+    ['ck', 'Web app'],
+  )
+
+  const renamed = await updateProject(store, {
+    id: project.id,
+    name: 'Web client',
+    prefix: 'WEBX',
+    workspacePath: null,
+  })
+  assert.equal(renamed.ok, true)
+  assert.equal(renamed.project.name, 'Web client')
+  assert.equal(renamed.project.prefix, 'WEBX')
+  assert.equal(renamed.project.workspacePath, null)
+  assert.ok(renamed.project.updatedAt >= project.updatedAt)
+
+  const noop = await updateProject(store, { id: project.id, name: 'Web client' })
+  assert.equal(noop.unchanged, true)
+
+  const archived = await archiveProject(store, { id: project.id })
+  assert.equal(archived.ok, true)
+  assert.match(archived.project.archivedAt, /^\d{4}-\d{2}-\d{2}T/)
+  const archivedAgain = await archiveProject(store, { id: project.id })
+  assert.equal(archivedAgain.unchanged, true)
+
+  await rejectsCode(
+    updateProject(store, { id: project.id, name: 'Nope' }),
+    'PROJECT_ARCHIVED',
+  )
+
+  const restored = await restoreProject(store, { id: project.id })
+  assert.equal(restored.ok, true)
+  assert.equal(restored.project.archivedAt, null)
+  const restoredAgain = await restoreProject(store, { id: project.id })
+  assert.equal(restoredAgain.unchanged, true)
+
+  await rejectsCode(archiveProject(store, { id: 'prj_missing' }), 'PROJECT_NOT_FOUND')
+  await rejectsCode(archiveProject(store, { id: '' }), 'PROJECT_NOT_FOUND')
+})
+
+test('project input validation rejects bad names, prefixes and paths', async (t) => {
+  const { store } = fixture(t)
+  for (const prefix of ['a', 'abc', 'TOOLONG', 'bad!', 'WE B']) {
+    await rejectsCode(createProject(store, { name: 'App', prefix }), 'INVALID_INPUT')
+  }
+  await rejectsCode(createProject(store, { name: '   ' }), 'INVALID_INPUT')
+  await rejectsCode(createProject(store, { name: 'x'.repeat(121) }), 'INVALID_INPUT')
+  await rejectsCode(
+    createProject(store, { name: 'App', workspacePath: 'relative/path' }),
+    'INVALID_INPUT',
+  )
+  await rejectsCode(
+    createProject(store, { name: 'App', workspacePath: 42 }),
+    'INVALID_INPUT',
+  )
+  assert.equal(listProjects(store.read()).length, 1)
+
+  const project = (await createProject(store, { name: 'App' })).project
+  assert.equal(project.prefix, 'APP')
+  await rejectsCode(
+    updateProject(store, { id: project.id, prefix: 'nope' }),
+    'INVALID_INPUT',
+  )
+  await rejectsCode(
+    updateProject(store, { id: project.id, workspacePath: 'still/relative' }),
+    'INVALID_INPUT',
+  )
+  assert.equal(listProjects(store.read())[1].prefix, 'APP')
+})
+
+test('two projects keep independent identifier counters and prefixes', async (t) => {
+  const { store } = fixture(t)
+  const app = (await createProject(store, { name: 'App', prefix: 'APP' })).project
+  const web = (await createProject(store, { name: 'Web', prefix: 'WEB' })).project
+
+  const appFirst = await createTask(store, { projectId: app.id, title: 'app first' })
+  const webFirst = await createTask(store, { projectId: web.id, title: 'web first' })
+  const appSecond = await createTask(store, { projectId: app.id, title: 'app second' })
+  const webSecond = await createTask(store, { projectId: web.id, title: 'web second' })
+
+  assert.equal(appFirst.task.identifier, 'APP-1')
+  assert.equal(appSecond.task.identifier, 'APP-2')
+  assert.equal(webFirst.task.identifier, 'WEB-1')
+  assert.equal(webSecond.task.identifier, 'WEB-2')
+  assert.equal(appFirst.task.projectId, app.id)
+  assert.equal(webFirst.task.projectId, web.id)
+
+  const projects = listProjects(store.read())
+  assert.equal(projects.find((entry) => entry.id === app.id).nextTaskNumber, 3)
+  assert.equal(projects.find((entry) => entry.id === web.id).nextTaskNumber, 3)
+
+  await updateProject(store, { id: app.id, prefix: 'APPX' })
+  const appThird = await createTask(store, { projectId: app.id, title: 'app third' })
+  assert.equal(appThird.task.identifier, 'APPX-3')
+  const webThird = await createTask(store, { projectId: web.id, title: 'web third' })
+  assert.equal(webThird.task.identifier, 'WEB-3')
+})
+
+test('createTask defaults to the first active project and rejects unknown projects', async (t) => {
+  const { store } = fixture(t)
+  const first = store.read().projects[0]
+  const defaultTask = await newTask(store)
+  assert.equal(defaultTask.projectId, first.id)
+  assert.equal(defaultTask.identifier, 'CK-1')
+
+  await rejectsCode(
+    createTask(store, { title: 'x', projectId: 'prj_missing' }),
+    'PROJECT_NOT_FOUND',
+  )
+
+  await archiveProject(store, { id: first.id })
+  await rejectsCode(createTask(store, { title: 'x' }), 'NO_ACTIVE_PROJECT')
+
+  const app = (await createProject(store, { name: 'App', prefix: 'APP' })).project
+  const task = await createTask(store, { title: 'after archive' })
+  assert.equal(task.task.projectId, app.id)
+  assert.equal(task.task.identifier, 'APP-1')
+})
+
+test('archive blocks every task write with PROJECT_ARCHIVED and restore re-enables them', async (t) => {
+  const { store } = fixture(t)
+  const project = (await createProject(store, { name: 'Frozen', prefix: 'FRZ' })).project
+  const plain = await newTask(store, { projectId: project.id, title: 'plain' })
+  const waiting = await newTask(store, { projectId: project.id, title: 'waiting' })
+  const asked = await askTask(store, {
+    id: waiting.identifier,
+    version: 1,
+    prompt: 'Which target?',
+    options: [{ label: 'A' }, { label: 'B' }],
+  })
+  await archiveProject(store, { id: project.id })
+
+  const attempts = [
+    () => updateTask(store, { id: plain.identifier, version: 1, title: 'renamed' }),
+    () => moveTask(store, { id: plain.identifier, version: 1, to: 'running' }),
+    () => blockTask(store, { id: plain.identifier, version: 1, reason: 'stuck' }),
+    () => unblockTask(store, { id: plain.identifier, version: 1 }),
+    () => askTask(store, {
+      id: plain.identifier,
+      version: 1,
+      prompt: 'Pick',
+      options: [{ label: 'A' }, { label: 'B' }],
+    }),
+    () => answerTask(store, { id: waiting.identifier, version: asked.task.version, option: 'opt_1' }),
+    () => approveTask(store, { id: waiting.identifier, version: asked.task.version, as: 'user' }),
+    () => rejectTask(store, { id: waiting.identifier, version: asked.task.version, as: 'user' }),
+    () => addComment(store, { id: plain.identifier, version: 1, body: 'hello' }),
+    () => createTask(store, { projectId: project.id, title: 'new' }),
+  ]
+  for (const attempt of attempts) {
+    await rejectsCode(attempt(), 'PROJECT_ARCHIVED')
+  }
+
+  const board = store.read()
+  const stored = findTask(board, plain.identifier)
+  assert.equal(stored.version, 1)
+  assert.equal(stored.title, 'plain')
+  assert.equal(stored.comments.length, 0)
+  assert.equal(findTask(board, waiting.identifier).version, asked.task.version)
+  assert.equal(board.tasks.length, 2)
+
+  await restoreProject(store, { id: project.id })
+  const updated = await updateTask(store, { id: plain.identifier, version: 1, title: 'renamed' })
+  assert.equal(updated.task.title, 'renamed')
+  const created = await createTask(store, { projectId: project.id, title: 'after restore' })
+  assert.equal(created.task.identifier, 'FRZ-3')
+})
+
+test('boardView and summarizeBoard filter by project and include everything by default', async (t) => {
+  const { store } = fixture(t)
+  const app = (await createProject(store, { name: 'App', prefix: 'APP' })).project
+  const web = (await createProject(store, { name: 'Web', prefix: 'WEB' })).project
+  const appTask = await newTask(store, { projectId: app.id, title: 'app task' })
+  const webTask = await newTask(store, { projectId: web.id, title: 'web task', priority: 'high' })
+  const doneAppTask = await newTask(store, {
+    projectId: app.id,
+    title: 'app done',
+    status: 'done',
+  })
+
+  const all = boardView(store.read())
+  assert.deepEqual(
+    all.tasks.map((task) => task.identifier).sort(),
+    [appTask.identifier, webTask.identifier, doneAppTask.identifier].sort(),
+  )
+  assert.equal(all.summary.total, 3)
+  assert.equal(all.project, null)
+
+  const appView = boardView(store.read(), { projectId: app.id })
+  assert.equal(appView.project.id, app.id)
+  assert.equal(appView.summary.project.id, app.id)
+  assert.equal(appView.summary.projects.length, 3)
+  assert.deepEqual(
+    appView.columns.backlog.map((task) => task.identifier),
+    [appTask.identifier],
+  )
+  assert.deepEqual(appView.columns.done.map((task) => task.identifier), [doneAppTask.identifier])
+  assert.ok(appView.tasks.every((task) => task.projectId === app.id))
+  assert.equal(appView.tasks[0].projectName, 'App')
+  assert.equal(appView.summary.total, 2)
+
+  const webView = boardView(store.read(), { projectId: web.id })
+  assert.deepEqual(webView.tasks.map((task) => task.identifier), [webTask.identifier])
+  assert.equal(webView.tasks[0].projectName, 'Web')
+  assert.equal(webView.summary.counts.backlog, 1)
+
+  const summary = summarizeBoard(store.read(), { projectId: app.id })
+  assert.equal(summary.total, 2)
+  assert.equal(summary.counts.done, 1)
+  assert.equal(summary.project.id, app.id)
+  assert.equal(getTaskView(store, { id: appTask.identifier }).task.projectName, 'App')
+})
+
+test('decorateTask adds projectId and projectName when a project is available', async (t) => {
+  const { store } = fixture(t)
+  const project = (await createProject(store, { name: 'Docs', prefix: 'DOC' })).project
+  const task = await newTask(store, { projectId: project.id, title: 'write docs' })
+
+  const decorated = decorateTask(task, project)
+  assert.equal(decorated.projectId, project.id)
+  assert.equal(decorated.projectName, 'Docs')
+  assert.equal(decorated.column, 'backlog')
+  assert.equal(task.projectName, undefined)
+
+  const withoutProject = decorateTask(task)
+  assert.equal(withoutProject.projectId, project.id)
+  assert.equal(withoutProject.projectName, undefined)
 })

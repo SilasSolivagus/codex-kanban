@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto'
+import path from 'node:path'
 import {
   COLUMNS,
   PRIORITIES,
@@ -10,6 +11,7 @@ import {
   nextIdentifier,
   sortTasks,
   statusForColumn,
+  taskPrefixFor,
 } from './rules.mjs'
 
 const MAX_TITLE = 240
@@ -26,6 +28,8 @@ const MAX_LINKS = 50
 const MAX_LABELS = 20
 const MAX_ACTOR = 80
 const MAX_ACTIVITY = 200
+const MAX_PROJECT_NAME = 120
+const PROJECT_PREFIX = /^[A-Z0-9]{2,6}$/
 const DISPLAY_ORDER = ['needs', 'running', 'backlog', 'done']
 
 export class KanbanError extends Error {
@@ -172,6 +176,179 @@ function statusForTarget(target) {
   return STATUSES.includes(target) ? target : statusForColumn(target)
 }
 
+export function findProject(board, ref) {
+  if (!board || !Array.isArray(board.projects)) return undefined
+  if (typeof ref !== 'string' || !ref.trim()) return undefined
+  const needle = ref.trim()
+  return board.projects.find((project) => project?.id === needle)
+    ?? board.projects.find((project) => typeof project?.name === 'string' && project.name === needle)
+}
+
+export function listProjects(board) {
+  return Array.isArray(board?.projects) ? board.projects : []
+}
+
+function mustFindProject(board, ref) {
+  const project = findProject(board, ref)
+  if (!project) throw new KanbanError('PROJECT_NOT_FOUND', `no project matches ${ref}`)
+  return project
+}
+
+function assertProjectWritable(project) {
+  if (project?.archivedAt) {
+    throw new KanbanError(
+      'PROJECT_ARCHIVED',
+      `project ${project.name} is archived; restore it before writing`,
+    )
+  }
+}
+
+function projectForTask(board, task) {
+  const project = listProjects(board).find((entry) => entry?.id === task?.projectId)
+  if (!project) {
+    throw new KanbanError(
+      'PROJECT_NOT_FOUND',
+      `task ${task?.identifier ?? task?.id ?? '?'} belongs to an unknown project`,
+    )
+  }
+  return project
+}
+
+function mustFindWritableTask(board, ref) {
+  const task = mustFindTask(board, ref)
+  assertProjectWritable(projectForTask(board, task))
+  return task
+}
+
+function projectForCreate(board, projectId) {
+  if (projectId !== undefined && projectId !== null) {
+    const project = mustFindProject(board, projectId)
+    assertProjectWritable(project)
+    return project
+  }
+  const active = listProjects(board).find((project) => !project.archivedAt)
+  if (!active) {
+    throw new KanbanError(
+      'NO_ACTIVE_PROJECT',
+      'every project is archived; restore one before creating tasks',
+    )
+  }
+  return active
+}
+
+function validatePrefix(value) {
+  if (typeof value !== 'string') {
+    throw new KanbanError('INVALID_INPUT', 'prefix must be a string')
+  }
+  const prefix = value.trim()
+  if (!PROJECT_PREFIX.test(prefix)) {
+    throw new KanbanError(
+      'INVALID_INPUT',
+      'prefix must be 2-6 uppercase letters or digits',
+    )
+  }
+  return prefix
+}
+
+function normalizeWorkspacePath(value) {
+  if (value === undefined || value === null || value === '') return null
+  if (typeof value !== 'string' || !value.trim()) {
+    throw new KanbanError('INVALID_INPUT', 'workspacePath must be an absolute path')
+  }
+  const candidate = value.trim()
+  if (!path.isAbsolute(candidate)) {
+    throw new KanbanError('INVALID_INPUT', 'workspacePath must be an absolute path')
+  }
+  return candidate
+}
+
+function tasksForProject(board, projectId) {
+  const tasks = Array.isArray(board?.tasks) ? board.tasks : []
+  if (projectId === undefined || projectId === null) return tasks
+  const project = findProject(board, projectId)
+  const id = project ? project.id : projectId
+  return tasks.filter((task) => task?.projectId === id)
+}
+
+export async function createProject(store, input = {}) {
+  const name = requireString(input.name, 'name', MAX_PROJECT_NAME)
+  const prefix = input.prefix === undefined || input.prefix === null || input.prefix === ''
+    ? taskPrefixFor(name)
+    : validatePrefix(input.prefix)
+  const workspacePath = normalizeWorkspacePath(input.workspacePath)
+
+  return store.mutate((board) => {
+    const at = nowIso()
+    let id
+    do {
+      id = `prj_${randomUUID().slice(0, 8)}`
+    } while (listProjects(board).some((project) => project.id === id))
+    const project = {
+      id,
+      name,
+      prefix,
+      workspacePath,
+      nextTaskNumber: 1,
+      archivedAt: null,
+      createdAt: at,
+      updatedAt: at,
+    }
+    if (!Array.isArray(board.projects)) board.projects = []
+    board.projects.push(project)
+    return { ok: true, project }
+  })
+}
+
+export async function updateProject(store, input = {}) {
+  const name = input.name === undefined ? undefined : requireString(input.name, 'name', MAX_PROJECT_NAME)
+  const prefix = input.prefix === undefined ? undefined : validatePrefix(input.prefix)
+  const workspacePath = input.workspacePath === undefined
+    ? undefined
+    : normalizeWorkspacePath(input.workspacePath)
+
+  return store.mutate((board) => {
+    const project = mustFindProject(board, input.id)
+    assertProjectWritable(project)
+    let changed = false
+    if (name !== undefined && name !== project.name) {
+      project.name = name
+      changed = true
+    }
+    if (prefix !== undefined && prefix !== project.prefix) {
+      project.prefix = prefix
+      changed = true
+    }
+    if (workspacePath !== undefined && workspacePath !== project.workspacePath) {
+      project.workspacePath = workspacePath
+      changed = true
+    }
+    if (!changed) return { ok: true, project, unchanged: true }
+    project.updatedAt = nowIso()
+    return { ok: true, project }
+  })
+}
+
+export async function archiveProject(store, input = {}) {
+  return store.mutate((board) => {
+    const project = mustFindProject(board, input.id)
+    if (project.archivedAt) return { ok: true, project, unchanged: true }
+    const at = nowIso()
+    project.archivedAt = at
+    project.updatedAt = at
+    return { ok: true, project }
+  })
+}
+
+export async function restoreProject(store, input = {}) {
+  return store.mutate((board) => {
+    const project = mustFindProject(board, input.id)
+    if (!project.archivedAt) return { ok: true, project, unchanged: true }
+    project.archivedAt = null
+    project.updatedAt = nowIso()
+    return { ok: true, project }
+  })
+}
+
 export async function createTask(store, input = {}) {
   const title = requireString(input.title, 'title', MAX_TITLE)
   const description = optionalString(input.description, 'description', MAX_DESCRIPTION)
@@ -188,10 +365,8 @@ export async function createTask(store, input = {}) {
   const actor = actorOf(input)
 
   return store.mutate((board) => {
-    const identifier = nextIdentifier(
-      { prefix: board.project.prefix, nextTaskNumber: board.nextTaskNumber },
-      board.tasks,
-    )
+    const project = projectForCreate(board, input.projectId)
+    const identifier = nextIdentifier(project, tasksForProject(board, project.id))
     const createdAt = nowIso()
     const sortOrder = board.tasks.reduce(
       (max, task) => (Number.isFinite(task.sortOrder) ? Math.max(max, task.sortOrder) : max),
@@ -199,6 +374,7 @@ export async function createTask(store, input = {}) {
     ) + 1024
     const task = {
       id: `tsk_${randomUUID()}`,
+      projectId: project.id,
       identifier,
       title,
       description,
@@ -213,6 +389,7 @@ export async function createTask(store, input = {}) {
       pendingQuestion: null,
       questionResolution: null,
       links,
+      attachments: [],
       comments: [],
       activity: [
         {
@@ -228,7 +405,7 @@ export async function createTask(store, input = {}) {
       updatedAt: createdAt,
     }
     board.tasks.push(task)
-    board.nextTaskNumber = Number(identifier.slice(identifier.lastIndexOf('-') + 1)) + 1
+    project.nextTaskNumber = Number(identifier.slice(identifier.lastIndexOf('-') + 1)) + 1
     return { ok: true, task }
   })
 }
@@ -236,7 +413,7 @@ export async function createTask(store, input = {}) {
 export async function updateTask(store, input = {}) {
   const actor = actorOf(input)
   return store.mutate((board) => {
-    const task = mustFindTask(board, input.id ?? input.identifier)
+    const task = mustFindWritableTask(board, input.id ?? input.identifier)
     checkVersion(task, input.version)
     const changes = []
 
@@ -291,7 +468,7 @@ export async function updateTask(store, input = {}) {
 export async function moveTask(store, input = {}) {
   const actor = actorOf(input)
   return store.mutate((board) => {
-    const task = mustFindTask(board, input.id ?? input.identifier)
+    const task = mustFindWritableTask(board, input.id ?? input.identifier)
     checkVersion(task, input.version)
     const target = typeof input.to === 'string' ? input.to.trim() : ''
     if (!target) throw new KanbanError('INVALID_INPUT', 'to is required (column or status)')
@@ -347,7 +524,7 @@ export async function moveTask(store, input = {}) {
 export async function blockTask(store, input = {}) {
   const actor = actorOf(input)
   return store.mutate((board) => {
-    const task = mustFindTask(board, input.id ?? input.identifier)
+    const task = mustFindWritableTask(board, input.id ?? input.identifier)
     checkVersion(task, input.version)
     const reason = requireString(input.reason, 'reason', MAX_REASON)
     if (task.blockedReason === reason) return { ok: true, task, unchanged: true }
@@ -364,7 +541,7 @@ export async function blockTask(store, input = {}) {
 export async function unblockTask(store, input = {}) {
   const actor = actorOf(input)
   return store.mutate((board) => {
-    const task = mustFindTask(board, input.id ?? input.identifier)
+    const task = mustFindWritableTask(board, input.id ?? input.identifier)
     checkVersion(task, input.version)
     if (!task.blockedReason) return { ok: true, task, unchanged: true }
     const before = task.blockedReason
@@ -400,7 +577,7 @@ export async function askTask(store, input = {}) {
   })
 
   return store.mutate((board) => {
-    const task = mustFindTask(board, input.id ?? input.identifier)
+    const task = mustFindWritableTask(board, input.id ?? input.identifier)
     checkVersion(task, input.version)
     if (task.pendingQuestion && !task.questionResolution) {
       throw new KanbanError('QUESTION_OPEN', `task ${task.identifier} already waits for an answer`)
@@ -423,7 +600,7 @@ export async function answerTask(store, input = {}) {
   const actor = actorOf(input)
   const note = optionalString(input.note, 'note', MAX_NOTE)
   return store.mutate((board) => {
-    const task = mustFindTask(board, input.id ?? input.identifier)
+    const task = mustFindWritableTask(board, input.id ?? input.identifier)
     checkVersion(task, input.version)
     if (!task.pendingQuestion) {
       throw new KanbanError('NO_QUESTION', `task ${task.identifier} has no open question`)
@@ -456,7 +633,7 @@ export async function approveTask(store, input = {}) {
   }
   const note = optionalString(input.note, 'note', MAX_NOTE)
   return store.mutate((board) => {
-    const task = mustFindTask(board, input.id ?? input.identifier)
+    const task = mustFindWritableTask(board, input.id ?? input.identifier)
     checkVersion(task, input.version)
     if (task.status === 'done' && (!task.pendingQuestion || task.questionResolution?.decision === 'approve')) {
       return { ok: true, task, unchanged: true }
@@ -498,7 +675,7 @@ export async function rejectTask(store, input = {}) {
   }
   const note = optionalString(input.note, 'note', MAX_NOTE)
   return store.mutate((board) => {
-    const task = mustFindTask(board, input.id ?? input.identifier)
+    const task = mustFindWritableTask(board, input.id ?? input.identifier)
     checkVersion(task, input.version)
     const at = nowIso()
     task.questionResolution = {
@@ -524,7 +701,7 @@ export async function addComment(store, input = {}) {
   const actor = actorOf(input)
   const body = requireString(input.body, 'body', MAX_COMMENT)
   return store.mutate((board) => {
-    const task = mustFindTask(board, input.id ?? input.identifier)
+    const task = mustFindWritableTask(board, input.id ?? input.identifier)
     checkVersion(task, input.version)
     const comment = {
       id: `cmt_${randomUUID()}`,
@@ -538,41 +715,64 @@ export async function addComment(store, input = {}) {
   })
 }
 
-export function decorateTask(task) {
+export function decorateTask(task, project) {
   const attention = attentionReason(task)
-  return {
+  const decorated = {
     ...task,
     column: columnForTask(task),
     attention,
     attentionSince: attention ? elapsedStart(task) : null,
   }
+  let resolved = null
+  if (project && typeof project === 'object' && !Array.isArray(project)) {
+    resolved = Array.isArray(project.projects)
+      ? project.projects.find((entry) => entry?.id === task?.projectId)
+      : project
+  }
+  if (resolved) {
+    if (decorated.projectId === undefined) decorated.projectId = resolved.id
+    decorated.projectName = resolved.name
+  }
+  return decorated
 }
 
-export function summarizeBoard(board) {
+export function summarizeBoard(board, { projectId } = {}) {
+  const tasks = tasksForProject(board, projectId)
   const counts = { backlog: 0, running: 0, needs: 0, done: 0, canceled: 0 }
-  for (const task of board.tasks) {
+  for (const task of tasks) {
     const column = columnForTask(task)
     if (column) counts[column] += 1
     else counts.canceled += 1
   }
   return {
-    project: board.project,
+    project: projectId === undefined || projectId === null ? null : findProject(board, projectId) ?? null,
+    projects: listProjects(board),
     counts,
-    total: board.tasks.length,
+    total: tasks.length,
     needsYou: counts.needs,
   }
 }
 
-export function boardView(board, { column, includeDone = true, includeCanceled = false } = {}) {
+export function boardView(
+  board,
+  { column, includeDone = true, includeCanceled = false, projectId } = {},
+) {
+  const tasks = tasksForProject(board, projectId)
+  const project = projectId === undefined || projectId === null
+    ? null
+    : findProject(board, projectId) ?? null
+  const projectsById = new Map(listProjects(board).map((entry) => [entry.id, entry]))
+  const decorate = (task) => decorateTask(task, project ?? projectsById.get(task.projectId))
+
   const groups = new Map(COLUMNS.map((entry) => [entry.id, []]))
-  for (const task of board.tasks) {
+  for (const task of tasks) {
     const columnId = columnForTask(task)
     if (!columnId) {
-      if (includeCanceled && includeDone) groups.get('done').push(decorateTask(task))
+      if (includeCanceled && includeDone) groups.get('done').push(decorate(task))
       continue
     }
     if (columnId === 'done' && !includeDone) continue
-    groups.get(columnId).push(decorateTask(task))
+    groups.get(columnId).push(decorate(task))
   }
   for (const list of groups.values()) list.sort(sortTasks)
 
@@ -585,8 +785,9 @@ export function boardView(board, { column, includeDone = true, includeCanceled =
   const selected = column ? groups.get(column) ?? [] : flat
 
   return {
-    project: board.project,
-    summary: summarizeBoard(board),
+    project,
+    projects: listProjects(board),
+    summary: summarizeBoard(board, { projectId }),
     columns: Object.fromEntries(groups),
     tasks: selected,
   }
@@ -595,5 +796,5 @@ export function boardView(board, { column, includeDone = true, includeCanceled =
 export function getTaskView(store, input = {}) {
   const board = store.read()
   const task = mustFindTask(board, input.id ?? input.identifier)
-  return { ok: true, task: decorateTask(task) }
+  return { ok: true, task: decorateTask(task, findProject(board, task.projectId)) }
 }

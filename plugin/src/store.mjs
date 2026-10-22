@@ -6,10 +6,12 @@ import { taskPrefixFor } from './rules.mjs'
 export const BOARD_DIR = '.kanban'
 export const BOARD_FILE = 'board.json'
 export const LOCK_FILE = 'board.lock'
-export const SCHEMA_VERSION = 1
+export const SCHEMA_VERSION = 2
+export const DEFAULT_PROJECT_ID = 'prj_default'
 
 const LOCK_RETRY_MS = 25
 const MIN_STALE_LOCK_MS = 30_000
+const PROJECT_PREFIX = /^[A-Z0-9]{2,6}$/
 
 export function boardError(code, message) {
   const error = new Error(message)
@@ -17,18 +19,92 @@ export function boardError(code, message) {
   return error
 }
 
+function defaultProject(name, createdAt) {
+  return {
+    id: DEFAULT_PROJECT_ID,
+    name,
+    prefix: taskPrefixFor(name),
+    workspacePath: null,
+    nextTaskNumber: 1,
+    archivedAt: null,
+    createdAt,
+    updatedAt: createdAt,
+  }
+}
+
+// A non-enumerable alias for the first active project. It keeps the v0.2 CLI,
+// MCP and web entry points working during the v0.3 migration; it is never
+// serialized and never shadows the canonical `projects` array.
+function withProjectCompat(board) {
+  Object.defineProperty(board, 'project', {
+    configurable: true,
+    enumerable: false,
+    get() {
+      const projects = Array.isArray(board.projects) ? board.projects : []
+      return projects.find((project) => !project?.archivedAt) ?? projects[0] ?? null
+    },
+  })
+  return board
+}
+
 export function emptyBoard(root) {
   const base = path.resolve(root || process.cwd())
   const name = path.basename(base) || 'board'
+  const projects = [defaultProject(name, new Date().toISOString())]
+  return withProjectCompat({ schema: SCHEMA_VERSION, projects, tasks: [] })
+}
+
+function normalizeProject(source, fallback, index) {
+  const value = source && typeof source === 'object' && !Array.isArray(source) ? source : {}
+  const name = typeof value.name === 'string' && value.name.trim()
+    ? value.name.trim()
+    : index === 0 ? fallback.name : `Project ${index + 1}`
+  const createdAt = typeof value.createdAt === 'string' && value.createdAt
+    ? value.createdAt
+    : fallback.createdAt
   return {
-    schema: SCHEMA_VERSION,
-    project: {
-      name,
-      prefix: taskPrefixFor(name),
-      createdAt: new Date().toISOString(),
-    },
-    nextTaskNumber: 1,
-    tasks: [],
+    id: typeof value.id === 'string' && value.id.trim()
+      ? value.id.trim()
+      : index === 0 ? DEFAULT_PROJECT_ID : `prj_p${index + 1}`,
+    name,
+    prefix: typeof value.prefix === 'string' && PROJECT_PREFIX.test(value.prefix)
+      ? value.prefix
+      : taskPrefixFor(name),
+    workspacePath: typeof value.workspacePath === 'string' && path.isAbsolute(value.workspacePath)
+      ? value.workspacePath
+      : null,
+    nextTaskNumber: Number.isInteger(value.nextTaskNumber) && value.nextTaskNumber > 0
+      ? value.nextTaskNumber
+      : 1,
+    archivedAt: typeof value.archivedAt === 'string' && value.archivedAt ? value.archivedAt : null,
+    createdAt,
+    updatedAt: typeof value.updatedAt === 'string' && value.updatedAt ? value.updatedAt : createdAt,
+  }
+}
+
+function migrateV1Project(board, fallback) {
+  const legacy = board.project && typeof board.project === 'object' && !Array.isArray(board.project)
+    ? board.project
+    : {}
+  const name = typeof legacy.name === 'string' && legacy.name.trim()
+    ? legacy.name.trim()
+    : fallback.name
+  const createdAt = typeof legacy.createdAt === 'string' && legacy.createdAt
+    ? legacy.createdAt
+    : fallback.createdAt
+  return {
+    id: DEFAULT_PROJECT_ID,
+    name,
+    prefix: typeof legacy.prefix === 'string' && PROJECT_PREFIX.test(legacy.prefix)
+      ? legacy.prefix
+      : taskPrefixFor(name),
+    workspacePath: null,
+    nextTaskNumber: Number.isInteger(board.nextTaskNumber) && board.nextTaskNumber > 0
+      ? board.nextTaskNumber
+      : 1,
+    archivedAt: null,
+    createdAt,
+    updatedAt: createdAt,
   }
 }
 
@@ -36,28 +112,34 @@ export function normalizeBoard(board, root) {
   if (!board || typeof board !== 'object' || Array.isArray(board) || !Array.isArray(board.tasks)) {
     throw boardError('CORRUPT_BOARD', 'board.json does not match the kanban schema')
   }
-  const fallback = emptyBoard(root)
-  const project = board.project && typeof board.project === 'object' && !Array.isArray(board.project)
+  const fallback = emptyBoard(root).projects[0]
+  const legacyProject = board.project && typeof board.project === 'object' && !Array.isArray(board.project)
     ? board.project
-    : {}
-  return {
-    schema: SCHEMA_VERSION,
-    project: {
-      name: typeof project.name === 'string' && project.name.trim()
-        ? project.name
-        : fallback.project.name,
-      prefix: typeof project.prefix === 'string' && /^[A-Z0-9]{2,6}$/.test(project.prefix)
-        ? project.prefix
-        : fallback.project.prefix,
-      createdAt: typeof project.createdAt === 'string' && project.createdAt
-        ? project.createdAt
-        : fallback.project.createdAt,
-    },
-    nextTaskNumber: Number.isInteger(board.nextTaskNumber) && board.nextTaskNumber > 0
-      ? board.nextTaskNumber
-      : 1,
-    tasks: board.tasks,
+    : null
+  const isV1 = legacyProject !== null || board.schema === 1
+
+  let projects
+  if (Array.isArray(board.projects) && board.projects.length) {
+    projects = board.projects.map((project, index) => normalizeProject(project, fallback, index))
+  } else if (isV1) {
+    projects = [migrateV1Project(board, fallback)]
+  } else {
+    projects = [normalizeProject(null, fallback, 0)]
   }
+
+  const projectIds = new Set(projects.map((project) => project.id))
+  const tasks = board.tasks.map((task) => {
+    if (!task || typeof task !== 'object' || Array.isArray(task)) return task
+    return {
+      ...task,
+      projectId: typeof task.projectId === 'string' && projectIds.has(task.projectId)
+        ? task.projectId
+        : projects[0].id,
+      attachments: Array.isArray(task.attachments) ? task.attachments : [],
+    }
+  })
+
+  return withProjectCompat({ schema: SCHEMA_VERSION, projects, tasks })
 }
 
 function sleep(ms) {
@@ -69,6 +151,7 @@ export function createStore({ root, lockTimeoutMs = 5000 } = {}) {
   const dir = path.join(base, BOARD_DIR)
   const file = path.join(dir, BOARD_FILE)
   const lockFile = path.join(dir, LOCK_FILE)
+  const attachmentsDir = path.join(dir, 'attachments')
   const timeout = Number.isFinite(lockTimeoutMs) && lockTimeoutMs >= 0 ? lockTimeoutMs : 5000
 
   function readFromDisk() {
@@ -253,6 +336,7 @@ export function createStore({ root, lockTimeoutMs = 5000 } = {}) {
     root: base,
     dir,
     path: file,
+    attachmentsDir,
     read() {
       return readFromDisk()
     },
