@@ -59,6 +59,9 @@ export const STRINGS = Object.freeze({
     'filter.none': 'No tasks match the current filters. Clear the filters to see the board.',
     'filter.archived': 'Show archived',
     'filter.archivedAria': 'Show archived tasks on the board',
+    'filter.hideArchived': 'Hide archived',
+    'filter.hideArchivedAria': 'Hide archived tasks on the board',
+    'toast.reordered': '{id} moved',
     'priority.none': 'None',
     'priority.low': 'Low',
     'priority.medium': 'Medium',
@@ -275,6 +278,9 @@ export const STRINGS = Object.freeze({
     'filter.none': '没有任务匹配当前筛选，清除筛选即可查看全部任务。',
     'filter.archived': '显示已归档',
     'filter.archivedAria': '在看板中显示已归档任务',
+    'filter.hideArchived': '隐藏已归档',
+    'filter.hideArchivedAria': '在看板中隐藏已归档任务',
+    'toast.reordered': '{id} 已移动',
     'priority.none': '无',
     'priority.low': '低',
     'priority.medium': '中',
@@ -2053,6 +2059,25 @@ export function renderLiveHtml({ project = {} } = {}) {
         openTask(task.id);
         return;
       }
+      if (event.altKey && (event.key === 'ArrowUp' || event.key === 'ArrowDown') && DRAG_COLUMNS.indexOf(columnId) !== -1) {
+        var columnTasks = (state.data && state.data.board.columns[columnId]) || [];
+        var position = columnTasks.findIndex(function (entry) { return entry.id === task.id; });
+        var target = position + (event.key === 'ArrowUp' ? -1 : 1);
+        if (position >= 0 && target >= 0 && target < columnTasks.length) {
+          event.preventDefault();
+          act({
+            action: 'task.reorder',
+            id: task.id,
+            version: task.version,
+            ...(event.key === 'ArrowUp'
+              ? { beforeId: columnTasks[target].id }
+              : { afterId: columnTasks[target].id })
+          }).then(function () {
+            notify(t('toast.reordered', { id: task.identifier }));
+          }).catch(function () {});
+        }
+        return;
+      }
       if (event.altKey && (event.key === 'ArrowLeft' || event.key === 'ArrowRight')
         && DRAG_COLUMNS.indexOf(columnId) !== -1) {
         var index = DRAG_COLUMNS.indexOf(columnId) + (event.key === 'ArrowRight' ? 1 : -1);
@@ -2267,6 +2292,34 @@ export function renderLiveHtml({ project = {} } = {}) {
       if (showToast) notify(t('toast.refreshed'));
     }).catch(handleError);
   }
+
+  function syncArchivedToggle() {
+    var key = state.includeArchived ? 'filter.hideArchived' : 'filter.archived';
+    var ariaKey = state.includeArchived ? 'filter.hideArchivedAria' : 'filter.archivedAria';
+    archivedToggle.setAttribute('data-i18n', key);
+    archivedToggle.setAttribute('aria-pressed', state.includeArchived ? 'true' : 'false');
+    archivedToggle.textContent = t(key);
+    archivedToggle.setAttribute('aria-label', t(ariaKey));
+    archivedToggle.title = archivedToggle.textContent;
+  }
+
+  drawer.addEventListener('keydown', function (event) {
+    if (event.key !== 'Tab' || !drawer.classList.contains('open')) return;
+    var nodes = drawer.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+    var list = Array.prototype.filter.call(nodes, function (node) {
+      return !node.disabled && node.offsetParent !== null;
+    });
+    if (!list.length) return;
+    var first = list[0];
+    var last = list[list.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  });
 
   function openTask(ref) {
     var task = findTask(ref);
@@ -2953,7 +3006,7 @@ export function renderLiveHtml({ project = {} } = {}) {
     archivedToggle.addEventListener('click', function () {
       state.includeArchived = !state.includeArchived;
       storeSet(STORAGE.archived, state.includeArchived ? '1' : '0');
-      archivedToggle.setAttribute('aria-pressed', state.includeArchived ? 'true' : 'false');
+      syncArchivedToggle();
       load(false);
     });
     refreshButton.addEventListener('click', function () { load(true); });

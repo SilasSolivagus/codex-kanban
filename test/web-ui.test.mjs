@@ -521,3 +521,13 @@ test('filter and empty states tell the user how to clear the filters', () => {
   assert.match(script, /empty\.textContent = hasFilters\(\) \? t\('filter\.none'\) : t\('columns\.empty\.' \+ id\)/)
   assert.match(script, /function clearAllFilters\(\)/)
 })
+
+test('keyboard reorder, focus trap and archived toggle state are wired', () => {
+  assert.match(script, /event\.altKey && \(event\.key === 'ArrowUp' \|\| event\.key === 'ArrowDown'\)/)
+  assert.match(script, /action: 'task\.reorder'/)
+  assert.match(script, /drawer\.addEventListener\('keydown'/)
+  assert.match(script, /event\.key !== 'Tab'/)
+  assert.match(script, /'filter\.hideArchived'/)
+  assert.match(script, /syncArchivedToggle/)
+  assert.match(script, /archivedToggle\.setAttribute\('aria-pressed'/)
+})

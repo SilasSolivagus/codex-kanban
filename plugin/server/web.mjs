@@ -117,8 +117,9 @@ function projectSummaries(board) {
       prefix: project.prefix,
       workspacePath: project.workspacePath ?? null,
       archivedAt: project.archivedAt ?? null,
-      taskCount: own.length,
-      openCount: own.filter((task) => isOpen(task)).length,
+      taskCount: own.filter((task) => !task.archivedAt).length,
+      archivedCount: own.filter((task) => task.archivedAt).length,
+      openCount: own.filter((task) => isOpen(task) && !task.archivedAt).length,
     }
   })
 }

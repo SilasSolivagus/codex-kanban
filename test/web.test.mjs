@@ -59,7 +59,7 @@ test('serves the live board page and the v2 board payload', async (t) => {
   assert.equal(json.projects.length, 1)
   assert.deepEqual(
     Object.keys(json.projects[0]).sort(),
-    ['archivedAt', 'id', 'name', 'openCount', 'prefix', 'taskCount', 'workspacePath'].sort(),
+    ['archivedAt', 'archivedCount', 'id', 'name', 'openCount', 'prefix', 'taskCount', 'workspacePath'].sort(),
   )
   assert.equal(json.projects[0].taskCount, 0)
   assert.equal(json.projects[0].openCount, 0)
@@ -533,4 +533,14 @@ test('task archive and restore round-trip through the api and include_archived',
   assert.equal(back.id, task.id)
   assert.equal(back.archivedAt, null)
   assert.equal(restored.body.summary.total, 1)
+})
+
+test('project counts exclude archived tasks', async (t) => {
+  const { url } = await fixture(t)
+  const created = await act(url, { action: 'task.create', title: 'active one' })
+  const id = column(created.body, 'backlog')[0].identifier
+  await act(url, { action: 'task.archive', id, version: 1 })
+  const json = await board(url)
+  assert.equal(json.projects[0].taskCount, 0)
+  assert.equal(json.projects[0].archivedCount, 1)
 })
