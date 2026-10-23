@@ -1,0 +1,54 @@
+name: Feature request
+description: Propose a concrete improvement to the board, the import or the agent tools.
+title: "feat: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe the workflow you are trying to complete, not only the feature name. A concrete workflow is easier to build against.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Board model / statuses
+        - Projects and archive
+        - Import from sessions
+        - Web board UX
+        - MCP tools for agents
+        - CLI
+        - Documentation
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: The workflow that hurts
+      description: What are you doing in Codex when the board gets in the way?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What you would like
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you considered
+      description: Including "do nothing" and workarounds you use today.
+    validations:
+      required: false
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Does this change stored data?
+      options:
+        - "No — UI, CLI or docs only"
+        - "Maybe — new optional field"
+        - "Yes — schema or migration"
+        - "Not sure"
+    validations:
+      required: true

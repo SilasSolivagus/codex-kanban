@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: What should v0.8 build?
+    url: https://github.com/SilasSolivagus/codex-kanban/discussions/1
+    about: Open-ended ideas and prioritisation. Read what others want before opening a feature request.
+  - name: Questions and setup help
+    url: https://github.com/SilasSolivagus/codex-kanban/discussions/categories/q-a
+    about: Install problems, Codex client differences, how-to questions.
+  - name: Show and tell
+    url: https://github.com/SilasSolivagus/codex-kanban/discussions/categories/show-and-tell
+    about: Share a board, a workflow, or a script built on the CLI.

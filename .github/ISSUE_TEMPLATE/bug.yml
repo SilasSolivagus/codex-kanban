@@ -1,0 +1,68 @@
+name: Bug report
+description: Something in the plugin, MCP tools, web board or import is broken.
+title: "bug: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report this. Please include enough detail to reproduce it without guessing.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Codex plugin install / startup
+        - MCP tools
+        - Web board
+        - Import from sessions
+        - CLI
+        - Documentation
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you saw, including the exact error code if there was one (e.g. TASK_VERSION_CONFLICT).
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. cd into a repo with a .kanban board
+        2. run ...
+        3. click ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Plugin version
+      description: Output of `codex plugin list | grep codex-kanban`.
+      placeholder: "codex-kanban@silassolivagus  installed, enabled  0.7.2"
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Codex client and OS
+      placeholder: "Codex app 0.137 / macOS 15.3, Node 22.22"
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or screenshots
+      description: Paste terminal output, `~/Library/Logs/codex-kanban.log`, or drag screenshots here.
+      render: shell
+    validations:
+      required: false

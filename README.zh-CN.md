@@ -315,6 +315,15 @@ docs/ux-review/                    走查报告、证据与分批报告
 见 [CONTRIBUTING.md](CONTRIBUTING.md)，以及给人看的使用说明：
 [English](docs/usage.en.md) · [简体中文](docs/usage.md)。
 
+## 反馈与建议
+
+- **Bug**：用 bug 模板，里面会问插件版本、Codex 客户端和系统。
+- **具体改进**：feature 模板问的是“哪个工作流卡住了”，不是只要一个功能名。
+- **开放讨论/优先级**：来 [v0.8 该做什么？（Discussions #1）](https://github.com/SilasSolivagus/codex-kanban/discussions/1)。
+- **安装与用法问题**：去 [Q&A](https://github.com/SilasSolivagus/codex-kanban/discussions/categories/q-a)。
+
+如果看板挡了你的路，说清楚当时在做什么；这比一串功能名更有用。
+
 ## 许可证
 
 MIT © 2026 Silas Solivagus，见 [LICENSE](LICENSE)。

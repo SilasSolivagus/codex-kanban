@@ -341,6 +341,15 @@ docs/ux-review/                   audits, evidence and batch reports
 See [CONTRIBUTING.md](CONTRIBUTING.md) and the human guides:
 [English](docs/usage.en.md) · [简体中文](docs/usage.md).
 
+## Feedback and ideas
+
+- **Bug?** Use the bug report template; it asks for the plugin version, Codex client and OS.
+- **Concrete improvement?** The feature template asks for the workflow that hurts, not just the feature name.
+- **Open-ended prioritisation?** Join [What should v0.8 build? (Discussions #1)](https://github.com/SilasSolivagus/codex-kanban/discussions/1).
+- **Setup or how-to?** Use [Q&A](https://github.com/SilasSolivagus/codex-kanban/discussions/categories/q-a).
+
+If the board got in your way, describe the workflow you were in. That is easier to act on than a list of features.
+
 ## License
 
 MIT © 2026 Silas Solivagus. See [LICENSE](LICENSE).
