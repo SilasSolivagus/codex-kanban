@@ -339,3 +339,18 @@ test('import --project creates in the named project and validates --since', asyn
   assert.match(failed.stderr, /^\[INVALID_INPUT\] --since /m)
   assert.equal(jsonBoard(root).columns.backlog.length, 1)
 })
+
+test('stats runs locally and can be printed as json', () => {
+  const root = tempRoot()
+  run(root, ['add', 'A task', '--priority', 'high'])
+  const json = JSON.parse(run(root, ['stats', '--json']).stdout)
+  assert.equal(json.schema, 2)
+  assert.equal(json.tasks.total, 1)
+  assert.equal(json.tasks.byColumn.backlog, 1)
+  assert.ok(json.pluginVersion)
+  assert.equal(JSON.stringify(json).includes('A task'), false)
+
+  const text = run(root, ['stats']).stdout
+  assert.match(text, /Codex Kanban usage/)
+  assert.match(text, /discussions\/1/)
+})

@@ -18,6 +18,7 @@ import {
   updateTask,
 } from '../src/domain.mjs'
 import { renderMarkdown, renderTaskDetail } from '../src/render.mjs'
+import { buildStats, formatStats } from '../src/stats.mjs'
 import { renderHtml } from '../src/html.mjs'
 import { createStore, resolveRoot } from '../src/store.mjs'
 import { applySessionImport } from '../src/import.mjs'
@@ -43,6 +44,7 @@ Usage:
   codex-kanban reject <id> --confirmed-by TEXT [--note TEXT]
   codex-kanban comment <id> --body TEXT
   codex-kanban import [--root PATH] [--since 30d] [--limit 10] [--project ID|NAME] [--apply] [--json]
+  codex-kanban stats [--json]
   codex-kanban render [--open]
   codex-kanban open
   codex-kanban serve [--port 4317] [--host 127.0.0.1] [--no-open]
@@ -405,6 +407,17 @@ async function main() {
         as: actor,
       })
       printTask(result)
+      return
+    }
+    case 'stats': {
+      const board = store.read()
+      const manifest = JSON.parse(fs.readFileSync(new URL('../.codex-plugin/plugin.json', import.meta.url), 'utf8'))
+      const stats = buildStats(board, { version: manifest.version })
+      if (flags.json) {
+        process.stdout.write(`${JSON.stringify(stats, null, 2)}\n`)
+      } else {
+        process.stdout.write(`${formatStats(stats)}\n`)
+      }
       return
     }
     case 'render': {

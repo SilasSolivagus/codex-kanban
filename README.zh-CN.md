@@ -8,8 +8,8 @@
 
 <p align="center">
   <a href="https://github.com/SilasSolivagus/codex-kanban/actions/workflows/ci.yml"><img src="https://github.com/SilasSolivagus/codex-kanban/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <img src="https://img.shields.io/badge/version-0.7.2-2F6FB2" alt="版本 0.7.2">
-  <img src="https://img.shields.io/badge/tests-296%20passing-2ea043" alt="296 项测试通过">
+  <img src="https://img.shields.io/badge/version-0.7.3-2F6FB2" alt="版本 0.7.2">
+  <img src="https://img.shields.io/badge/tests-300%20passing-2ea043" alt="300 项测试通过">
   <img src="https://img.shields.io/badge/design-B%203.42%2F4-6C5CE7" alt="UX 评审 B">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-2F6FB2" alt="MIT 许可证"></a>
 </p>
@@ -89,7 +89,7 @@ Codex 建任务、带着选项提问，任务停在 Needs you。你回答后说�
 node plugin/bin/codex-kanban.mjs serve
 
 # 从已安装的插件（版本号可能不同）
-node "$HOME/.codex/plugins/cache/silassolivagus/codex-kanban/0.7.2/bin/codex-kanban.mjs" serve
+node "$HOME/.codex/plugins/cache/silassolivagus/codex-kanban/0.7.3/bin/codex-kanban.mjs" serve
 ```
 
 `serve` 默认打开 `http://127.0.0.1:4317`；加 `--no-open` 只打印地址。服务只监听回环，
@@ -321,6 +321,17 @@ docs/ux-review/                    走查报告、证据与分批报告
 - **具体改进**：feature 模板问的是“哪个工作流卡住了”，不是只要一个功能名。
 - **开放讨论/优先级**：来 [v0.8 该做什么？（Discussions #1）](https://github.com/SilasSolivagus/codex-kanban/discussions/1)。
 - **安装与用法问题**：去 [Q&A](https://github.com/SilasSolivagus/codex-kanban/discussions/categories/q-a)。
+
+### 不用账号也能分享使用情况
+
+```bash
+node plugin/bin/codex-kanban.mjs stats        # 人读的摘要
+node plugin/bin/codex-kanban.mjs stats --json # 同样的数据，JSON
+```
+
+只输出数量：项目数、各列/各状态任务数、待处理、评论、附件、链接、最近 7 天活动、插件与
+平台版本。不含仓库路径、项目名、任务标题、标签或会话内容。不会联网；想影响路线图就把输出
+贴到 Discussions。
 
 如果看板挡了你的路，说清楚当时在做什么；这比一串功能名更有用。
 

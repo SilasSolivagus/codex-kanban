@@ -8,8 +8,8 @@
 
 <p align="center">
   <a href="https://github.com/SilasSolivagus/codex-kanban/actions/workflows/ci.yml"><img src="https://github.com/SilasSolivagus/codex-kanban/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <img src="https://img.shields.io/badge/version-0.7.2-2F6FB2" alt="Version 0.7.2">
-  <img src="https://img.shields.io/badge/tests-296%20passing-2ea043" alt="296 tests passing">
+  <img src="https://img.shields.io/badge/version-0.7.3-2F6FB2" alt="Version 0.7.3">
+  <img src="https://img.shields.io/badge/tests-300%20passing-2ea043" alt="300 tests passing">
   <img src="https://img.shields.io/badge/design-B%203.42%2F4-6C5CE7" alt="UX audit B">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-2F6FB2" alt="MIT license"></a>
 </p>
@@ -95,7 +95,7 @@ with your confirmation. Ask "what needs me?" any time for just the attention que
 node plugin/bin/codex-kanban.mjs serve
 
 # from the installed plugin (version may differ)
-node "$HOME/.codex/plugins/cache/silassolivagus/codex-kanban/0.7.2/bin/codex-kanban.mjs" serve
+node "$HOME/.codex/plugins/cache/silassolivagus/codex-kanban/0.7.3/bin/codex-kanban.mjs" serve
 ```
 
 `serve` opens `http://127.0.0.1:4317` by default; pass `--no-open` to only print the
@@ -322,7 +322,7 @@ cd codex-kanban
 node --test
 ```
 
-The suite has 296 tests at `v0.7.2`, uses only `node:test`, and needs no dependencies.
+The suite has 300 tests at `v0.7.2`, uses only `node:test`, and needs no dependencies.
 `npm test` runs the same command.
 
 ```
@@ -347,6 +347,19 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) and the human guides:
 - **Concrete improvement?** The feature template asks for the workflow that hurts, not just the feature name.
 - **Open-ended prioritisation?** Join [What should v0.8 build? (Discussions #1)](https://github.com/SilasSolivagus/codex-kanban/discussions/1).
 - **Setup or how-to?** Use [Q&A](https://github.com/SilasSolivagus/codex-kanban/discussions/categories/q-a).
+
+### Share usage without an account
+
+```bash
+node plugin/bin/codex-kanban.mjs stats        # human summary
+node plugin/bin/codex-kanban.mjs stats --json # same data as JSON
+```
+
+It prints counts only — projects, tasks by column and status, attention, comments,
+attachments, links, activity in the last 7 days, plugin/platform versions. No
+repository path, project names, task titles, labels or session content. There is no
+network request; paste the output into Discussions if you want it to influence the
+roadmap.
 
 If the board got in your way, describe the workflow you were in. That is easier to act on than a list of features.
 
