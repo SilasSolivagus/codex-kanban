@@ -236,12 +236,13 @@ Codex 主目录不在默认位置时，使用
 ## 使用本地 Web 看板
 
 ```bash
-node plugin/bin/codex-kanban.mjs serve --open
+node plugin/bin/codex-kanban.mjs serve
 ```
 
 打开 `http://127.0.0.1:4317`。卡片可以在 Backlog、Running、Done 之间拖拽；点开卡片可以
 回答问题、批准、驳回、阻塞、解阻塞、提问或评论。写入走同一个存储，版本校验与 MCP 工具一致。
 
+- `serve` 默认会打开浏览器，`--no-open` 只打印地址。
 - 默认只监听回环地址。`--host 0.0.0.0` 会暴露到局域网，只应在信任的机器上使用。
 - 没有账号体系，能访问端口的人就是以人类身份操作，所以默认只听回环。
 - `--port 8080` 换端口，Ctrl-C 停止。

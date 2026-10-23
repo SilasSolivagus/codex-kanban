@@ -8,8 +8,8 @@
 
 <p align="center">
   <a href="https://github.com/SilasSolivagus/codex-kanban/actions/workflows/ci.yml"><img src="https://github.com/SilasSolivagus/codex-kanban/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <img src="https://img.shields.io/badge/version-0.6.3-2F6FB2" alt="版本 0.6.3">
-  <img src="https://img.shields.io/badge/tests-272%20passing-2ea043" alt="272 项测试通过">
+  <img src="https://img.shields.io/badge/version-0.6.4-2F6FB2" alt="版本 0.6.3">
+  <img src="https://img.shields.io/badge/tests-274%20passing-2ea043" alt="274 项测试通过">
   <img src="https://img.shields.io/badge/design-B%203.42%2F4-6C5CE7" alt="UX 评审 B">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-2F6FB2" alt="MIT 许可证"></a>
 </p>
@@ -86,10 +86,10 @@ Codex 建任务、带着选项提问，任务停在 Needs you。你回答后说�
 
 ```bash
 # 从源码目录
-node plugin/bin/codex-kanban.mjs serve --open
+node plugin/bin/codex-kanban.mjs serve
 
 # 从已安装的插件（版本号可能不同）
-node "$HOME/.codex/plugins/cache/silassolivagus/codex-kanban/0.6.3/bin/codex-kanban.mjs" serve --open
+node "$HOME/.codex/plugins/cache/silassolivagus/codex-kanban/0.6.4/bin/codex-kanban.mjs" serve
 ```
 
 打开 `http://127.0.0.1:4317`：四列、拖拽排序、项目切换、搜索筛选、完整任务抽屉
@@ -97,8 +97,19 @@ node "$HOME/.codex/plugins/cache/silassolivagus/codex-kanban/0.6.3/bin/codex-kan
 
 ![任务抽屉：状态、属性、协作与吸底保存栏](docs/assets/kanban-drawer.png)
 
-服务默认只监听回环地址，没有账号体系，不发起任何外部请求。`--port` 换端口；
-`--host 0.0.0.0` 会暴露到局域网，只应在你信任的机器上使用。
+`serve` 默认会打开浏览器；加 `--no-open` 就只打印地址。服务只监听回环地址，没有账号
+体系，不发起任何外部请求。`--port` 换端口；`--host 0.0.0.0` 会暴露到局域网，只应在你
+信任的机器上使用。
+
+macOS 下想登录即启动：
+
+```bash
+scripts/install-autostart.sh --root "$PWD"          # 只起服务
+scripts/install-autostart.sh --root "$PWD" --open   # 同时打开浏览器
+scripts/uninstall-autostart.sh
+```
+
+安装脚本会写一个 LaunchAgent 并保持进程存活，日志在 `~/Library/Logs/codex-kanban.log`。
 
 ### 3. CLI（给脚本用）
 

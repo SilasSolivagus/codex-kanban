@@ -42,7 +42,7 @@ Usage:
   codex-kanban comment <id> --body TEXT
   codex-kanban render [--open]
   codex-kanban open
-  codex-kanban serve [--port 4317] [--host 127.0.0.1] [--open]
+  codex-kanban serve [--port 4317] [--host 127.0.0.1] [--no-open]
   codex-kanban help
 
 Every command accepts --root PATH, --as agent|user (default user), and
@@ -358,7 +358,7 @@ async function main() {
       const web = createWebServer({ store, host, port })
       const url = await web.listen()
       process.stdout.write(`Codex Kanban · ${url}\n`)
-      if (flags.open) openInBrowser(url)
+      if (flags['no-open'] !== true) openInBrowser(url)
       const shutdown = () => {
         web.close().then(() => process.exit(0))
       }

@@ -8,8 +8,8 @@
 
 <p align="center">
   <a href="https://github.com/SilasSolivagus/codex-kanban/actions/workflows/ci.yml"><img src="https://github.com/SilasSolivagus/codex-kanban/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <img src="https://img.shields.io/badge/version-0.6.3-2F6FB2" alt="Version 0.6.3">
-  <img src="https://img.shields.io/badge/tests-272%20passing-2ea043" alt="272 tests passing">
+  <img src="https://img.shields.io/badge/version-0.6.4-2F6FB2" alt="Version 0.6.4">
+  <img src="https://img.shields.io/badge/tests-274%20passing-2ea043" alt="274 tests passing">
   <img src="https://img.shields.io/badge/design-B%203.42%2F4-6C5CE7" alt="UX audit B">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-2F6FB2" alt="MIT license"></a>
 </p>
@@ -92,10 +92,10 @@ attention queue.
 
 ```bash
 # from a checkout
-node plugin/bin/codex-kanban.mjs serve --open
+node plugin/bin/codex-kanban.mjs serve
 
 # from the installed plugin (version may differ)
-node "$HOME/.codex/plugins/cache/silassolivagus/codex-kanban/0.6.3/bin/codex-kanban.mjs" serve --open
+node "$HOME/.codex/plugins/cache/silassolivagus/codex-kanban/0.6.4/bin/codex-kanban.mjs" serve
 ```
 
 Opens `http://127.0.0.1:4317`: four columns with drag ordering, project switcher,
@@ -104,9 +104,21 @@ question panels, attachments, archive, and a zh/en toggle.
 
 ![The task drawer with status, attributes, collaboration and the sticky save bar](docs/assets/kanban-drawer.png)
 
-The server binds to loopback by default, has no account system, and makes no
-outbound requests. `--port` changes the port; `--host 0.0.0.0` exposes it to your
-network and should only be used on a machine you trust.
+`serve` opens the browser by default; pass `--no-open` to only print the URL. The
+server binds to loopback, has no account system, and makes no outbound requests.
+`--port` changes the port; `--host 0.0.0.0` exposes it to your network and should only
+be used on a machine you trust.
+
+To start the board at login on macOS:
+
+```bash
+scripts/install-autostart.sh --root "$PWD"          # serve only
+scripts/install-autostart.sh --root "$PWD" --open   # also open the browser
+scripts/uninstall-autostart.sh
+```
+
+The installer writes a LaunchAgent and keeps the server alive; logs go to
+`~/Library/Logs/codex-kanban.log`.
 
 ### 3. CLI (for scripts)
 
@@ -285,7 +297,7 @@ cd codex-kanban
 node --test
 ```
 
-The suite has 272 tests at `v0.6.3`, uses only `node:test`, and needs no dependencies.
+The suite has 274 tests at `v0.6.3`, uses only `node:test`, and needs no dependencies.
 `npm test` runs the same command.
 
 ```

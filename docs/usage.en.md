@@ -262,13 +262,14 @@ the task; rejecting sends it back to Backlog.
 ## Use the local web board
 
 ```bash
-node plugin/bin/codex-kanban.mjs serve --open
+node plugin/bin/codex-kanban.mjs serve
 ```
 
 Open `http://127.0.0.1:4317`. Drag cards between Backlog, Running and Done; click a
 card to answer a question, approve, reject, block, unblock, ask or comment. Writes go
 through the same store, with the same version checks as the MCP tools.
 
+- `serve` opens the browser by default; `--no-open` prints the URL only.
 - The server listens on loopback only by default. `--host 0.0.0.0` exposes it to your
   network; only do that on a trusted machine.
 - There is no account system. Anyone who can reach the port acts as the human, which
