@@ -1,6 +1,6 @@
 {
   "name": "codex-kanban",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "description": "A Codex-native task board: projects, four columns, approvals, blockers, attachments and durable repository-local state, exposed through MCP tools and a local web board.",
   "author": {
     "name": "Silas Solivagus",
