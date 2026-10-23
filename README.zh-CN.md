@@ -8,7 +8,7 @@
 
 <p align="center">
   <a href="https://github.com/SilasSolivagus/codex-kanban/actions/workflows/ci.yml"><img src="https://github.com/SilasSolivagus/codex-kanban/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <img src="https://img.shields.io/badge/version-0.6.4-2F6FB2" alt="版本 0.6.3">
+  <img src="https://img.shields.io/badge/version-0.6.5-2F6FB2" alt="版本 0.6.3">
   <img src="https://img.shields.io/badge/tests-274%20passing-2ea043" alt="274 项测试通过">
   <img src="https://img.shields.io/badge/design-B%203.42%2F4-6C5CE7" alt="UX 评审 B">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-2F6FB2" alt="MIT 许可证"></a>
@@ -89,7 +89,7 @@ Codex 建任务、带着选项提问，任务停在 Needs you。你回答后说�
 node plugin/bin/codex-kanban.mjs serve
 
 # 从已安装的插件（版本号可能不同）
-node "$HOME/.codex/plugins/cache/silassolivagus/codex-kanban/0.6.4/bin/codex-kanban.mjs" serve
+node "$HOME/.codex/plugins/cache/silassolivagus/codex-kanban/0.6.5/bin/codex-kanban.mjs" serve
 ```
 
 打开 `http://127.0.0.1:4317`：四列、拖拽排序、项目切换、搜索筛选、完整任务抽屉
@@ -101,15 +101,17 @@ node "$HOME/.codex/plugins/cache/silassolivagus/codex-kanban/0.6.4/bin/codex-kan
 体系，不发起任何外部请求。`--port` 换端口；`--host 0.0.0.0` 会暴露到局域网，只应在你
 信任的机器上使用。
 
-macOS 下想登录即启动：
+登录时自动启动：
 
-```bash
-scripts/install-autostart.sh --root "$PWD"          # 只起服务
-scripts/install-autostart.sh --root "$PWD" --open   # 同时打开浏览器
-scripts/uninstall-autostart.sh
-```
+| 系统 | 安装 | 卸载 |
+| --- | --- | --- |
+| macOS | `scripts/install-autostart.sh --root "$PWD"` | `scripts/uninstall-autostart.sh` |
+| Linux | `scripts/install-autostart-linux.sh --root "$PWD"` | `scripts/uninstall-autostart-linux.sh` |
+| Windows | `powershell -File scripts\install-autostart-windows.ps1 -Root .` | `powershell -File scripts\uninstall-autostart-windows.ps1` |
 
-安装脚本会写一个 LaunchAgent 并保持进程存活，日志在 `~/Library/Logs/codex-kanban.log`。
+加 `--open`（macOS/Linux）或 `-Open`（Windows）可在登录时同时打开浏览器。macOS 写
+LaunchAgent（日志 `~/Library/Logs/codex-kanban.log`），Linux 写 systemd user unit
+（`journalctl --user -u codex-kanban`），Windows 写登录计划任务。
 
 ### 3. CLI（给脚本用）
 

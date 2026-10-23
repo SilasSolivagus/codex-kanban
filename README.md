@@ -8,7 +8,7 @@
 
 <p align="center">
   <a href="https://github.com/SilasSolivagus/codex-kanban/actions/workflows/ci.yml"><img src="https://github.com/SilasSolivagus/codex-kanban/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <img src="https://img.shields.io/badge/version-0.6.4-2F6FB2" alt="Version 0.6.4">
+  <img src="https://img.shields.io/badge/version-0.6.5-2F6FB2" alt="Version 0.6.5">
   <img src="https://img.shields.io/badge/tests-274%20passing-2ea043" alt="274 tests passing">
   <img src="https://img.shields.io/badge/design-B%203.42%2F4-6C5CE7" alt="UX audit B">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-2F6FB2" alt="MIT license"></a>
@@ -95,7 +95,7 @@ attention queue.
 node plugin/bin/codex-kanban.mjs serve
 
 # from the installed plugin (version may differ)
-node "$HOME/.codex/plugins/cache/silassolivagus/codex-kanban/0.6.4/bin/codex-kanban.mjs" serve
+node "$HOME/.codex/plugins/cache/silassolivagus/codex-kanban/0.6.5/bin/codex-kanban.mjs" serve
 ```
 
 Opens `http://127.0.0.1:4317`: four columns with drag ordering, project switcher,
@@ -109,16 +109,17 @@ server binds to loopback, has no account system, and makes no outbound requests.
 `--port` changes the port; `--host 0.0.0.0` exposes it to your network and should only
 be used on a machine you trust.
 
-To start the board at login on macOS:
+To start the board at login:
 
-```bash
-scripts/install-autostart.sh --root "$PWD"          # serve only
-scripts/install-autostart.sh --root "$PWD" --open   # also open the browser
-scripts/uninstall-autostart.sh
-```
+| OS | Install | Uninstall |
+| --- | --- | --- |
+| macOS | `scripts/install-autostart.sh --root "$PWD"` | `scripts/uninstall-autostart.sh` |
+| Linux | `scripts/install-autostart-linux.sh --root "$PWD"` | `scripts/uninstall-autostart-linux.sh` |
+| Windows | `powershell -File scripts\install-autostart-windows.ps1 -Root .` | `powershell -File scripts\uninstall-autostart-windows.ps1` |
 
-The installer writes a LaunchAgent and keeps the server alive; logs go to
-`~/Library/Logs/codex-kanban.log`.
+Add `--open` (macOS/Linux) or `-Open` (Windows) to also open the browser at login.
+macOS writes a LaunchAgent (`~/Library/Logs/codex-kanban.log`), Linux a systemd user
+unit (`journalctl --user -u codex-kanban`), Windows a logon Scheduled Task.
 
 ### 3. CLI (for scripts)
 
@@ -309,6 +310,7 @@ plugin/server/                    JSON-RPC stdio server, HTTP API
 plugin/src/                       domain, store, rules, renderers, web UI
 plugin/skills/kanban/SKILL.md     agent-facing workflow
 test/                             node:test suites
+scripts/                          autostart installers (macOS/Linux/Windows)
 docs/ux-review/                   audits, evidence and batch reports
 ```
 
