@@ -4,203 +4,194 @@
 
 <h1 align="center">Codex Kanban</h1>
 
-<p align="center"><strong>为 Codex 打造的任务看板：四列视图、审批、阻塞项，以及随仓库持久化的状态。</strong></p>
+<p align="center"><strong>Codex 原生任务看板：多项目、四列、审批、阻塞、附件，以及随仓库持久化的状态。</strong></p>
 
 <p align="center">
   <a href="https://github.com/SilasSolivagus/codex-kanban/actions/workflows/ci.yml"><img src="https://github.com/SilasSolivagus/codex-kanban/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <a href="https://github.com/SilasSolivagus/codex-kanban"><img src="https://img.shields.io/badge/version-0.6.3-2F6FB2" alt="版本 0.1.0"></a>
-  <img src="https://img.shields.io/badge/tests-213%20passing-2ea043" alt="213 项测试通过">
+  <img src="https://img.shields.io/badge/version-0.6.3-2F6FB2" alt="版本 0.6.3">
+  <img src="https://img.shields.io/badge/tests-272%20passing-2ea043" alt="272 项测试通过">
+  <img src="https://img.shields.io/badge/design-B%203.42%2F4-6C5CE7" alt="UX 评审 B">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-2F6FB2" alt="MIT 许可证"></a>
 </p>
 
 <p align="center"><a href="README.md">English</a> · 简体中文</p>
 
-![Codex Kanban 看板，包含 Backlog、Running、Needs you 和 Done 四列](docs/assets/kanban-board.png)
+![Codex Kanban 看板：Backlog、Running、Needs you、Done 四列](docs/assets/kanban-web.png)
 
-Codex Kanban 给 Codex 补上一层不随对话消失的任务状态。任务存放在仓库内的
-`.kanban/board.json`，重启后还在，能跟着代码一起提交和评审，属于项目本身而不是某一次
-聊天。Codex 通过 13 个 MCP 工具和一个轻量的 `kanban` 技能读写看板，由技能判断什么时候
-该建任务、什么时候该阻塞、什么时候该交给人类决定。
+Codex Kanban 给 Codex 补上一层不随对话消失的任务状态。项目、任务、问题、阻塞、评论、
+活动记录和附件都存在仓库内的 `.kanban/board.json`，重启后还在，能跟代码一起提交和评审，
+属于项目本身而不是某一次聊天。
 
-不需要托管服务、数据库或任何运行时依赖。看板就是一个 JSON 文件；Markdown 是主要视图，
-HTML 看板是附加的自包含视图，需要纵览整条队列时再用。
+Codex 通过 20 个 MCP 工具和一个轻量的 `kanban` 技能读写看板；人则用 `127.0.0.1` 上的
+本地网页看板，或走 CLI。没有托管服务、没有数据库、没有账号、没有运行时依赖。
 
-## 功能
+## 它能做什么
 
 | | |
 | --- | --- |
-| **四列，六种状态** | Backlog（`backlog`、`todo`）、Running（`in_progress`）、Needs you（计算得出）、Done（`done`）。`in_review` 也会停在 Needs you；`canceled` 不显示在看板上。 |
-| **Needs you 自动汇总** | 这一列由未决问题、生效中的阻塞和待评审状态计算得出，优先级依次为问题、阻塞、评审。它不能作为移动目标。 |
-| **人类审批边界** | `kanban_task_approve` 和 `kanban_task_reject` 必须带 `as: "user"` 和 `confirmed_by`；智能体不能把 `in_review` 任务直接移到 Done。 |
-| **带选项的问题** | 提问时给出 2 到 5 个真实选项。回答会被记录，但任务仍留在 Needs you，直到人类批准或驳回。 |
-| **阻塞项只写一件事** | 缺权限、缺依赖、环境不可用、等别人的交付物时使用阻塞。解除后任务回到原来的列。 |
-| **状态持久且可评审** | 仓库里的普通 JSON 文件，跟代码一起提交，任务变更可以直接出现在 diff 里。 |
-| **原子写入与版本校验** | 每次看板写入都经过锁、临时文件和原子重命名；任务更新必须带版本，旧版本写入会返回 `TASK_VERSION_CONFLICT`。 |
-| **多项目** | 一个仓库可以有多条工作流，各自独立的编号前缀与计数器；归档后只读，可恢复。 |
-| **附件** | 文件存在 `.kanban/attachments/`，从网页上传，单文件 10 MB。 |
-| **搜索与筛选** | 文本搜索，加上优先级、标签、负责人筛选；列可折叠。 |
-| **两种展示方式** | 终端和对话里用 Markdown；需要看整体时生成自包含的 HTML 看板。 |
-| **零运行时依赖** | 只需要 Node.js 22 或更高版本，ESM，无构建步骤，无需安装依赖。 |
+| **四列、六种状态** | Backlog（`backlog`、`todo`）、Running（`in_progress`）、Needs you（计算得出）、Done（`done`）。`in_review` 也停在 Needs you；`canceled` 不显示在看板上。 |
+| **Needs you 自动汇总** | 由未决问题、生效阻塞和待评审状态计算得出，优先级依次为问题、阻塞、评审。不能作为移动目标。 |
+| **人类审批边界** | 批准和驳回必须带 `as: "user"` 与 `confirmed_by`。agent 不能把任务移出 `in_review`，也不能关掉自己提审的任务。 |
+| **带选项的问题** | 2–5 个真实选项，每个可带说明。点一下选中，确认一次就同时记录答案并做出决定。 |
+| **阻塞只写一件事** | 缺权限、缺依赖、环境不可用、等别人的交付物时使用。卡片显示琥珀色“受阻”条，解除后自动离开 Needs you。 |
+| **多项目** | 一个仓库可有多条工作流，各自独立的编号前缀与计数器，`APP-1` 与 `WEB-1` 可以共存。 |
+| **归档与恢复** | 项目和任务都能归档。归档项目在领域层只读；归档任务默认隐藏，打开「显示已归档」才出现。 |
+| **附件** | 从任务抽屉上传，存在 `.kanban/attachments/`，单文件 10 MB，可通过 HTTP 下载。 |
+| **排序** | 跨列拖拽、列内拖拽排序，顺序写入 `sortOrder`。键盘：`Alt+↑/↓` 列内移动，`Alt+←/→` 跨列。 |
+| **搜索与筛选** | 文本搜索，加优先级、标签、负责人筛选；筛选条件以可删除的胶囊展示，并显示 `X / Y` 计数。 |
+| **中英双语、键盘优先** | 中英文界面，`/` 搜索、`n` 新建、`Esc` 逐层关闭，支持减少动画。 |
+| **可评审的持久状态** | 普通 JSON 文件，原子写入、版本校验。跟代码一起提交，任务变更直接出现在 diff 里。 |
 
 ## 安装
 
 前提：支持插件的 Codex，以及 Node.js 22 或更高版本。
-
-从仓库市场安装：
 
 ```bash
 codex plugin marketplace add https://github.com/SilasSolivagus/codex-kanban
 codex plugin add codex-kanban@silassolivagus
 ```
 
-本地检出则把市场指向目录：
+本地开发目录也可以直接作为 marketplace：
 
 ```bash
 codex plugin marketplace add /path/to/codex-kanban
 codex plugin add codex-kanban@silassolivagus
 ```
 
-在要跟踪的仓库里重新打开一个 Codex 会话。插件会加载 `kanban` 技能，MCP 服务同时提供
-下面 13 个工具。
+以后更新：
 
-## 用法
+```bash
+codex plugin marketplace upgrade silassolivagus
+codex plugin add codex-kanban@silassolivagus
+```
 
-下面三个提示覆盖主要流程。
+然后在要跟踪的仓库里新开一个 Codex 会话。`kanban` 技能会随插件加载，MCP 服务会暴露下面
+这些工具。
 
-**先看看有什么在等人处理。**
+## 三种用法
 
-> “现在有什么需要我处理？只看 Needs you 这一列。”
+### 1. 在 Codex 里（agent 写，人做决定）
 
-Codex 读取看板，返回需要关注的队列，其余内容不打扰你。
+> “把 SSO 跳转这个 bug 建成高优先级任务，标签 auth。问我先修 staging 还是 production。”
 
-**把需要跨对话保留的工作记下来。**
+Codex 建任务、带着选项提问，任务停在 Needs you。你回答后说“用 staging 方案，批准”，它记录
+答案并带着你的确认关闭任务。任何时候问“现在什么在等我”，它只列 Needs you。
 
-> “把 SSO 跳转这个 bug 记成高优先级任务，加 `auth` 标签。顺便问我一句：先修 staging
-> 还是 production？”
+### 2. 本地网页看板（给人用）
 
-Codex 建任务、挂上一个带选项的问题，然后把它留在 Needs you。
+```bash
+# 从源码目录
+node plugin/bin/codex-kanban.mjs serve --open
 
-**人类做完决定后收尾。**
+# 从已安装的插件（版本号可能不同）
+node "$HOME/.codex/plugins/cache/silassolivagus/codex-kanban/0.6.3/bin/codex-kanban.mjs" serve --open
+```
 
-> “发布说明我批准了，选 staging 方案。把那个任务按我的批准关掉，然后把看板渲染出来。”
+打开 `http://127.0.0.1:4317`：四列、拖拽排序、项目切换、搜索筛选、完整任务抽屉
+（详情 / 协作 / 动态）、卡内问题面板、附件、归档，以及中英文切换。
 
-Codex 记录答案、带上人类的确认完成审批、把任务移到 Done，并写出
-`.kanban/board.html`。
+![任务抽屉：状态、属性、协作与吸底保存栏](docs/assets/kanban-drawer.png)
+
+服务默认只监听回环地址，没有账号体系，不发起任何外部请求。`--port` 换端口；
+`--host 0.0.0.0` 会暴露到局域网，只应在你信任的机器上使用。
+
+### 3. CLI（给脚本用）
+
+```bash
+node plugin/bin/codex-kanban.mjs board
+node plugin/bin/codex-kanban.mjs add "修复登录跳转" \
+  --description "SSO 后落到首页，没有回到来源页。" \
+  --priority high --label auth
+node plugin/bin/codex-kanban.mjs move 1 --to in_progress
+node plugin/bin/codex-kanban.mjs ask 1 \
+  --prompt "先修哪个环境？" \
+  --option Staging --option Production
+node plugin/bin/codex-kanban.mjs approve 1 --confirmed-by "先上 staging"
+node plugin/bin/codex-kanban.mjs render --open
+```
+
+数字引用（如 `1`）会解析成 `<前缀>-1`。`--root PATH` 指向别的仓库；默认使用当前目录
+向上最近的、包含 `.git` 或 `.kanban` 的目录。
 
 ## 工具
 
-每个工具都要带 `root`（仓库绝对路径）。除非设置了 `CODEX_KANBAN_ROOT` 环境变量，否则
-它是必填的；这里故意不回退到服务进程的工作目录，因为安装后的插件是从插件缓存目录启动的。
-写任务时要带 `kanban_task_get` 返回的当前 `version`；approve 和 reject 还需要
-`as: "user"` 和 `confirmed_by`。
+所有工具都要传 `root`（仓库绝对路径）。除非设置了 `CODEX_KANBAN_ROOT`，否则它是必填的；
+这里故意不回退到服务进程的工作目录，因为安装后的插件是从插件缓存目录启动的。写已有任务
+要带 `kanban_task_get` 返回的当前 `version`；批准和驳回还需要 `as: "user"` 与
+`confirmed_by`。
 
 | 工具 | 作用 |
 | --- | --- |
-| `kanban_board` | 输出 Markdown 看板，Needs you 在前，可只看一列或隐藏 Done。 |
-| `kanban_task_get` | 读取单个任务：描述、问题、阻塞、链接、评论、活动记录和当前版本。 |
-| `kanban_task_create` | 在 Backlog 或指定状态创建任务，返回任务标识。 |
-| `kanban_task_update` | 修改标题、描述、优先级、标签或链接，不移动任务。 |
-| `kanban_task_move` | 移到某一列或存储状态；Needs you 不能手动选择。 |
-| `kanban_task_block` | 记录一条可执行的阻塞原因，任务进入 Needs you。 |
-| `kanban_task_unblock` | 清除阻塞，任务回到原来的列。 |
-| `kanban_task_ask` | 挂出带 2 到 5 个选项的问题，任务进入 Needs you。 |
-| `kanban_task_answer` | 记录选项和备注，不关闭问题。 |
-| `kanban_task_approve` | 仅限人类：批准并把任务置为 Done。 |
-| `kanban_task_reject` | 仅限人类：驳回并附备注，任务回到 Backlog。 |
-| `kanban_task_comment` | 追加一条跟随任务的评论。 |
-| `kanban_render` | 写出 `.kanban/board.html`，返回路径和内联视觉引用。 |
-
-## 本地 Web 看板
-
-不想在终端或对话里操作时，可以直接开一个本地看板：
-
-```bash
-node plugin/bin/codex-kanban.mjs serve --open
-# Codex Kanban · http://127.0.0.1:4317
-```
-
-![本地 Web 看板：四列、可拖拽](docs/assets/kanban-web.png)
-
-![任务抽屉：两列属性、链接、附件、活动](docs/assets/kanban-drawer.png)
-
-读写的是同一个 `.kanban/board.json`。卡片可在 Backlog、Running、Done 之间拖拽；
-点开卡片可以回答问题、批准、驳回、阻塞、解阻塞、提问或评论。Needs you 不能作为拖拽目标。
-
-服务默认只监听 `127.0.0.1`，没有账号体系，也不发起任何外部请求。`--port` 换端口；
-`--host 0.0.0.0` 会把看板暴露到局域网，只应在你信任的机器上使用。
+| `kanban_board` | 渲染 Markdown 看板，Needs you 优先，可按项目或列过滤。 |
+| `kanban_task_get` | 读取单个任务：描述、问题、阻塞、链接、附件、评论、活动、当前版本。 |
+| `kanban_task_create` | 在指定项目里建任务，默认 Backlog，返回编号。 |
+| `kanban_task_update` | 修改标题、描述、优先级、标签、链接。 |
+| `kanban_task_move` | 移到某一列或状态，或调整列内顺序。 |
+| `kanban_task_block` | 记录一条可执行的阻塞原因。 |
+| `kanban_task_unblock` | 解除阻塞。 |
+| `kanban_task_ask` | 提一个 2–5 个选项的问题。 |
+| `kanban_task_answer` | 记录所选选项和备注。 |
+| `kanban_task_approve` | 仅人类：批准并关闭为 Done。 |
+| `kanban_task_reject` | 仅人类：带备注驳回，回到 Backlog。 |
+| `kanban_task_comment` | 追加评论，跟着任务走。 |
+| `kanban_task_archive` | 归档任务，从看板隐藏但不删除。 |
+| `kanban_task_restore` | 恢复归档任务。 |
+| `kanban_render` | 写出 `.kanban/board.html`，返回路径和内联引用。 |
+| `kanban_project_list` | 列出项目、前缀、归档状态和任务数。 |
+| `kanban_project_create` | 新建项目，可指定前缀和工作区路径。 |
+| `kanban_project_update` | 重命名项目、改前缀或工作区路径。 |
+| `kanban_project_archive` | 归档项目，任务转为只读。 |
+| `kanban_project_restore` | 恢复归档项目。 |
 
 ## 项目、归档与附件
 
-一块看板可以容纳多个项目。每个项目有自己的编号前缀与计数器，所以同一个仓库里可以同时有
-`APP-1` 和 `WEB-1`。
-
-- 列内可以拖拽排序，顺序存在 `sortOrder` 里。
-- 任务也能单独归档：归档后默认隐藏，打开 **显示已归档** 才能看到，写入返回 `TASK_ARCHIVED`。
-- 在网页看板的 **项目管理** 里新建、重命名、归档、恢复，或使用 `kanban_project_*` 工具。
-- 归档在领域层强制生效：归档项目下的任何任务写入都会返回 `PROJECT_ARCHIVED`，直到恢复。
-- 附件存在 `.kanban/attachments/<id>`，元数据挂在任务上。抽屉里上传（单文件 10 MB），
-  下载就是 `GET /api/attachments/<id>`。不想把二进制提交进 git，就把
-  `.kanban/attachments/` 加进 `.gitignore`。
+- 一块看板可以放多个项目，每个项目有自己的前缀和计数器；编号在项目内唯一，不是仓库内唯一。
+- 归档在领域层强制生效：写归档项目里的任务返回 `PROJECT_ARCHIVED`，写归档任务返回
+  `TASK_ARCHIVED`。
+- 附件是 `.kanban/attachments/<id>` 下的文件，元数据挂在任务上。不想把二进制提交进 git，
+  就把附件目录加进 `.gitignore`。
+- Needs you、受阻、待审都是从状态计算出来的覆盖层，不会改写底层状态。
 
 ## 架构
 
 ```mermaid
 flowchart LR
-  U[你] --> A[Codex 应用或 CLI]
-  A --> S[kanban 技能<br/>判断何时读、问、写]
-  A --> M[MCP 服务<br/>13 个 kanban_* 工具]
+  U[你] --> A[Codex App 或 CLI]
+  A --> S[kanban 技能<br/>何时读、问、写]
+  A --> M[MCP 服务<br/>20 个 kanban_* 工具]
   S --> M
-  M --> B[".kanban/board.json<br/>原子写入 · 带版本"]
+  W[本地网页看板<br/>127.0.0.1] --> M
+  M --> B[".kanban/board.json<br/>原子 · 版本化"]
   M --> H[".kanban/board.html<br/>自包含视图"]
+  M --> F[".kanban/attachments/"]
 ```
 
-技能负责策略：回答前先读看板，缺人类决定时提问而不是阻塞，不批准自己做的任务。MCP
-服务负责数据通路：一个仓库一块看板，所有读写都走同一个存储。HTML 文件不会反向写入。
-
-## 命令行
-
-CLI 不经过 Codex，直接操作同一份存储。在仓库根目录：
-
-```bash
-node plugin/bin/codex-kanban.mjs board
-node plugin/bin/codex-kanban.mjs add "修复登录跳转" \
-  --description "SSO 登录后总是落在 /，应回到进入登录前的页面。" \
-  --priority high --label auth
-node plugin/bin/codex-kanban.mjs move 1 --to in_progress
-node plugin/bin/codex-kanban.mjs ask 1 \
-  --prompt "先在哪套环境修复？" \
-  --option Staging \
-  --option Production
-node plugin/bin/codex-kanban.mjs answer 1 --option opt_1
-node plugin/bin/codex-kanban.mjs approve 1 --confirmed-by "先上 staging"
-node plugin/bin/codex-kanban.mjs render --open
-```
-
-- 数字引用（如 `1`）会解析为 `<项目前缀>-1`。
-- `--root PATH` 指向其他仓库。默认从当前目录开始向上查找，使用第一个包含 `.git` 或
-  `.kanban` 的目录。
-- CLI 默认以人类身份运行。`approve` 和 `reject` 始终以人类身份执行，并且必须提供
-  `--confirmed-by`。
-- 安装插件后，入口位于
-  `$CODEX_HOME/plugins/cache/silassolivagus/codex-kanban/<version>/bin/codex-kanban.mjs`。
-  使用默认 Codex 主目录和 0.1.0 版本时：
-
-```bash
-node "$HOME/.codex/plugins/cache/silassolivagus/codex-kanban/0.1.0/bin/codex-kanban.mjs" board --root "$PWD"
-```
+技能负责策略：回答前先读板、缺人类决定时提问而不是硬阻塞、绝不自己批准自己。服务负责
+数据路径：一个仓库一块板，所有写入走同一个存储。HTML 视图永远不回写。
 
 ## 数据模型
 
-第一次写入时才会创建看板：
+首次写入时创建，schema 2：
 
 ```json
 {
-  "schema": 1,
-  "project": { "name": "my-app", "prefix": "MYAPP", "createdAt": "2026-10-22T07:45:38.341Z" },
-  "nextTaskNumber": 2,
+  "schema": 2,
+  "projects": [
+    {
+      "id": "prj_default",
+      "name": "my-app",
+      "prefix": "MYAPP",
+      "workspacePath": null,
+      "nextTaskNumber": 2,
+      "archivedAt": null,
+      "createdAt": "2026-10-22T07:45:38.341Z",
+      "updatedAt": "2026-10-22T07:45:38.341Z"
+    }
+  ],
   "tasks": [
     {
       "id": "tsk_8116bbc1-7390-4031-9c1f-719fd79c6f3b",
+      "projectId": "prj_default",
       "identifier": "MYAPP-1",
       "title": "修复登录跳转",
       "status": "in_progress",
@@ -208,6 +199,11 @@ node "$HOME/.codex/plugins/cache/silassolivagus/codex-kanban/0.1.0/bin/codex-kan
       "labels": ["auth"],
       "blockedReason": null,
       "pendingQuestion": null,
+      "links": [],
+      "attachments": [],
+      "comments": [],
+      "activity": [],
+      "archivedAt": null,
       "version": 3,
       "createdAt": "2026-10-22T07:45:38.342Z",
       "updatedAt": "2026-10-22T07:46:12.000Z"
@@ -216,27 +212,40 @@ node "$HOME/.codex/plugins/cache/silassolivagus/codex-kanban/0.1.0/bin/codex-kan
 }
 ```
 
-`version` 从 1 开始，任务每发生一次变更就加一。写入时必须带上读取到的版本：版本过期返回
-`TASK_VERSION_CONFLICT`，完全没带则返回 `VERSION_REQUIRED`，调用方需要重新读取。
-写入通过 `.kanban/board.lock` 串行化，先写 `board.json.tmp` 并同步到磁盘，再重命名
-覆盖 `board.json`。
+v1 的板子会在首次读取时就地迁移。`version` 从 1 开始，每次变更递增；写入必须带上读到的
+版本，旧版本返回 `TASK_VERSION_CONFLICT`，缺版本返回 `VERSION_REQUIRED`。写入通过
+`.kanban/board.lock` 串行化，流程是写 `board.json.tmp`、落盘、再重命名。
+
+## UX 质量
+
+网页看板经过两轮独立设计走查，对照 dsh-kanban 参考图，带截图和 goodwill 表：
+
+| 轮次 | 设计评分 | AI Slop | Goodwill | 结论 |
+| --- | --- | --- | --- | --- |
+| 第一轮 | C（2.80/4） | B | 43/100 | 10 项问题 |
+| 第二轮 | **B（3.42/4）** | B | **90/100** | 9/10 修复，无回归 |
+
+报告、截图和剩余问题都在 [`docs/ux-review/`](docs/ux-review/)。界面支持键盘操作、可见焦点、
+`prefers-reduced-motion`，元数据对比度不低于 4.83:1。
 
 ## 已知限制
 
-- **审批边界是协作约定，不是身份认证。** `as: "user"` 和 `confirmed_by` 是由工具和技能执行的声明；刻意撒谎、直接运行 CLI 或手改 `board.json` 都能绕过。真正的保护是看板本身就是可评审的普通 JSON。
-- **`confirmed_by` 只是门槛，不是审计字段。** 审批和驳回必须提供它，但它不会作为独立
-  字段保存。解决记录和活动日志能证明“做过决定”，如果需要保留原话，请写进备注。
-- **HTML 看板只读，且依赖宿主。** 按钮通过 `window.openai.sendFollowUpMessage` 把动作
-  交回 Codex。在 Codex 应用里会发出后续消息；在普通浏览器里仍可阅读，但按钮无法写入，
-  界面会明确提示。
-- **已取消的任务不显示在看板上。** 移到 `canceled` 后任务仍保留在 `board.json`，也能按
-  标识读取，但不再出现在任何一列。
+- **审批边界是协作约定，不是身份认证。** `as: "user"` 和 `confirmed_by` 由工具和技能执行，
+  但都是调用方声明；刻意撒谎、直接跑 CLI 或手改 `board.json` 都能绕过。真正的保护是看板
+  本身就是可评审的普通 JSON。
+- **没有实时协作。** 两个人用同一块板靠 git；网页服务是单用户、只监听回环。
+- **一个仓库一块板。** 项目是仓库内的工作流，不是跨仓库全局看板。
+- **App 内联视图没有端到端验证。** `kanban_render` 会写出 HTML 并返回宿主引用，但各客户端
+  里真正验证过的是 Markdown 看板。
+- **`confirmed_by` 只是门禁，不是审计字段。** 它不会单独持久化；需要保留原话就写进决定备注。
+- **规模未验证。** 筛选和渲染只在几十条任务上试过，没到几百条。
 
 ## 路线图
 
-- 审批时持久化人类的确认内容，让审计记录包含原话，而不只是“已批准”。
-- 为规模变大的看板增加搜索和筛选。
-- 收集 v0.1 反馈后再评估附件和多仓库看板。
+- 跨仓库的全局看板，同时保留“每仓库一个文件”的退路。
+- 把人类确认和审批一起持久化，让审计记录带上原话。
+- 多人感知（谁在看、软锁），但不把看板变成服务。
+- 把网页看板做成安装后的一条命令，不再需要拼缓存路径。
 
 ## 开发
 
@@ -246,23 +255,23 @@ cd codex-kanban
 node --test
 ```
 
-`v0.3.0` 共有 213 项测试，只使用 `node:test`。`npm test` 执行同一条命令，没有运行时
-或开发依赖需要安装。
+`v0.6.3` 共 272 项测试，只用 `node:test`，没有任何依赖需要安装。`npm test` 跑同一条命令。
 
 ```
-.agents/plugins/marketplace.json   本地市场条目
+.agents/plugins/marketplace.json   本地 marketplace 入口
 plugin/.codex-plugin/plugin.json   插件清单
 plugin/.mcp.json                   MCP 服务配置
-plugin/bin/                        启动器和 CLI
-plugin/server/                     JSON-RPC stdio 服务
-plugin/src/                        领域逻辑、存储、规则、渲染
-plugin/skills/kanban/SKILL.md      面向智能体的工作流
+plugin/bin/                        启动器与 CLI
+plugin/server/                     JSON-RPC stdio 服务、HTTP API
+plugin/src/                        领域、存储、规则、渲染、网页界面
+plugin/skills/kanban/SKILL.md      agent 工作流
 test/                              node:test 测试
+docs/ux-review/                    走查报告、证据与分批报告
 ```
 
-插件隔离调试流程见 [CONTRIBUTING.md](CONTRIBUTING.md)。人类侧的操作说明见
-[使用指南](docs/usage.md)。
+见 [CONTRIBUTING.md](CONTRIBUTING.md)，以及给人看的使用说明：
+[English](docs/usage.en.md) · [简体中文](docs/usage.md)。
 
 ## 许可证
 
-MIT © 2026 Silas Solivagus。见 [LICENSE](LICENSE)。
+MIT © 2026 Silas Solivagus，见 [LICENSE](LICENSE)。

@@ -4,181 +4,105 @@
 
 <h1 align="center">Codex Kanban</h1>
 
-<p align="center"><strong>A Codex-native task board: four columns, approvals, blockers and durable repository state.</strong></p>
+<p align="center"><strong>A Codex-native task board: projects, four columns, approvals, blockers, attachments and durable repository state.</strong></p>
 
 <p align="center">
   <a href="https://github.com/SilasSolivagus/codex-kanban/actions/workflows/ci.yml"><img src="https://github.com/SilasSolivagus/codex-kanban/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <a href="https://github.com/SilasSolivagus/codex-kanban"><img src="https://img.shields.io/badge/version-0.6.3-2F6FB2" alt="Version 0.6.3"></a>
-  <img src="https://img.shields.io/badge/tests-213%20passing-2ea043" alt="213 tests passing">
+  <img src="https://img.shields.io/badge/version-0.6.3-2F6FB2" alt="Version 0.6.3">
+  <img src="https://img.shields.io/badge/tests-272%20passing-2ea043" alt="272 tests passing">
+  <img src="https://img.shields.io/badge/design-B%203.42%2F4-6C5CE7" alt="UX audit B">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-2F6FB2" alt="MIT license"></a>
 </p>
 
 <p align="center">English · <a href="README.zh-CN.md">简体中文</a></p>
 
-![The Codex Kanban board with Backlog, Running, Needs you and Done columns](docs/assets/kanban-board.png)
+![The Codex Kanban board with Backlog, Running, Needs you and Done columns](docs/assets/kanban-web.png)
 
-Codex Kanban gives Codex a task layer that outlives the conversation. Tasks live in
+Codex Kanban gives Codex a task layer that outlives the conversation. Projects,
+tasks, questions, blockers, comments, activity and attachments live in
 `.kanban/board.json` inside your repository, so they survive restarts, show up in
-code review, and belong to the project rather than to a chat. Codex reads and writes
-the board through 13 MCP tools and a small `kanban` skill that decides when a task
-should be opened, blocked, or sent to a human.
+code review, and belong to the project rather than to a chat.
 
-There is no hosted service, database, or runtime dependency. The board is a JSON
-file; the Markdown board is the primary view; the HTML board is a self-contained
-extra when you want to see the whole queue at once.
+Codex reads and writes the board through 20 MCP tools and a small `kanban` skill.
+Humans get the same board as a local web app at `127.0.0.1`, plus a CLI for scripting.
+There is no hosted service, no database, no account, and no runtime dependency.
 
-## Features
+## What you get
 
 | | |
 | --- | --- |
-| **Four columns, six statuses** | Backlog (`backlog`, `todo`), Running (`in_progress`), Needs you (computed), Done (`done`). `in_review` also waits in Needs you; `canceled` is hidden from the board. |
-| **Needs you is automatic** | The column is computed from open questions, active blockers and review state. Priority is question, then blocked, then review. It is not a move target. |
-| **Human approval boundary** | `kanban_task_approve` and `kanban_task_reject` require `as: "user"` plus `confirmed_by`. An agent cannot close an `in_review` task by moving it to Done. |
-| **Questions with options** | Ask with two to five real options. An answer is recorded, but the task stays in Needs you until a human approves or rejects it. |
-| **Blockers with one clear reason** | Block a task when external work is missing: access, a dependency, an environment, or another person's deliverable. Unblock returns it to its normal column. |
-| **Durable, reviewable state** | A plain JSON file in the repository. Commit it with the code and review task changes in the same diff. |
-| **Atomic, versioned writes** | Every board write uses a lock, a temporary file and an atomic rename. Every task update carries a version; stale writes fail with `TASK_VERSION_CONFLICT`. |
-| **Projects** | Several workstreams per repository, each with its own prefix and task counter; archive makes a project read-only and restorable. |
-| **Attachments** | Files stored under `.kanban/attachments/`, uploaded from the web board, 10 MB per file. |
-| **Search and filters** | Text search plus priority, label and assignee filters; collapsible columns. |
-| **Two surfaces** | Markdown for the terminal and the conversation; a self-contained HTML board for a visual pass. |
-| **No runtime dependencies** | Node.js 22 or newer, ESM, no build step, no package install. |
+| **Four columns, six statuses** | Backlog (`backlog`, `todo`), Running (`in_progress`), Needs you (computed), Done (`done`). `in_review` also waits in Needs you; `canceled` stays out of the board. |
+| **Needs you is automatic** | Computed from open questions, active blockers and review state. Priority is question → blocked → review. It is not a move target. |
+| **Human approval boundary** | Approve and reject require `as: "user"` plus `confirmed_by`. An agent cannot move a task out of `in_review`, and cannot close one it opened for review. |
+| **Questions with options** | Two to five real options with per-option detail. One click selects, one confirm records the answer and decides. |
+| **Blockers with one reason** | Block when external work is missing; the card shows an amber blocked strip and leaves Needs you when cleared. |
+| **Projects** | Several workstreams per repository, each with its own identifier prefix and counter. `APP-1` and `WEB-1` coexist in one board. |
+| **Archive and restore** | Projects and tasks can be archived. Archived projects are read-only at the domain layer; archived tasks are hidden until you toggle **Show archived**. |
+| **Attachments** | Upload from the task drawer, stored under `.kanban/attachments/`, 10 MB per file, downloadable over HTTP. |
+| **Ordering** | Drag between columns and within a column; `sortOrder` persists. Keyboard: `Alt+↑/↓` reorders, `Alt+←/→` moves columns. |
+| **Search and filters** | Text search plus priority, label and assignee filters, with removable chips and `X / Y` counts. |
+| **Bilingual, keyboard-first** | Chinese and English UI, `/` search, `n` new task, `Esc` closes layer by layer, reduced-motion support. |
+| **Durable, reviewable state** | A plain JSON file with atomic, versioned writes. Commit it with the code and review task changes in the same diff. |
 
 ## Install
 
 Requirements: Codex with plugin support, and Node.js 22 or newer.
-
-Install from the repository marketplace:
 
 ```bash
 codex plugin marketplace add https://github.com/SilasSolivagus/codex-kanban
 codex plugin add codex-kanban@silassolivagus
 ```
 
-For a local checkout, point the marketplace at the directory instead:
+For a local checkout, point the marketplace at the directory:
 
 ```bash
 codex plugin marketplace add /path/to/codex-kanban
 codex plugin add codex-kanban@silassolivagus
 ```
 
+Update later with:
+
+```bash
+codex plugin marketplace upgrade silassolivagus
+codex plugin add codex-kanban@silassolivagus
+```
+
 Start a new Codex session in the repository you want to track. The `kanban` skill
-is loaded with the plugin, and the MCP server exposes the 13 tools below.
+loads with the plugin and the MCP server exposes the tools below.
 
-## Use it
+## Three ways to use it
 
-Three prompts that exercise the main flows:
-
-**See what needs a person.**
-
-> "What needs me? Show only the Needs you column."
-
-Codex reads the board, returns the attention queue, and keeps the rest out of the
-way.
-
-**Track work that should survive the chat.**
+### 1. In Codex (agent writes, you decide)
 
 > "Track the SSO redirect bug as a high-priority task with the `auth` label. Ask me
 > whether staging or production should get the fix first."
 
 Codex creates the task, posts a question with options, and leaves it in Needs you.
+Answer it, then say "approve with the staging option" — Codex records the answer and
+closes the task with your confirmation. Ask "what needs me?" any time to get just the
+attention queue.
 
-**Close the loop after a human decision.**
-
-> "I approved the release notes with the staging option. Close that task with my
-> approval, then render the board."
-
-Codex answers the question, records the approval with the human's confirmation,
-moves the task to Done, and renders `.kanban/board.html`.
-
-## Tools
-
-Every tool takes `root`, the absolute repository path. It is required unless the
-`CODEX_KANBAN_ROOT` environment variable is set; there is deliberately no fallback
-to the server's working directory, because an installed plugin runs from the plugin
-cache. Writes to an existing task take the current `version` from
-`kanban_task_get`; approve and reject also require `as: "user"` and `confirmed_by`.
-
-| Tool | What it does |
-| --- | --- |
-| `kanban_board` | Render the Markdown board, Needs you first, optionally limited to one column or without Done. |
-| `kanban_task_get` | Read one task with description, question, blocker, links, comments, activity and current version. |
-| `kanban_task_create` | Create a task in Backlog or a given status and return its identifier. |
-| `kanban_task_update` | Change title, description, priority, labels or links without moving the task. |
-| `kanban_task_move` | Move a task to a column or stored status; Needs you cannot be chosen. |
-| `kanban_task_block` | Record one actionable blocker and move the task to Needs you. |
-| `kanban_task_unblock` | Clear the blocker and return the task to its normal column. |
-| `kanban_task_ask` | Post a question with two to five options and move the task to Needs you. |
-| `kanban_task_answer` | Record the selected option and a note on an open question. |
-| `kanban_task_approve` | Human-only: approve and close the task as Done. |
-| `kanban_task_reject` | Human-only: reject with a note and send the task back to Backlog. |
-| `kanban_task_comment` | Append a comment that stays with the task. |
-| `kanban_render` | Write `.kanban/board.html` and return its path plus the inline visual reference. |
-| `kanban_project_list` | List projects with prefix, archive state and task counts. |
-| `kanban_project_create` | Create a project (workstream) with an optional prefix and workspace path. |
-| `kanban_project_update` | Rename a project, change its prefix, or set its workspace path. |
-| `kanban_project_archive` | Archive a project; its tasks become read-only. |
-| `kanban_project_restore` | Restore an archived project. |
-
-## Local web board
-
-For humans who would rather not work inside a terminal or a chat, the plugin ships
-a local board:
+### 2. Local web board (for humans)
 
 ```bash
+# from a checkout
 node plugin/bin/codex-kanban.mjs serve --open
-# Codex Kanban · http://127.0.0.1:4317
+
+# from the installed plugin (version may differ)
+node "$HOME/.codex/plugins/cache/silassolivagus/codex-kanban/0.6.3/bin/codex-kanban.mjs" serve --open
 ```
 
-![The local web board with four columns and drag-and-drop](docs/assets/kanban-web.png)
+Opens `http://127.0.0.1:4317`: four columns with drag ordering, project switcher,
+search and filters, a full task drawer (details, collaboration, activity), inline
+question panels, attachments, archive, and a zh/en toggle.
 
-![The task drawer: two-column attributes, links, attachments, activity](docs/assets/kanban-drawer.png)
+![The task drawer with status, attributes, collaboration and the sticky save bar](docs/assets/kanban-drawer.png)
 
-It reads and writes the same `.kanban/board.json`. Drag a card between Backlog,
-Running and Done; open a card to answer a question, approve, reject, block,
-unblock, ask, or comment. Needs you is never a drop target.
-
-The server binds to `127.0.0.1` by default, has no account system, and makes no
+The server binds to loopback by default, has no account system, and makes no
 outbound requests. `--port` changes the port; `--host 0.0.0.0` exposes it to your
 network and should only be used on a machine you trust.
 
-## Projects, archive and attachments
-
-A board can hold several projects. Each has its own identifier prefix and counter,
-so `APP-1` and `WEB-1` can coexist in one repository.
-
-- Reorder cards inside a column by dragging; the order is stored in `sortOrder`.
-- Archive a task as well as a project; archived tasks are hidden until you toggle
-  **Show archived**, and writes to them are rejected with `TASK_ARCHIVED`.
-- Create, rename, archive and restore projects from the web board's **Projects**
-  button or with the `kanban_project_*` tools.
-- Archiving is enforced in the domain layer: every write to a task in an archived
-  project fails with `PROJECT_ARCHIVED` until it is restored.
-- Attachments live in `.kanban/attachments/<id>` with metadata on the task. Upload
-  from the drawer (10 MB per file); download is a plain `GET /api/attachments/<id>`.
-  Add `.kanban/attachments/` to `.gitignore` if you do not want binaries in git.
-
-## Architecture
-
-```mermaid
-flowchart LR
-  U[You] --> A[Codex app or CLI]
-  A --> S[kanban skill<br/>when to read, ask or write]
-  A --> M[MCP server<br/>13 kanban_* tools]
-  S --> M
-  W[Web board<br/>127.0.0.1] --> M
-  M --> B[".kanban/board.json<br/>atomic · versioned"]
-  M --> H[".kanban/board.html<br/>self-contained view"]
-```
-
-The skill decides policy: read the board before answering, ask instead of blocking
-when a human decision is missing, never approve its own work. The MCP server owns
-the data path: one board per repository, all reads and writes through the same
-store. The HTML file never writes back.
-
-## CLI
-
-The CLI exposes the same store without Codex in the loop. From a checkout:
+### 3. CLI (for scripts)
 
 ```bash
 node plugin/bin/codex-kanban.mjs board
@@ -188,38 +112,99 @@ node plugin/bin/codex-kanban.mjs add "Fix the login redirect" \
 node plugin/bin/codex-kanban.mjs move 1 --to in_progress
 node plugin/bin/codex-kanban.mjs ask 1 \
   --prompt "Which environment should get the fix first?" \
-  --option Staging \
-  --option Production
-node plugin/bin/codex-kanban.mjs answer 1 --option opt_1
+  --option Staging --option Production
 node plugin/bin/codex-kanban.mjs approve 1 --confirmed-by "Staging first"
 node plugin/bin/codex-kanban.mjs render --open
 ```
 
-- Numeric references such as `1` resolve to `<project-prefix>-1`.
-- `--root PATH` points at another repository. By default the CLI uses the first
-  directory at or above the current directory that contains `.git` or `.kanban`.
-- The CLI runs as the human by default. `approve` and `reject` always run as the
-  human and require `--confirmed-by`.
-- When the plugin is installed, the entry point lives under
-  `$CODEX_HOME/plugins/cache/silassolivagus/codex-kanban/<version>/bin/codex-kanban.mjs`.
-  With the default Codex home on version 0.1.0:
+Numeric references such as `1` resolve to `<prefix>-1`. `--root PATH` points at
+another repository; by default the CLI uses the nearest directory above the current
+one that contains `.git` or `.kanban`.
 
-```bash
-node "$HOME/.codex/plugins/cache/silassolivagus/codex-kanban/0.1.0/bin/codex-kanban.mjs" board --root "$PWD"
+## Tools
+
+Every tool takes `root`, the absolute repository path. It is required unless
+`CODEX_KANBAN_ROOT` is set; there is deliberately no fallback to the server's working
+directory, because an installed plugin runs from the plugin cache. Writes to an
+existing task take the current `version` from `kanban_task_get`; approve and reject
+also require `as: "user"` and `confirmed_by`.
+
+| Tool | What it does |
+| --- | --- |
+| `kanban_board` | Render the Markdown board, Needs you first, optionally filtered by project or column. |
+| `kanban_task_get` | Read one task with description, question, blocker, links, attachments, comments, activity and current version. |
+| `kanban_task_create` | Create a task in a project, in Backlog or a given status, and return its identifier. |
+| `kanban_task_update` | Change title, description, priority, labels or links. |
+| `kanban_task_move` | Move a task to a column or stored status, or reorder within a column. |
+| `kanban_task_block` | Record one actionable blocker. |
+| `kanban_task_unblock` | Clear the blocker. |
+| `kanban_task_ask` | Post a question with two to five options. |
+| `kanban_task_answer` | Record the selected option and a note. |
+| `kanban_task_approve` | Human-only: approve and close the task as Done. |
+| `kanban_task_reject` | Human-only: reject with a note and send the task back to Backlog. |
+| `kanban_task_comment` | Append a comment that stays with the task. |
+| `kanban_task_archive` | Hide a task from the board without deleting it. |
+| `kanban_task_restore` | Bring an archived task back. |
+| `kanban_render` | Write `.kanban/board.html` and return its path plus the inline visual reference. |
+| `kanban_project_list` | List projects with prefix, archive state and task counts. |
+| `kanban_project_create` | Create a project with an optional prefix and workspace path. |
+| `kanban_project_update` | Rename a project, change its prefix, or set its workspace path. |
+| `kanban_project_archive` | Archive a project; its tasks become read-only. |
+| `kanban_project_restore` | Restore an archived project. |
+
+## Projects, archive and attachments
+
+- A board can hold several projects. Each has its own prefix and counter; identifiers
+  are unique per project, not per repository.
+- Archiving is enforced in the domain layer: a write to a task in an archived project
+  fails with `PROJECT_ARCHIVED`; a write to an archived task fails with `TASK_ARCHIVED`.
+- Attachments are files under `.kanban/attachments/<id>` with metadata on the task.
+  Add `.kanban/attachments/` to `.gitignore` if you do not want binaries in git.
+- Needs you, blocked and review are overlays computed from state; they never overwrite
+  the stored status.
+
+## Architecture
+
+```mermaid
+flowchart LR
+  U[You] --> A[Codex app or CLI]
+  A --> S[kanban skill<br/>when to read, ask or write]
+  A --> M[MCP server<br/>20 kanban_* tools]
+  S --> M
+  W[Local web board<br/>127.0.0.1] --> M
+  M --> B[".kanban/board.json<br/>atomic · versioned"]
+  M --> H[".kanban/board.html<br/>self-contained view"]
+  M --> F[".kanban/attachments/"]
 ```
+
+The skill owns policy — read before answering, ask instead of blocking when a human
+decision is missing, never approve its own work. The server owns the data path: one
+board per repository, every write through the same store. The HTML file never writes
+back.
 
 ## Data model
 
-The board is created on the first write:
+The board is created on the first write (schema 2):
 
 ```json
 {
-  "schema": 1,
-  "project": { "name": "my-app", "prefix": "MYAPP", "createdAt": "2026-10-22T07:45:38.341Z" },
-  "nextTaskNumber": 2,
+  "schema": 2,
+  "projects": [
+    {
+      "id": "prj_default",
+      "name": "my-app",
+      "prefix": "MYAPP",
+      "workspacePath": null,
+      "nextTaskNumber": 2,
+      "archivedAt": null,
+      "createdAt": "2026-10-22T07:45:38.341Z",
+      "updatedAt": "2026-10-22T07:45:38.341Z"
+    }
+  ],
   "tasks": [
     {
       "id": "tsk_8116bbc1-7390-4031-9c1f-719fd79c6f3b",
+      "projectId": "prj_default",
       "identifier": "MYAPP-1",
       "title": "Fix the login redirect",
       "status": "in_progress",
@@ -227,6 +212,11 @@ The board is created on the first write:
       "labels": ["auth"],
       "blockedReason": null,
       "pendingQuestion": null,
+      "links": [],
+      "attachments": [],
+      "comments": [],
+      "activity": [],
+      "archivedAt": null,
       "version": 3,
       "createdAt": "2026-10-22T07:45:38.342Z",
       "updatedAt": "2026-10-22T07:46:12.000Z"
@@ -235,35 +225,51 @@ The board is created on the first write:
 }
 ```
 
-`version` starts at 1 and increments whenever a task changes. A write must pass the
-version it read; a stale version fails with `TASK_VERSION_CONFLICT`, while a missing
-one fails with `VERSION_REQUIRED`. Writes are serialized with `.kanban/board.lock`
-and applied by writing `board.json.tmp`, syncing it, then renaming it over
-`board.json`.
+A v1 board is migrated in place on first read. `version` starts at 1 and increments on
+every change; a write must pass the version it read. Stale writes fail with
+`TASK_VERSION_CONFLICT`, missing versions with `VERSION_REQUIRED`. Writes are
+serialized with `.kanban/board.lock` and applied by writing `board.json.tmp`, syncing,
+then renaming.
+
+## UX quality
+
+The web board was audited twice by an independent designer against the dsh-kanban
+reference, with screenshots and a goodwill meter:
+
+| Round | Design score | AI-slop | Goodwill | Findings |
+| --- | --- | --- | --- | --- |
+| 1 | C (2.80/4) | B | 43/100 | 10 findings |
+| 2 | **B (3.42/4)** | B | **90/100** | 9/10 fixed, 0 regressions |
+
+Reports, screenshots and the remaining residue live in [`docs/ux-review/`](docs/ux-review/).
+The UI supports keyboard navigation, visible focus, `prefers-reduced-motion`, and a
+4.83:1 minimum contrast for metadata.
 
 ## Known limitations
 
 - **The approval boundary is cooperative, not authenticated.** `as: "user"` and
-  `confirmed_by` are declarations enforced by the tools and the skill. An agent
-  that deliberately lies, runs the CLI, or edits `board.json` can bypass them, so
-  the real protection is that the board is plain JSON you review in the diff.
-- **`confirmed_by` is a gate, not an audit field.** Approval and rejection require
-  it, but it is not persisted as a distinct field. The resolution note and activity
-  record that a decision happened; store the human's exact words in the note if you
-  need them later.
-- **The HTML board is read-only and host-dependent.** Its buttons route actions back
-  through Codex with `window.openai.sendFollowUpMessage`. Inside the Codex app they
-  send a follow-up; in a plain browser the board still reads, but the action buttons
-  cannot write and say so.
-- **Canceled tasks are hidden from the board.** Moving a task to `canceled` keeps it
-  in `board.json` and reachable by identifier, but it no longer appears in any column.
+  `confirmed_by` are declarations enforced by the tools and the skill. An agent that
+  deliberately lies, runs the CLI, or edits `board.json` can bypass them; the real
+  protection is that the board is plain JSON you review in the diff.
+- **No realtime collaboration.** Two people on the same board rely on git; the web
+  server is single-user and loopback-only.
+- **One repository per board.** Projects are workstreams inside a repository, not a
+  global cross-repo board.
+- **The in-app visual is not verified end to end.** `kanban_render` writes the HTML and
+  returns a host reference; the Markdown board is the verified path in every client.
+- **`confirmed_by` is a gate, not an audit field.** It is not persisted as its own
+  field; use the decision note if you need the exact words.
+- **Scale is untested beyond demo boards.** Filtering and rendering were checked with
+  a few dozen tasks, not hundreds.
 
 ## Roadmap
 
-- Persist the human's confirmation with an approval so the audit trail contains the
-  exact decision, not just the fact that one was made.
-- Add search and filtering for boards that grow beyond a screen or two.
-- Evaluate attachments and multi-repository boards after v0.1 feedback.
+- A global board across repositories, with the same file-per-repo escape hatch.
+- Persist the human confirmation with the approval so the audit trail carries the
+  exact words.
+- Multi-user awareness (who is viewing, soft locks) without turning the board into a
+  service.
+- Bundle the web board as a single command in the installed plugin cache.
 
 ## Development
 
@@ -273,23 +279,23 @@ cd codex-kanban
 node --test
 ```
 
-The suite has 213 tests at `v0.3.0` and uses only `node:test`. `npm test` runs the
-same command. There are no runtime or development dependencies to install.
+The suite has 272 tests at `v0.6.3`, uses only `node:test`, and needs no dependencies.
+`npm test` runs the same command.
 
 ```
 .agents/plugins/marketplace.json   local marketplace entry
 plugin/.codex-plugin/plugin.json   plugin manifest
 plugin/.mcp.json                   MCP server configuration
 plugin/bin/                       launcher and CLI
-plugin/server/                     JSON-RPC stdio server
-plugin/src/                        domain, store, rules, renderers
-plugin/skills/kanban/SKILL.md      agent-facing workflow
-test/                              node:test suites
+plugin/server/                    JSON-RPC stdio server, HTTP API
+plugin/src/                       domain, store, rules, renderers, web UI
+plugin/skills/kanban/SKILL.md     agent-facing workflow
+test/                             node:test suites
+docs/ux-review/                   audits, evidence and batch reports
 ```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the isolated-plugin workflow and the
-usage guides for the human side: [English](docs/usage.en.md) ·
-[简体中文](docs/usage.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md) and the human guides:
+[English](docs/usage.en.md) · [简体中文](docs/usage.md).
 
 ## License
 
