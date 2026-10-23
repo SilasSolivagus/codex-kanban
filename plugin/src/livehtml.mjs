@@ -41,6 +41,7 @@ export const STRINGS = Object.freeze({
     'header.langToggle': '中文',
     'header.langLabel': 'Switch to Chinese',
     'counts.tasks': '{n} tasks',
+    'counts.filteredTasks': '{visible} / {total} tasks',
     'counts.running': '{n} running',
     'counts.needs': '{n} needs you',
     'counts.done': '{n} done',
@@ -57,6 +58,9 @@ export const STRINGS = Object.freeze({
     'filter.clear': 'Clear filters',
     'filter.showing': 'Showing {visible} of {total}',
     'filter.none': 'No tasks match the current filters. Clear the filters to see the board.',
+    'filter.emptyTitle': 'No tasks match the current filters',
+    'filter.clearAll': 'Clear all',
+    'filter.remove': 'Remove filter {value}',
     'filter.archived': 'Show archived',
     'filter.archivedAria': 'Show archived tasks on the board',
     'filter.hideArchived': 'Hide archived',
@@ -156,6 +160,7 @@ export const STRINGS = Object.freeze({
     'drawer.readOnly': 'This task belongs to an archived project and is read-only.',
     'drawer.taskArchived': 'This task is archived. Restore it to edit it again.',
     'drawer.details': 'Details',
+    'drawer.collaboration': 'Collaboration',
     'drawer.attributes': 'Attributes',
     'drawer.statusLabel': 'Status',
     'drawer.updatedLabel': 'Updated',
@@ -181,6 +186,7 @@ export const STRINGS = Object.freeze({
     'drawer.linkIncomplete': 'Every link needs a label and a URL.',
     'drawer.save': 'Save changes',
     'drawer.saved': 'Task saved',
+    'drawer.unsaved': 'Unsaved',
     'drawer.activity': 'Activity',
     'drawer.activityEmpty': 'No activity yet.',
     'drawer.comments': 'Comments',
@@ -236,6 +242,7 @@ export const STRINGS = Object.freeze({
     'drawer.unblocked': 'Blocker cleared',
     'drawer.blocked': 'Blocker saved',
     'drawer.move': 'Move',
+    'drawer.actions': 'Actions',
     'drawer.moveTo': 'Move to {column}',
     'drawer.moved': 'Moved to {column}',
     'drawer.project': 'Project',
@@ -260,6 +267,7 @@ export const STRINGS = Object.freeze({
     'header.langToggle': 'EN',
     'header.langLabel': '切换到英文',
     'counts.tasks': '{n} 个任务',
+    'counts.filteredTasks': '{visible} / {total} 个任务',
     'counts.running': '{n} 个运行中',
     'counts.needs': '{n} 个需要你',
     'counts.done': '{n} 个已完成',
@@ -276,6 +284,9 @@ export const STRINGS = Object.freeze({
     'filter.clear': '清除筛选',
     'filter.showing': '显示 {visible} / {total}',
     'filter.none': '没有任务匹配当前筛选，清除筛选即可查看全部任务。',
+    'filter.emptyTitle': '没有任务匹配当前筛选',
+    'filter.clearAll': '清除全部',
+    'filter.remove': '移除筛选条件 {value}',
     'filter.archived': '显示已归档',
     'filter.archivedAria': '在看板中显示已归档任务',
     'filter.hideArchived': '隐藏已归档',
@@ -375,6 +386,7 @@ export const STRINGS = Object.freeze({
     'drawer.readOnly': '此任务属于已归档项目，为只读状态。',
     'drawer.taskArchived': '此任务已归档，恢复后才能继续编辑。',
     'drawer.details': '详情',
+    'drawer.collaboration': '协作',
     'drawer.attributes': '属性',
     'drawer.statusLabel': '状态',
     'drawer.updatedLabel': '更新时间',
@@ -400,6 +412,7 @@ export const STRINGS = Object.freeze({
     'drawer.linkIncomplete': '每个链接都需要名称和网址。',
     'drawer.save': '保存更改',
     'drawer.saved': '任务已保存',
+    'drawer.unsaved': '未保存',
     'drawer.activity': '动态',
     'drawer.activityEmpty': '暂无动态。',
     'drawer.comments': '评论',
@@ -455,6 +468,7 @@ export const STRINGS = Object.freeze({
     'drawer.unblocked': '阻塞已解除',
     'drawer.blocked': '阻塞已记录',
     'drawer.move': '移动',
+    'drawer.actions': '操作',
     'drawer.moveTo': '移动到{column}',
     'drawer.moved': '已移动到{column}',
     'drawer.project': '项目',
@@ -583,12 +597,25 @@ export function renderLiveHtml({ project = {} } = {}) {
   #search:hover { border-color: var(--border-strong); }
   .filters-wrap { position: relative; flex: none; }
   #filter-toggle {
+    position: relative;
     display: inline-flex; align-items: center; gap: 6px; height: 40px;
     padding: 0 14px; border: 1px solid var(--border); border-radius: 10px;
     background: var(--surface); color: var(--text); font-size: 13px; font-weight: 600;
   }
   #filter-toggle:hover { border-color: var(--border-strong); background: var(--surface-soft); }
   #filter-toggle[aria-expanded="true"] { border-color: var(--border-strong); background: var(--surface-soft); }
+  #filter-toggle.active {
+    border-color: var(--text); background: var(--surface-soft); color: var(--text);
+  }
+  #filter-toggle.active .btn-icon { color: var(--text); }
+  .filter-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 17px; height: 17px; padding: 0 4px; flex: none;
+    border-radius: 999px; background: light-dark(#111827, #f1f5f9);
+    color: light-dark(#ffffff, #111827); font-size: 10.5px; font-weight: 700;
+    font-variant-numeric: tabular-nums; line-height: 1;
+  }
+  .filter-badge[hidden] { display: none; }
   .archived-toggle {
     display: inline-flex; align-items: center; gap: 6px; height: 40px; flex: none;
     padding: 0 12px; border: 1px solid var(--border); border-radius: 10px;
@@ -618,6 +645,30 @@ export function renderLiveHtml({ project = {} } = {}) {
   }
   #clear-filters:hover { background: var(--surface-soft); }
   .filter-count { margin-left: auto; color: var(--muted); font-size: 11.5px; }
+  .filter-summary {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
+    margin: 0 0 12px; padding: 8px 12px;
+    border: 1px solid var(--border); border-radius: 10px; background: var(--surface);
+  }
+  .filter-summary[hidden] { display: none; }
+  .filter-chips { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; min-width: 0; }
+  .filter-chip {
+    display: inline-flex; align-items: center; gap: 6px; max-width: 240px;
+    height: 27px; padding: 0 8px 0 10px;
+    border: 1px solid var(--border-strong); border-radius: 999px;
+    background: var(--surface-soft); color: var(--text);
+    font-size: 12px; font-weight: 550;
+  }
+  .filter-chip:hover { border-color: var(--text); background: var(--surface); }
+  .filter-chip-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .filter-chip-x { flex: none; color: var(--muted); font-size: 14px; line-height: 1; }
+  .filter-chip:hover .filter-chip-x { color: var(--text); }
+  #filter-clear-all {
+    height: 27px; margin-left: auto; padding: 0 8px; flex: none;
+    border: 0; border-radius: 7px; background: transparent;
+    color: var(--muted); font-size: 12px; font-weight: 600;
+  }
+  #filter-clear-all:hover { background: var(--surface-soft); color: var(--text); }
   .topbar-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
   .topbar-tools { display: contents; }
   .running-chip {
@@ -674,6 +725,21 @@ export function renderLiveHtml({ project = {} } = {}) {
   .board { display: grid; grid-template-columns: repeat(1, minmax(0, 1fr)); gap: 14px; align-items: start; }
   @media (min-width: 600px) { .board { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   @media (min-width: 980px) { .board { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  .board-empty {
+    grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center;
+    gap: 10px; padding: 42px 20px; text-align: center;
+    border: 1px dashed var(--border-strong); border-radius: var(--radius);
+    background: var(--surface);
+  }
+  .board-empty[hidden] { display: none; }
+  .board-empty p { margin: 0; color: var(--muted); font-size: 13px; }
+  .board-empty button {
+    height: 32px; padding: 0 14px; border: 1px solid var(--border-strong);
+    border-radius: 8px; background: var(--surface); color: var(--text);
+    font-size: 12.5px; font-weight: 600;
+  }
+  .board-empty button:hover { background: var(--surface-soft); }
+  main.board.empty-filtered section.column { display: none; }
   section.column {
     display: flex; flex-direction: column; gap: 8px; min-height: 180px;
     padding: 10px; border: 1px solid var(--border); border-radius: var(--radius);
@@ -874,7 +940,32 @@ export function renderLiveHtml({ project = {} } = {}) {
     border: 0; border-radius: 8px; background: transparent; color: var(--muted); font-size: 20px;
   }
   #drawer-close:hover { background: var(--surface-soft); color: var(--text); }
-  .drawer-body { display: grid; gap: 0; align-content: start; padding: 0 22px 48px; overflow: auto; }
+  .drawer-body { display: grid; gap: 0; align-content: start; padding: 0 22px 24px; overflow: auto; }
+  .drawer-band > h3 {
+    margin: 0; color: var(--text); font-size: 14px; font-weight: 650; letter-spacing: -0.01em;
+  }
+  .drawer-band .drawer-section:first-of-type { padding-top: 0; border-top: 0; }
+  .drawer-actions-band { padding: 14px 0 16px; gap: 6px; }
+  .drawer-actions-band > h3 { color: var(--muted); font-size: 12px; font-weight: 600; }
+  .drawer-actions-band .actions button { height: 30px; font-size: 12px; }
+  .drawer-footer {
+    position: sticky; bottom: 0; z-index: 3; flex: none;
+    display: flex; align-items: center; flex-wrap: wrap; gap: 10px;
+    padding: 12px 22px calc(12px + env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid var(--border); background: var(--surface);
+  }
+  .drawer-footer .drawer-dirty {
+    display: inline-flex; align-items: center; gap: 6px;
+    color: var(--muted); font-size: 12px; white-space: nowrap;
+  }
+  .drawer-footer .drawer-dirty[hidden] { display: none; }
+  .drawer-footer .dirty-dot {
+    width: 7px; height: 7px; flex: none; border-radius: 50%;
+    background: var(--warn); box-shadow: 0 0 0 3px var(--warn-bg);
+  }
+  .drawer-footer-actions { margin-left: auto; flex-wrap: wrap; justify-content: flex-end; }
+  .drawer-footer-actions #save-task { min-width: 104px; }
+  .drawer-footer-actions #save-task:disabled { opacity: 0.45; }
   .panel {
     display: grid; gap: 8px; padding: 18px 0 20px;
     border: 0; border-bottom: 1px solid var(--border); border-radius: 0; background: transparent;
@@ -1003,12 +1094,27 @@ export function renderLiveHtml({ project = {} } = {}) {
       display: inline-flex; align-items: center; justify-content: center;
       width: 44px; min-width: 44px; height: 44px; padding: 0; gap: 0; border-radius: 10px;
     }
+    #filter-toggle .filter-badge {
+      position: absolute; top: -4px; right: -4px; min-width: 16px; height: 16px;
+      border: 1px solid var(--surface);
+    }
     .topbar-tools .icon-button, .topbar-tools #manage-projects {
       border: 1px solid var(--border); background: var(--surface); color: var(--muted);
     }
     .btn-label { display: none; }
     .btn-icon { display: inline-flex; }
     .filters-popover { width: min(300px, calc(100vw - 24px)); }
+  }
+  @media (max-width: 600px) {
+    aside.drawer { width: 100%; border-left: 0; }
+    .drawer-head { padding: 16px 16px 14px; }
+    .drawer-body { padding: 0 16px 20px; }
+    .attr-grid { grid-template-columns: minmax(0, 1fr); }
+    .drawer-footer { padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px)); }
+    .drawer-footer .drawer-dirty { order: 1; }
+    .drawer-footer-actions { order: 2; width: 100%; margin-left: 0; justify-content: flex-end; }
+    .filter-summary { align-items: flex-start; }
+    #filter-clear-all { margin-left: 0; }
   }
   @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto; }
@@ -1039,6 +1145,7 @@ export function renderLiveHtml({ project = {} } = {}) {
         <button id="filter-toggle" type="button" aria-expanded="false" aria-controls="filters-popover" data-i18n-aria="header.filter" aria-label="Filters" data-i18n-title="header.filter" title="Filters">
           <span class="btn-icon" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16l-6.4 7.3V19l-3.2 1.6v-8.3L4 5Z"/></svg></span>
           <span class="btn-label" data-i18n="header.filter">Filters</span>
+          <span class="filter-badge" id="filter-badge" aria-hidden="true" hidden>0</span>
         </button>
         <div class="filters-popover" id="filters-popover" role="group" data-i18n-aria="filter.toolbar" aria-label="Filters" hidden>
           <label for="filter-priority"><span data-i18n="filter.priority">All priorities</span>
@@ -1085,6 +1192,10 @@ export function renderLiveHtml({ project = {} } = {}) {
 </header>
 
 <div class="shell">
+  <div class="filter-summary" id="filter-summary" role="region" data-i18n-aria="filter.toolbar" aria-label="Filters" hidden>
+    <div class="filter-chips" id="filter-chips"></div>
+    <button id="filter-clear-all" type="button" data-i18n="filter.clearAll">Clear all</button>
+  </div>
   <div class="board-head">
     <h1 id="board-title">Codex Kanban</h1>
     <p class="board-meta">
@@ -1099,6 +1210,10 @@ export function renderLiveHtml({ project = {} } = {}) {
   </div>
 
   <main class="board" id="board">
+    <div class="board-empty" id="board-empty" role="status" hidden>
+      <p data-i18n="filter.emptyTitle">No tasks match the current filters</p>
+      <button id="board-empty-clear" type="button" data-i18n="filter.clear">Clear filters</button>
+    </div>
     <section class="column" data-column="backlog" data-collapsed="false">
       <div class="column-head">
         <span class="column-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 5.2 4.5h13.6L21 9.5V13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9.5Z"/><path d="M3 10h4l1.2 2h7.6L17 10h4"/></svg></span>
@@ -1223,8 +1338,8 @@ export function renderLiveHtml({ project = {} } = {}) {
   <div class="drawer-body">
     <p class="banner" id="drawer-readonly" hidden data-i18n="drawer.readOnly">This task belongs to an archived project and is read-only.</p>
 
-    <section class="panel">
-      <h3 data-i18n="drawer.attributes">Attributes</h3>
+    <section class="panel drawer-band" data-band="details">
+      <h3 data-i18n="drawer.details">Details</h3>
       <div class="attr-grid">
         <div class="attr full">
           <label for="edit-title" data-i18n="drawer.titleField">Title</label>
@@ -1270,67 +1385,65 @@ export function renderLiveHtml({ project = {} } = {}) {
             <input id="edit-labels" type="text" data-i18n-placeholder="drawer.labelsPlaceholder" placeholder="ui, docs" data-write />
           </label>
         </div>
-        <div class="attr full">
-          <div class="actions">
-            <button id="save-task" class="primary" type="button" data-write data-i18n="drawer.save">Save changes</button>
-            <button id="archive-task" class="danger" type="button" data-write data-i18n="drawer.archive">Archive</button>
-            <button id="restore-task" class="primary" type="button" hidden data-i18n="drawer.restore">Restore</button>
-          </div>
+      </div>
+    </section>
+
+    <section class="panel drawer-band" data-band="collaboration">
+      <h3 data-i18n="drawer.collaboration">Collaboration</h3>
+      <div class="drawer-section">
+        <h4 data-i18n="drawer.links">Links</h4>
+        <div id="edit-links" class="feed"></div>
+        <div class="actions">
+          <button id="add-link" type="button" data-write data-i18n="drawer.addLink">Add link</button>
         </div>
-        <div class="attr full drawer-section">
-          <h4 data-i18n="drawer.links">Links</h4>
-          <div id="edit-links" class="feed"></div>
-          <div class="actions">
-            <button id="add-link" type="button" data-write data-i18n="drawer.addLink">Add link</button>
-          </div>
+      </div>
+      <div class="drawer-section" id="blocker-section" hidden>
+        <h4 data-i18n="drawer.blocker">Blocker</h4>
+        <p class="feed-summary" id="blocker-reason"></p>
+        <p class="hint" id="blocker-since"></p>
+      </div>
+      <div class="drawer-section" id="question-section" hidden>
+        <h4 data-i18n="drawer.question">Needs your decision</h4>
+        <p class="feed-summary" id="question-prompt"></p>
+        <p class="hint" id="question-note" hidden></p>
+        <div id="question-options" class="feed" role="radiogroup" data-i18n-aria="drawer.question" aria-label="Needs your decision"></div>
+        <textarea id="answer-note" data-i18n-placeholder="drawer.answerNotePlaceholder" placeholder="Optional note" data-write></textarea>
+        <p class="hint" id="answer-hint" data-i18n="drawer.answerHint">Record an answer, then approve or reject.</p>
+        <p class="hint" id="resolution" hidden></p>
+        <div class="actions">
+          <button id="answer-question" type="button" data-write data-i18n="drawer.answer">Record answer</button>
+          <button id="approve" class="primary" type="button" data-write data-i18n="drawer.approve">Approve</button>
+          <button id="reject" class="danger" type="button" data-write data-i18n="drawer.reject">Reject</button>
         </div>
-        <div class="attr full drawer-section" id="blocker-section" hidden>
-          <h4 data-i18n="drawer.blocker">Blocker</h4>
-          <p class="feed-summary" id="blocker-reason"></p>
-          <p class="hint" id="blocker-since"></p>
-        </div>
-        <div class="attr full drawer-section" id="question-section" hidden>
-          <h4 data-i18n="drawer.question">Needs your decision</h4>
-          <p class="feed-summary" id="question-prompt"></p>
-          <p class="hint" id="question-note" hidden></p>
-          <div id="question-options" class="feed" role="radiogroup" data-i18n-aria="drawer.question" aria-label="Needs your decision"></div>
-          <textarea id="answer-note" data-i18n-placeholder="drawer.answerNotePlaceholder" placeholder="Optional note" data-write></textarea>
-          <p class="hint" id="answer-hint" data-i18n="drawer.answerHint">Record an answer, then approve or reject.</p>
-          <p class="hint" id="resolution" hidden></p>
-          <div class="actions">
-            <button id="answer-question" type="button" data-write data-i18n="drawer.answer">Record answer</button>
-            <button id="approve" class="primary" type="button" data-write data-i18n="drawer.approve">Approve</button>
-            <button id="reject" class="danger" type="button" data-write data-i18n="drawer.reject">Reject</button>
-          </div>
-        </div>
-        <div class="attr full drawer-section">
-          <h4 data-i18n="drawer.attachments">Attachments</h4>
-          <ul id="attachment-list" class="feed"></ul>
-          <p id="attachment-empty" class="hint" hidden data-i18n="drawer.attachmentsEmpty">No attachments.</p>
-          <label for="attachment-input" data-i18n="drawer.upload">Upload file</label>
-          <input id="attachment-input" type="file" data-write />
-          <p class="hint" data-i18n="drawer.attachmentHint">Up to 10 MB per file.</p>
-          <p class="error" id="attachment-error" role="alert" hidden></p>
-        </div>
-        <div class="attr full drawer-section">
-          <h4 data-i18n="drawer.comments">Comments</h4>
-          <ul id="comment-list" class="feed"></ul>
-          <p id="comments-empty" class="hint" hidden data-i18n="drawer.commentsEmpty">No comments yet.</p>
-          <textarea id="comment-body" data-i18n-placeholder="drawer.commentPlaceholder" placeholder="Add a comment" data-write></textarea>
-          <div class="actions">
-            <button id="add-comment" type="button" data-write data-i18n="drawer.addComment">Add comment</button>
-          </div>
-        </div>
-        <div class="attr full drawer-section">
-          <h4 data-i18n="drawer.activity">Activity</h4>
-          <ol id="activity-list" class="feed"></ol>
-          <p id="activity-empty" class="hint" hidden data-i18n="drawer.activityEmpty">No activity yet.</p>
+      </div>
+      <div class="drawer-section">
+        <h4 data-i18n="drawer.attachments">Attachments</h4>
+        <ul id="attachment-list" class="feed"></ul>
+        <p id="attachment-empty" class="hint" hidden data-i18n="drawer.attachmentsEmpty">No attachments.</p>
+        <label for="attachment-input" data-i18n="drawer.upload">Upload file</label>
+        <input id="attachment-input" type="file" data-write />
+        <p class="hint" data-i18n="drawer.attachmentHint">Up to 10 MB per file.</p>
+        <p class="error" id="attachment-error" role="alert" hidden></p>
+      </div>
+      <div class="drawer-section">
+        <h4 data-i18n="drawer.comments">Comments</h4>
+        <ul id="comment-list" class="feed"></ul>
+        <p id="comments-empty" class="hint" hidden data-i18n="drawer.commentsEmpty">No comments yet.</p>
+        <textarea id="comment-body" data-i18n-placeholder="drawer.commentPlaceholder" placeholder="Add a comment" data-write></textarea>
+        <div class="actions">
+          <button id="add-comment" type="button" data-write data-i18n="drawer.addComment">Add comment</button>
         </div>
       </div>
     </section>
 
-    <section class="panel">
-      <h3 data-i18n="drawer.move">Move</h3>
+    <section class="panel drawer-band" data-band="activity">
+      <h3 data-i18n="drawer.activity">Activity</h3>
+      <ol id="activity-list" class="feed"></ol>
+      <p id="activity-empty" class="hint" hidden data-i18n="drawer.activityEmpty">No activity yet.</p>
+    </section>
+
+    <section class="panel drawer-band drawer-actions-band" data-band="actions">
+      <h3 data-i18n="drawer.actions">Actions</h3>
       <div id="move-actions" class="actions"></div>
       <div class="actions">
         <button id="ask-task" type="button" data-write data-i18n="drawer.ask">Ask a question</button>
@@ -1340,6 +1453,17 @@ export function renderLiveHtml({ project = {} } = {}) {
       <p class="hint" id="drawer-status" hidden></p>
     </section>
   </div>
+  <footer class="drawer-footer" id="drawer-footer">
+    <span class="drawer-dirty" id="drawer-dirty" aria-live="polite" hidden>
+      <span class="dirty-dot" aria-hidden="true"></span>
+      <span data-i18n="drawer.unsaved">Unsaved</span>
+    </span>
+    <div class="actions drawer-footer-actions">
+      <button id="restore-task" class="primary" type="button" hidden data-i18n="drawer.restore">Restore</button>
+      <button id="archive-task" class="danger" type="button" data-write data-i18n="drawer.archive">Archive</button>
+      <button id="save-task" class="primary" type="button" data-write data-i18n="drawer.save" disabled>Save changes</button>
+    </div>
+  </footer>
 </aside>
 
 <dialog id="new-task-dialog" aria-labelledby="new-task-heading">
@@ -1509,7 +1633,8 @@ export function renderLiveHtml({ project = {} } = {}) {
     includeArchived: readArchived() || Boolean(readTaskRef()),
     pendingTaskRef: readTaskRef(),
     dragTask: null,
-    focusReturn: null
+    focusReturn: null,
+    dirty: false
   };
 
   var boardTitle = document.getElementById('board-title');
@@ -1531,6 +1656,13 @@ export function renderLiveHtml({ project = {} } = {}) {
   var filterAssignee = document.getElementById('filter-assignee');
   var clearFilters = document.getElementById('clear-filters');
   var filterCount = document.getElementById('filter-count');
+  var filterSummary = document.getElementById('filter-summary');
+  var filterChips = document.getElementById('filter-chips');
+  var filterClearAll = document.getElementById('filter-clear-all');
+  var filterBadge = document.getElementById('filter-badge');
+  var board = document.getElementById('board');
+  var boardEmpty = document.getElementById('board-empty');
+  var boardEmptyClear = document.getElementById('board-empty-clear');
   var questionTemplate = document.getElementById('question-panel-template');
   var backdrop = document.getElementById('backdrop');
   var drawer = document.getElementById('drawer');
@@ -1540,6 +1672,8 @@ export function renderLiveHtml({ project = {} } = {}) {
   var drawerVersion = document.getElementById('drawer-version');
   var drawerProject = document.getElementById('drawer-project');
   var drawerReadonly = document.getElementById('drawer-readonly');
+  var drawerFooter = document.getElementById('drawer-footer');
+  var drawerDirty = document.getElementById('drawer-dirty');
   var drawerStatus = document.getElementById('drawer-status');
   var editTitle = document.getElementById('edit-title');
   var editDescription = document.getElementById('edit-description');
@@ -1785,7 +1919,6 @@ export function renderLiveHtml({ project = {} } = {}) {
     }
     var summary = data.summary || {};
     var columnCounts = summary.counts || {};
-    counts.textContent = t('counts.tasks', { n: summary.total || 0 });
     runningCount.textContent = t('counts.running', { n: columnCounts.running || 0 });
     boardContext.textContent = '';
     readonlyBanner.hidden = !state.readOnly;
@@ -1845,6 +1978,52 @@ export function renderLiveHtml({ project = {} } = {}) {
     return Boolean(state.search.trim() || state.priority || state.label || state.assignee);
   }
 
+  function activeFilterCount() {
+    var count = 0;
+    if (state.search.trim()) count += 1;
+    if (state.priority) count += 1;
+    if (state.label) count += 1;
+    if (state.assignee) count += 1;
+    return count;
+  }
+
+  function addFilterChip(kind, value, label) {
+    var chip = el('button', 'filter-chip');
+    chip.type = 'button';
+    chip.setAttribute('data-filter', kind);
+    chip.setAttribute('data-filter-value', value);
+    chip.setAttribute('aria-label', t('filter.remove', { value: label }));
+    chip.title = t('filter.remove', { value: label });
+    chip.appendChild(el('span', 'filter-chip-label', label));
+    chip.appendChild(el('span', 'filter-chip-x', '×'));
+    chip.addEventListener('click', function () { removeFilter(kind); });
+    filterChips.appendChild(chip);
+  }
+
+  function renderFilterSummary() {
+    filterChips.textContent = '';
+    if (state.search.trim()) addFilterChip('search', state.search.trim(), state.search.trim());
+    if (state.priority) addFilterChip('priority', state.priority, t('priority.' + state.priority));
+    if (state.label) addFilterChip('label', state.label, state.label);
+    if (state.assignee) addFilterChip('assignee', state.assignee, state.assignee);
+    var count = activeFilterCount();
+    filterSummary.hidden = count === 0;
+    filterBadge.hidden = count === 0;
+    filterBadge.textContent = String(count);
+    filterToggle.classList.toggle('active', count > 0);
+    filterToggle.setAttribute('data-active', count > 0 ? 'true' : 'false');
+    filterToggle.setAttribute('aria-label', count > 0 ? t('header.filter') + ' · ' + count : t('header.filter'));
+  }
+
+  function removeFilter(kind) {
+    if (kind === 'search') { state.search = ''; searchInput.value = ''; }
+    if (kind === 'priority') state.priority = '';
+    if (kind === 'label') state.label = '';
+    if (kind === 'assignee') state.assignee = '';
+    renderFilters();
+    renderBoard();
+  }
+
   function matchesFilters(task) {
     if (state.priority && (task.priority || 'none') !== state.priority) return false;
     if (state.label) {
@@ -1870,41 +2049,58 @@ export function renderLiveHtml({ project = {} } = {}) {
 
   function renderBoard() {
     var columns = (state.data && state.data.board && state.data.board.columns) || {};
+    var filtered = hasFilters();
     var totals = { visible: 0, total: 0 };
+    var visibleByColumn = {};
     for (var i = 0; i < COLUMNS.length; i += 1) {
       var id = COLUMNS[i];
-      var section = document.querySelector('[data-column="' + id + '"]');
-      var list = section.querySelector('.cards');
       var all = columns[id] || [];
       var visible = [];
       for (var j = 0; j < all.length; j += 1) {
         if (matchesFilters(all[j])) visible.push(all[j]);
       }
+      visibleByColumn[id] = visible;
       totals.visible += visible.length;
       totals.total += all.length;
+    }
+    var emptyFiltered = filtered && totals.visible === 0;
+    boardEmpty.hidden = !emptyFiltered;
+    board.classList.toggle('empty-filtered', emptyFiltered);
+    for (var n = 0; n < COLUMNS.length; n += 1) {
+      var columnId = COLUMNS[n];
+      var section = document.querySelector('[data-column="' + columnId + '"]');
+      var list = section.querySelector('.cards');
+      var columnTasks = visibleByColumn[columnId];
       list.textContent = '';
-      for (var k = 0; k < visible.length; k += 1) {
-        list.appendChild(renderCard(visible[k], id));
+      for (var k = 0; k < columnTasks.length; k += 1) {
+        list.appendChild(renderCard(columnTasks[k], columnId));
       }
-      section.querySelector('[data-count]').textContent = String(visible.length);
+      section.querySelector('[data-count]').textContent = String(columnTasks.length);
       var empty = section.querySelector('[data-empty]');
-      empty.hidden = visible.length > 0;
-      empty.textContent = hasFilters() ? t('filter.none') : t('columns.empty.' + id);
-      var collapsed = state.collapsed.indexOf(id) !== -1;
+      empty.hidden = columnTasks.length > 0 || emptyFiltered;
+      empty.textContent = filtered ? t('filter.none') : t('columns.empty.' + columnId);
+      var collapsed = state.collapsed.indexOf(columnId) !== -1;
       section.setAttribute('data-collapsed', collapsed ? 'true' : 'false');
       var collapse = section.querySelector('[data-collapse]');
       collapse.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
       collapse.setAttribute('aria-label', t(collapsed ? 'columns.expand' : 'columns.collapse', {
-        column: t('columns.' + id)
+        column: t('columns.' + columnId)
       }));
       var creates = section.querySelectorAll('[data-create]');
       for (var c = 0; c < creates.length; c += 1) {
         creates[c].setAttribute('aria-label', t('columns.addAria', {
-          column: t('columns.' + id)
+          column: t('columns.' + columnId)
         }));
+        creates[c].hidden = emptyFiltered;
       }
+      var foot = section.querySelector('.column-foot');
+      if (foot) foot.hidden = emptyFiltered;
     }
+    counts.textContent = filtered
+      ? t('counts.filteredTasks', { visible: totals.visible, total: totals.total })
+      : t('counts.tasks', { n: totals.total });
     filterCount.textContent = t('filter.showing', { visible: totals.visible, total: totals.total });
+    renderFilterSummary();
   }
 
   function statusClass(task) {
@@ -2411,6 +2607,7 @@ export function renderLiveHtml({ project = {} } = {}) {
     state.selectedId = null;
     state.selectedOption = null;
     state.focusReturn = null;
+    state.dirty = false;
     drawer.classList.remove('open');
     drawer.setAttribute('aria-hidden', 'true');
     backdrop.classList.remove('open');
@@ -2474,6 +2671,7 @@ export function renderLiveHtml({ project = {} } = {}) {
       updateQuestionButtons();
     }
     attachmentError.hidden = true;
+    syncDirty();
   }
 
   function renderLinks(task) {
@@ -2503,6 +2701,7 @@ export function renderLiveHtml({ project = {} } = {}) {
     url.setAttribute('placeholder', t('drawer.linkUrlPlaceholder'));
     var remove = button('×', 'danger', function () {
       if (row.parentNode) row.parentNode.removeChild(row);
+      syncDirty();
     });
     remove.setAttribute('aria-label', t('drawer.removeLink'));
     remove.title = t('drawer.removeLink');
@@ -2692,6 +2891,46 @@ export function renderLiveHtml({ project = {} } = {}) {
     act('task.move', { id: task.id, version: task.version, to: columnId }).then(function (body) {
       if (body) notify(t('drawer.moved', { column: t('columns.' + columnId) }));
     });
+  }
+
+  function linkRowsSnapshot() {
+    var rows = editLinks.querySelectorAll('[data-link-row]');
+    var parts = [];
+    for (var i = 0; i < rows.length; i += 1) {
+      var label = rows[i].querySelector('.link-label').value.trim();
+      var url = rows[i].querySelector('.link-url').value.trim();
+      if (!label && !url) continue;
+      parts.push(label + '\u0000' + url);
+    }
+    return parts.join('\u0001');
+  }
+
+  function taskLinksSnapshot(task) {
+    var links = Array.isArray(task.links) ? task.links : [];
+    var parts = [];
+    for (var i = 0; i < links.length; i += 1) {
+      parts.push((links[i].label || '') + '\u0000' + (links[i].url || ''));
+    }
+    return parts.join('\u0001');
+  }
+
+  function isDrawerDirty(task) {
+    if (!task) return false;
+    if (editTitle.value !== (task.title || '')) return true;
+    if (editDescription.value !== (task.description || '')) return true;
+    if (editPriority.value !== (task.priority || 'none')) return true;
+    var labels = Array.isArray(task.labels) ? task.labels : [];
+    if (editLabels.value !== labels.join(', ')) return true;
+    return linkRowsSnapshot() !== taskLinksSnapshot(task);
+  }
+
+  function syncDirty() {
+    var task = currentTask();
+    var dirty = Boolean(task) && isDrawerDirty(task);
+    state.dirty = dirty;
+    saveTaskButton.disabled = !task || !dirty || !isWritable(task);
+    drawerDirty.hidden = !dirty;
+    drawerFooter.classList.toggle('dirty', dirty);
   }
 
   function saveTask() {
@@ -3073,6 +3312,8 @@ export function renderLiveHtml({ project = {} } = {}) {
       renderBoard();
     });
     clearFilters.addEventListener('click', clearAllFilters);
+    filterClearAll.addEventListener('click', clearAllFilters);
+    boardEmptyClear.addEventListener('click', clearAllFilters);
     archivedToggle.addEventListener('click', function () {
       state.includeArchived = !state.includeArchived;
       storeSet(STORAGE.archived, state.includeArchived ? '1' : '0');
@@ -3111,6 +3352,8 @@ export function renderLiveHtml({ project = {} } = {}) {
     });
     drawerClose.addEventListener('click', closeDrawer);
     backdrop.addEventListener('click', closeDrawer);
+    drawer.addEventListener('input', syncDirty);
+    drawer.addEventListener('change', syncDirty);
     saveTaskButton.addEventListener('click', saveTask);
     archiveButton.addEventListener('click', archiveCurrentTask);
     restoreButton.addEventListener('click', restoreCurrentTask);

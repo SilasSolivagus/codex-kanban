@@ -552,6 +552,67 @@ test('the drawer takes focus, restores it and supports the ?task= deep link', ()
   assert.match(script, /event\.key === 'Escape'/)
 })
 
+test('the drawer is split into details, collaboration and activity bands in order', () => {
+  const bands = [...markup.matchAll(/data-band="([^"]+)"/g)].map((match) => match[1])
+  assert.deepEqual(bands, ['details', 'collaboration', 'activity', 'actions'])
+  const headings = [...markup.matchAll(/<h3 data-i18n="(drawer\.(?:details|collaboration|activity|actions))"/g)]
+    .map((match) => match[1])
+  assert.deepEqual(headings, [
+    'drawer.details',
+    'drawer.collaboration',
+    'drawer.activity',
+    'drawer.actions',
+  ])
+  // The details band owns the metadata and editable fields.
+  const details = markup.slice(markup.indexOf('data-band="details"'), markup.indexOf('data-band="collaboration"'))
+  for (const id of ['edit-title', 'attr-status', 'edit-priority', 'attr-assignee', 'attr-updated', 'attr-created', 'attr-version', 'edit-description', 'edit-labels']) {
+    assert.ok(details.includes(`id="${id}"`), `${id} lives in the details band`)
+  }
+  // Collaboration owns links, blocker, question, attachments and comments.
+  const collaboration = markup.slice(markup.indexOf('data-band="collaboration"'), markup.indexOf('data-band="activity"'))
+  for (const id of ['edit-links', 'blocker-section', 'question-section', 'attachment-list', 'comment-list']) {
+    assert.ok(collaboration.includes(`id="${id}"`), `${id} lives in the collaboration band`)
+  }
+  // Activity keeps its latest-twelve feed, and move/block/archive sit after collaboration.
+  const activity = markup.slice(markup.indexOf('data-band="activity"'), markup.indexOf('data-band="actions"'))
+  assert.ok(activity.includes('id="activity-list"'))
+  assert.ok(markup.indexOf('id="move-actions"') > markup.indexOf('data-band="activity"'))
+  for (const id of ['ask-task', 'block-task', 'unblock-task']) {
+    assert.ok(markup.indexOf(`id="${id}"`) > markup.indexOf('data-band="activity"'), `${id} is a secondary action`)
+  }
+  assert.ok(markup.indexOf('id="archive-task"') > markup.indexOf('data-band="activity"'))
+  assert.ok(markup.indexOf('id="archive-task"') > markup.indexOf('data-band="collaboration"'))
+  assert.equal(STRINGS.zh['drawer.collaboration'], '协作')
+  assert.equal(STRINGS.zh['drawer.activity'], '动态')
+})
+
+test('the drawer has a sticky footer whose save button waits for unsaved changes', () => {
+  assert.match(markup, /<footer class="drawer-footer" id="drawer-footer">/)
+  assert.match(markup, /\.drawer-footer \{[^}]*position: sticky;[^}]*bottom: 0;/)
+  assert.match(markup, /<span class="drawer-dirty" id="drawer-dirty"[^>]*hidden>/)
+  assert.match(markup, /<span class="dirty-dot" aria-hidden="true"><\/span>/)
+  assert.match(markup, /<button id="save-task"[^>]*disabled>Save changes<\/button>/)
+  assert.match(markup, /<button id="archive-task"[^>]*data-i18n="drawer\.archive"/)
+  assert.match(markup, /<button id="restore-task"[^>]*data-i18n="drawer\.restore"/)
+  assert.match(script, /function syncDirty\(\)/)
+  assert.match(script, /function isDrawerDirty\(task\)/)
+  assert.match(script, /saveTaskButton\.disabled = !task \|\| !dirty \|\| !isWritable\(task\)/)
+  assert.match(script, /drawerDirty\.hidden = !dirty/)
+  assert.match(script, /drawerFooter\.classList\.toggle\('dirty', dirty\)/)
+  assert.match(script, /drawer\.addEventListener\('input', syncDirty\)/)
+  assert.match(script, /drawer\.addEventListener\('change', syncDirty\)/)
+  // The old inline save action row is gone.
+  assert.doesNotMatch(markup, /<div class="actions">\s*<button id="save-task"/)
+})
+
+test('below 600px the drawer is full width and the bands still stack in order', () => {
+  const compact = markup.split('@media (max-width: 600px)')[1].split('@media (prefers-reduced-motion')[0]
+  assert.match(compact, /aside\.drawer \{ width: 100%; border-left: 0; \}/)
+  assert.match(compact, /\.attr-grid \{ grid-template-columns: minmax\(0, 1fr\); \}/)
+  const bands = [...markup.matchAll(/data-band="([^"]+)"/g)].map((match) => match[1])
+  assert.deepEqual(bands, ['details', 'collaboration', 'activity', 'actions'])
+})
+
 test('the density scale gives cards room while keeping the fold', () => {
   assert.match(markup, /min-height: 56px/)
   assert.match(markup, /padding: 9px 24px/)
@@ -566,11 +627,49 @@ test('the density scale gives cards room while keeping the fold', () => {
   assert.match(markup, /\.card-footer \{[^}]*padding-top: 7px/)
 })
 
-test('filter and empty states tell the user how to clear the filters', () => {
+test('active filters surface as a summary row and a toolbar badge', () => {
+  assert.match(markup, /<div class="filter-summary" id="filter-summary"[^>]*hidden>/)
+  assert.match(markup, /<div class="filter-chips" id="filter-chips">/)
+  assert.match(markup, /<button id="filter-clear-all"[^>]*data-i18n="filter\.clearAll"/)
+  assert.match(markup, /<span class="filter-badge" id="filter-badge"[^>]*hidden>/)
+  assert.match(markup, /#filter-toggle\.active \{/)
+  assert.match(script, /function renderFilterSummary\(\)/)
+  assert.match(script, /function activeFilterCount\(\)/)
+  assert.match(script, /function addFilterChip\(kind, value, label\)/)
+  assert.match(script, /chip\.appendChild\(el\('span', 'filter-chip-x', '×'\)\)/)
+  assert.match(script, /filterSummary\.hidden = count === 0/)
+  assert.match(script, /filterBadge\.hidden = count === 0/)
+  assert.match(script, /filterBadge\.textContent = String\(count\)/)
+  assert.match(script, /filterToggle\.classList\.toggle\('active', count > 0\)/)
+  assert.match(script, /function removeFilter\(kind\)/)
+  assert.equal(STRINGS.zh['filter.clearAll'], '清除全部')
+  assert.equal(STRINGS.zh['filter.emptyTitle'], '没有任务匹配当前筛选')
+})
+
+test('the board meta reports visible / total tasks only while filtering', () => {
+  assert.match(script, /counts\.textContent = filtered\s*\n?\s*\? t\('counts\.filteredTasks', \{ visible: totals\.visible, total: totals\.total \}\)/)
+  assert.match(script, /: t\('counts\.tasks', \{ n: totals\.total \}\)/)
+  assert.equal(STRINGS.en['counts.filteredTasks'], '{visible} / {total} tasks')
+  assert.equal(STRINGS.zh['counts.filteredTasks'], '{visible} / {total} 个任务')
+  // With no filter the old single-total copy is kept.
+  assert.match(STRINGS.zh['counts.tasks'], /^\{n\} 个任务$/)
+})
+
+test('a filtered empty board renders one board-level empty state and hides create controls', () => {
+  assert.match(markup, /<div class="board-empty" id="board-empty" role="status" hidden>/)
+  assert.match(markup, /<button id="board-empty-clear"[^>]*data-i18n="filter\.clear"/)
+  assert.equal((markup.match(/class="board-empty"/g) || []).length, 1)
+  assert.match(markup, /main\.board\.empty-filtered section\.column \{ display: none; \}/)
+  assert.match(script, /var emptyFiltered = filtered && totals\.visible === 0/)
+  assert.match(script, /boardEmpty\.hidden = !emptyFiltered/)
+  assert.match(script, /board\.classList\.toggle\('empty-filtered', emptyFiltered\)/)
+  assert.match(script, /empty\.hidden = columnTasks\.length > 0 \|\| emptyFiltered/)
+  assert.match(script, /creates\[c\]\.hidden = emptyFiltered/)
+  assert.match(script, /foot\.hidden = emptyFiltered/)
+  assert.match(script, /boardEmptyClear\.addEventListener\('click', clearAllFilters\)/)
+  assert.match(script, /function clearAllFilters\(\)/)
   assert.match(STRINGS.en['filter.none'], /Clear the filters/)
   assert.match(STRINGS.zh['filter.none'], /清除筛选/)
-  assert.match(script, /empty\.textContent = hasFilters\(\) \? t\('filter\.none'\) : t\('columns\.empty\.' \+ id\)/)
-  assert.match(script, /function clearAllFilters\(\)/)
 })
 
 test('keyboard reorder, focus trap and archived toggle state are wired', () => {
