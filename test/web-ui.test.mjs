@@ -254,11 +254,34 @@ test('drawer contains editable details, links, activity, comments and attachment
   assert.match(script, /t\('drawer\.version', \{ n: task\.version \}\)/)
 })
 
-test('activity feeds the latest twelve events with actor and relative time', () => {
+test('activity groups the latest twelve events by day with localised sentences', () => {
   assert.match(script, /var latest = activity\.slice\(-12\)/)
-  assert.match(script, /entry\.actor && entry\.actor\.name/)
-  assert.match(script, /dwellLabel\(entry\.at\)/)
-  assert.match(script, /entry\.summary \|\| entry\.kind/)
+  assert.match(script, /function activityText\(entry, task\)/)
+  assert.match(script, /function actorName\(actor\)/)
+  assert.match(script, /function dayLabel\(iso\)/)
+  assert.match(script, /var day = dayKey\(entry\.at\)/)
+  assert.match(script, /el\('li', 'feed-day', dayLabel\(entry\.at\)\)/)
+  assert.match(script, /t\('activity\.today'\)/)
+  assert.match(script, /t\('activity\.yesterday'\)/)
+  assert.match(script, /t\('actor\.you'\)/)
+  assert.match(script, /t\('actor\.codex'\)/)
+  assert.match(script, /status: t\('status\.' \+ createdStatus\)/)
+  assert.match(script, /t\('activity\.moved', \{/)
+  assert.match(script, /kind === 'approved'/)
+  assert.equal(STRINGS.zh['activity.created'], '创建了 {id}（{status}）')
+  assert.equal(STRINGS.zh['activity.answered'], '回答了「{option}」')
+  assert.equal(STRINGS.zh['activity.approved'], '批准了 {id}')
+  assert.equal(STRINGS.zh['activity.rejected'], '驳回了 {id}')
+  assert.equal(STRINGS.zh['activity.blocked'], '阻塞：{reason}')
+  assert.equal(STRINGS.zh['activity.unblocked'], '解除阻塞')
+  assert.equal(STRINGS.zh['activity.attached'], '添加了附件 {name}')
+  assert.equal(STRINGS.zh['activity.commented'], '评论：{body}')
+  assert.equal(STRINGS.zh['activity.moved'], '移动：{from} → {to}')
+  assert.equal(STRINGS.zh['activity.archived'], '归档')
+  assert.equal(STRINGS.zh['activity.restored'], '恢复')
+  for (const key of ['activity.today', 'activity.yesterday', 'actor.you', 'actor.codex']) {
+    assert.ok(I18N_KEYS.includes(key), `${key} is in both dictionaries`)
+  }
 })
 
 test('comments and attachments use the v2 api and show sizes', () => {
@@ -301,7 +324,11 @@ test('project management creates, renames, archives and restores', () => {
   assert.match(script, /act\('project\.update'/)
   assert.match(script, /act\('project\.archive'/)
   assert.match(script, /act\('project\.restore'/)
-  assert.match(script, /window\.confirm\(t\('project\.archiveConfirm'/)
+  assert.match(script, /function openConfirm\(options\)/)
+  assert.match(script, /t\('confirm\.archiveProjectTitle'\)/)
+  assert.match(script, /t\('confirm\.restoreProjectTitle'\)/)
+  assert.match(script, /function closeConfirm\(\)/)
+  assert.doesNotMatch(script, /window\.confirm\(t\('project\.archiveConfirm'/)
   assert.match(script, /project\.archivedSuffix/)
 })
 
@@ -449,8 +476,9 @@ test('the card footer shows status, dwell time and only non-zero metric counts',
   assert.match(markup, /\.card-dwell \{/)
   assert.match(script, /function taskStatusLabel\(task\)/)
   assert.match(script, /function taskElapsed\(task\)/)
-  assert.match(script, /'card\.dwell'/)
-  assert.match(script, /' · ' \+ t\('card\.dwell'/)
+  assert.match(script, /function dwellText\(iso\)/)
+  assert.match(script, /t\('card\.dwellLabel'/)
+  assert.match(script, /' · ' \+ dwellText\(elapsed\)/)
   assert.match(script, /task\.attentionSince/)
   assert.match(script, /pendingQuestion\.createdAt/)
   assert.match(script, /blockedSince \|\| task\.statusSince/)
@@ -520,7 +548,7 @@ test('the drawer uses the two-column attribute grid with full-width sections', (
     'drawer.comments',
     'drawer.activity',
   ])
-  assert.match(script, /attrStatus\.appendChild/)
+  assert.match(script, /attrStatus\.value = task\.status \|\| 'backlog'/)
   assert.match(script, /attrUpdated\.textContent = formatTime\(task\.updatedAt\)/)
   assert.match(script, /attrCreated\.textContent = formatTime\(task\.createdAt\)/)
   assert.match(script, /attrVersion\.textContent = String\(task\.version\)/)
@@ -680,4 +708,131 @@ test('keyboard reorder, focus trap and archived toggle state are wired', () => {
   assert.match(script, /'filter\.hideArchived'/)
   assert.match(script, /syncArchivedToggle/)
   assert.match(script, /archivedToggle\.setAttribute\('aria-pressed'/)
+})
+
+// --- UX batch C -----------------------------------------------------------
+
+test('the drawer status control is a real six-status select wired to the move api', () => {
+  assert.match(markup, /<select id="attr-status"[^>]*data-write/)
+  for (const status of ['backlog', 'todo', 'in_progress', 'in_review', 'done', 'canceled']) {
+    assert.match(
+      markup,
+      new RegExp(`<option value="${status}" data-i18n="status\\.${status}"`),
+      `${status} is a stored status option`,
+    )
+  }
+  assert.match(markup, /<label for="attr-status" data-i18n="drawer\.statusLabel">Status<\/label>/)
+  assert.match(script, /function changeStatus\(\)/)
+  assert.match(script, /act\('task\.move', \{ id: task\.id, version: task\.version, to: next \}\)/)
+  assert.match(script, /attrStatus\.addEventListener\('change', changeStatus\)/)
+  assert.match(script, /t\('drawer\.statusChanged'/)
+  // The move band survives as the secondary route to the same action.
+  assert.match(script, /function renderMoveActions\(task\)/)
+  assert.equal(STRINGS.zh['drawer.statusChanged'], '状态已改为{status}')
+})
+
+test('question options align a 16px radio next to a 28px row in both surfaces', () => {
+  assert.match(markup, /\.question-option,\s*\n\s*\.option \{\s*\n\s*display: grid; grid-template-columns: 16px minmax\(0, 1fr\);/)
+  assert.match(markup, /\.question-option,\s*\n\s*\.option \{[^}]*min-height: 28px/)
+  assert.match(markup, /\.question-option input\[type="radio"\],\s*\n\s*\.option input\[type="radio"\] \{/)
+  assert.match(markup, /width: 16px; height: 16px; margin: 0; margin-top: 2px;/)
+  assert.match(markup, /\.question-option:has\(input:checked\)/)
+  assert.match(markup, /\.option:has\(input:checked\)/)
+  assert.match(script, /el\('span', 'option-label', option\.label\)/)
+  assert.match(script, /questionTemplate\.content/)
+})
+
+test('native browser chrome is replaced with styled selects, a dropzone and a confirm sheet', () => {
+  assert.ok((markup.match(/class="select-field"/g) || []).length >= 5)
+  assert.ok((markup.match(/class="select-chevron"/g) || []).length >= 5)
+  assert.match(markup, /\.select-trigger \{[^}]*height: 40px/)
+  assert.match(markup, /\.select-menu \{/)
+  assert.match(markup, /\.select-option\.selected/)
+  assert.equal((markup.match(/role="combobox"/g) || []).length, 5)
+  assert.equal((markup.match(/role="listbox"/g) || []).length, 5)
+  assert.match(script, /function setupSelectFields\(\)/)
+  assert.match(script, /function handleSelectNav\(event, field\)/)
+  assert.match(script, /event\.key === 'ArrowDown' \|\| event\.key === 'ArrowUp'/)
+  assert.match(script, /event\.key === 'Enter' \|\| event\.key === ' '/)
+  assert.match(script, /event\.key === 'Escape'/)
+  for (const id of ['filter-priority', 'filter-label', 'filter-assignee', 'edit-priority']) {
+    assert.match(markup, new RegExp(`data-select-field>\\s*<select id="${id}"`), `${id} sits in a styled field`)
+  }
+  // The file input is hidden behind a dashed dropzone with an explicit button.
+  assert.match(markup, /<div class="dropzone" id="attachment-dropzone">/)
+  assert.match(markup, /<button class="dropzone-button" id="attachment-browse" type="button" data-i18n="drawer\.chooseFile">Choose file<\/button>/)
+  assert.match(markup, /<input id="attachment-input" type="file" data-write hidden \/>/)
+  assert.match(markup, /<p class="dropzone-file" id="attachment-filename" hidden><\/p>/)
+  assert.match(markup, /\.dropzone\.dragover/)
+  assert.match(script, /uploadAttachment\(dropped\)/)
+  assert.match(script, /setAttachmentFilename\(file\.name\)/)
+  assert.match(script, /file\.size > MAX_ATTACHMENT_BYTES/)
+  assert.match(script, /attachmentError\.textContent = t\('drawer\.attachmentTooLarge'\)/)
+  // The confirm sheet replaces window.confirm for archive and restore.
+  assert.match(markup, /<div class="confirm-sheet" id="confirm-sheet" role="alertdialog" aria-modal="true"/)
+  assert.match(markup, /<h2 id="confirm-title"><\/h2>/)
+  assert.match(markup, /<p class="confirm-target" id="confirm-target"><\/p>/)
+  assert.match(markup, /<button id="confirm-cancel"[^>]*data-i18n="confirm\.cancel">Cancel<\/button>/)
+  assert.match(markup, /<button id="confirm-ok" class="danger-solid" type="button"><\/button>/)
+  assert.match(markup, /#confirm-ok\.danger-solid \{[^}]*background: light-dark\(#b42318/)
+  assert.match(script, /function openConfirm\(options\)/)
+  assert.match(script, /function closeConfirm\(\)/)
+  assert.match(script, /function confirmAccept\(\)/)
+  assert.match(script, /confirmCancel\.focus\(/)
+  assert.match(script, /if \(event\.key === 'Tab'\) trapFocus\(confirmSheet, event\)/)
+  assert.match(script, /t\('confirm\.archiveTaskTitle'\)/)
+  assert.match(script, /t\('confirm\.archiveProjectTitle'\)/)
+  assert.match(script, /t\('confirm\.restoreTaskTitle'\)/)
+  assert.match(script, /t\('confirm\.restoreProjectTitle'\)/)
+  assert.equal(STRINGS.zh['confirm.archive'], '确认归档')
+  assert.equal(STRINGS.zh['confirm.cancel'], '取消')
+})
+
+test('sub-minute ages read just now and card dwell time is labelled', () => {
+  assert.equal(STRINGS.zh['age.justNow'], '刚刚')
+  assert.equal(STRINGS.en['age.justNow'], 'just now')
+  assert.match(script, /if \(seconds < 60\) return \{ justNow: true, value: '' \}/)
+  assert.match(script, /function agoText\(iso\)/)
+  assert.match(script, /function updatedText\(iso\)/)
+  assert.match(script, /function dwellText\(iso\)/)
+  assert.match(script, /parts\.justNow \? t\('card\.updatedJustNow'\)/)
+  assert.match(script, /parts\.justNow \? t\('card\.dwellJustNow'\)/)
+  assert.match(script, /t\('card\.dwellLabel'/)
+  assert.match(script, /' · ' \+ dwellText\(elapsed\)/)
+  assert.equal(STRINGS.zh['card.dwellLabel'], '已停留 {time}')
+  assert.equal(STRINGS.zh['card.updatedJustNow'], '刚刚更新')
+  assert.equal(STRINGS.zh['card.updatedAgo'], '更新于 {time}前')
+})
+
+test('card metrics and empty-state copy meet the contrast floor', () => {
+  assert.match(markup, /\.card-metrics \.metric \{[^}]*color: light-dark\(#6b7280, #9aa4b2\);[^}]*font-size: 12px/)
+  assert.match(markup, /\.card-dwell \{[^}]*color: light-dark\(#6b7280, #9aa4b2\);[^}]*font-size: 12px/)
+  assert.match(markup, /\.card-metrics \{[^}]*color: light-dark\(#6b7280, #9aa4b2\);[^}]*font-size: 12px/)
+  assert.match(markup, /\.column-empty \{[^}]*color: light-dark\(#4b5563, #aab4c2\)/)
+  assert.match(markup, /\.board-empty p \{[^}]*color: light-dark\(#4b5563, #aab4c2\)/)
+  // Zero counts stay omitted.
+  assert.match(script, /if \(count > 0\) metrics\.appendChild\(metric\(name, count/)
+})
+
+test('Escape clears or blurs the search before closing the topmost layer', () => {
+  const keydown = script.slice(script.indexOf("document.addEventListener('keydown'"))
+  const escape = keydown.slice(
+    keydown.indexOf("if (event.key === 'Escape')"),
+    keydown.indexOf("if (event.ctrlKey || event.metaKey || event.altKey) return;"),
+  )
+  assert.match(escape, /if \(!confirmSheet\.hidden\) \{\s*closeConfirm\(\);/)
+  assert.match(escape, /if \(document\.activeElement === searchInput\) \{/)
+  assert.match(escape, /if \(searchInput\.value\) \{/)
+  assert.match(escape, /state\.search = '';/)
+  assert.match(escape, /searchInput\.value = '';/)
+  assert.match(escape, /searchInput\.blur\(\);/)
+  assert.ok(escape.indexOf('closeConfirm()') < escape.indexOf('closeDrawer()'), 'confirm sheet outranks the drawer')
+  assert.ok(escape.indexOf('searchInput.blur()') < escape.indexOf('closeDrawer()'), 'search blur outranks the drawer')
+  // The advertised chain / -> Esc -> n stays intact.
+  assert.match(keydown, /if \(event\.key === '\/'\)/)
+  assert.match(keydown, /searchInput\.focus\(\)/)
+  assert.match(keydown, /if \(event\.key === 'n' \|\| event\.key === 'N'\)/)
+  assert.match(keydown, /openNewTask\(\)/)
+  assert.match(STRINGS.zh['shortcuts.hint'], /Esc.*n 新建任务/)
+  assert.match(STRINGS.en['shortcuts.hint'], /Esc.*n for a new task/)
 })

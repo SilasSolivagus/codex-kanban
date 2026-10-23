@@ -55,6 +55,9 @@ export const STRINGS = Object.freeze({
     'filter.priority': 'All priorities',
     'filter.label': 'All labels',
     'filter.assignee': 'All assignees',
+    'filter.priorityAria': 'Priority',
+    'filter.labelAria': 'Label',
+    'filter.assigneeAria': 'Assignee',
     'filter.clear': 'Clear filters',
     'filter.showing': 'Showing {visible} of {total}',
     'filter.none': 'No tasks match the current filters. Clear the filters to see the board.',
@@ -93,7 +96,10 @@ export const STRINGS = Object.freeze({
     'card.attention.review': 'review',
     'card.unassigned': 'unassigned',
     'card.updatedAgo': 'Updated {time} ago',
+    'card.updatedJustNow': 'Updated just now',
     'card.dwell': '{time} ago',
+    'card.dwellLabel': 'Here for {time}',
+    'card.dwellJustNow': 'Just entered this status',
     'card.archived': 'Archived',
     'card.blockedPrefix': 'Blocked: ',
     'card.attachments': '{n} attachments',
@@ -107,10 +113,37 @@ export const STRINGS = Object.freeze({
     'status.in_review': 'Needs you',
     'status.done': 'Done',
     'status.canceled': 'Canceled',
+    'age.justNow': 'just now',
     'age.seconds': '{n}s',
     'age.minutes': '{n}m',
     'age.hours': '{n}h',
     'age.days': '{n}d',
+    'actor.you': 'You',
+    'actor.codex': 'Codex',
+    'activity.today': 'Today',
+    'activity.yesterday': 'Yesterday',
+    'activity.created': 'Created {id} in {status}',
+    'activity.question': 'Asked: {prompt}',
+    'activity.answered': 'Answered “{option}”',
+    'activity.answeredNote': 'Recorded an answer',
+    'activity.approved': 'Approved {id}',
+    'activity.rejected': 'Rejected {id}',
+    'activity.blocked': 'Blocked: {reason}',
+    'activity.unblocked': 'Unblocked',
+    'activity.attached': 'Attached {name}',
+    'activity.detached': 'Removed attachment {name}',
+    'activity.commented': 'Comment: {body}',
+    'activity.moved': 'Moved: {from} → {to}',
+    'activity.archived': 'Archived',
+    'activity.restored': 'Restored',
+    'activity.updated': 'Updated: {fields}',
+    'activity.reordered': 'Reordered',
+    'activity.field.title': 'title',
+    'activity.field.description': 'description',
+    'activity.field.priority': 'priority',
+    'activity.field.labels': 'labels',
+    'activity.field.links': 'links',
+    'activity.field.status': 'status',
     'toast.networkError': 'The board did not answer. Check the server and retry.',
     'toast.refreshed': 'Board refreshed',
     'toast.projectCreated': 'Project created',
@@ -147,12 +180,11 @@ export const STRINGS = Object.freeze({
     'project.archived': 'Archived',
     'project.active': 'Active',
     'project.renamePrompt': 'New name for {name}',
-    'project.archiveConfirm': 'Archive {name}? Its tasks become read-only until restored.',
     'project.close': 'Close',
     'project.readOnly': 'This project is archived. Task and attachment changes are disabled until you restore it.',
     'project.restoreSelected': 'Restore project',
     'project.none': 'No projects yet. Create one to start.',
-    'shortcuts.hint': 'Press / to search, n for a new task, Esc to close.',
+    'shortcuts.hint': 'Press / to search, Esc to clear or close, n for a new task.',
     'shortcuts.label': 'Keyboard shortcuts',
     'drawer.title': 'Task details',
     'drawer.close': 'Close',
@@ -168,7 +200,6 @@ export const STRINGS = Object.freeze({
     'drawer.versionLabel': 'Version',
     'drawer.archive': 'Archive',
     'drawer.restore': 'Restore',
-    'drawer.archiveConfirm': 'Archive {id}? It leaves the board until restored.',
     'drawer.archived': 'Task archived',
     'drawer.restored': 'Task restored',
     'drawer.titleField': 'Title',
@@ -198,12 +229,14 @@ export const STRINGS = Object.freeze({
     'drawer.attachments': 'Attachments',
     'drawer.attachmentsEmpty': 'No attachments.',
     'drawer.upload': 'Upload file',
+    'drawer.chooseFile': 'Choose file',
+    'drawer.dropHint': 'or drag a file here · up to 10 MB',
+    'drawer.fileSelected': 'Selected {name}',
     'drawer.attachmentHint': 'Up to 10 MB per file.',
     'drawer.attachmentTooLarge': 'This file is larger than 10 MB and was not uploaded.',
     'drawer.attachmentReadError': 'This file could not be read.',
     'drawer.attachmentUploaded': 'Attachment uploaded',
     'drawer.attachmentRemoved': 'Attachment removed',
-    'drawer.removeAttachmentConfirm': 'Remove {name}?',
     'drawer.download': 'Download {name}',
     'drawer.delete': 'Delete',
     'drawer.sizeBytes': '{n} B',
@@ -248,9 +281,24 @@ export const STRINGS = Object.freeze({
     'drawer.project': 'Project',
     'drawer.assignee': 'Assignee',
     'drawer.status': 'Status: {status}',
+    'drawer.statusChanged': 'Status changed to {status}',
     'drawer.created': 'Created {time}',
     'drawer.selected': 'Selected: {option}',
     'drawer.noOptions': 'No options.',
+    'confirm.cancel': 'Cancel',
+    'confirm.archive': 'Confirm archive',
+    'confirm.restore': 'Confirm restore',
+    'confirm.remove': 'Confirm removal',
+    'confirm.archiveTaskTitle': 'Archive task',
+    'confirm.archiveTaskDetail': 'It leaves the board until restored.',
+    'confirm.archiveProjectTitle': 'Archive project',
+    'confirm.archiveProjectDetail': 'Its tasks become read-only until restored.',
+    'confirm.restoreTaskTitle': 'Restore task',
+    'confirm.restoreTaskDetail': 'It returns to the board.',
+    'confirm.restoreProjectTitle': 'Restore project',
+    'confirm.restoreProjectDetail': 'Its tasks become editable again.',
+    'confirm.removeAttachmentTitle': 'Remove attachment',
+    'confirm.removeAttachmentDetail': 'This cannot be undone.',
   }),
   zh: Object.freeze({
     'app.title': 'Codex Kanban',
@@ -281,6 +329,9 @@ export const STRINGS = Object.freeze({
     'filter.priority': '全部优先级',
     'filter.label': '全部标签',
     'filter.assignee': '全部负责人',
+    'filter.priorityAria': '优先级',
+    'filter.labelAria': '标签',
+    'filter.assigneeAria': '负责人',
     'filter.clear': '清除筛选',
     'filter.showing': '显示 {visible} / {total}',
     'filter.none': '没有任务匹配当前筛选，清除筛选即可查看全部任务。',
@@ -319,7 +370,10 @@ export const STRINGS = Object.freeze({
     'card.attention.review': '待审核',
     'card.unassigned': '未分配',
     'card.updatedAgo': '更新于 {time}前',
+    'card.updatedJustNow': '刚刚更新',
     'card.dwell': '{time}前',
+    'card.dwellLabel': '已停留 {time}',
+    'card.dwellJustNow': '刚刚进入此状态',
     'card.archived': '已归档',
     'card.blockedPrefix': '受阻：',
     'card.attachments': '{n} 个附件',
@@ -333,10 +387,37 @@ export const STRINGS = Object.freeze({
     'status.in_review': '等你确认',
     'status.done': '完成',
     'status.canceled': '已取消',
+    'age.justNow': '刚刚',
     'age.seconds': '{n}秒',
     'age.minutes': '{n}分钟',
     'age.hours': '{n}小时',
     'age.days': '{n}天',
+    'actor.you': '你',
+    'actor.codex': 'Codex',
+    'activity.today': '今天',
+    'activity.yesterday': '昨天',
+    'activity.created': '创建了 {id}（{status}）',
+    'activity.question': '提问：{prompt}',
+    'activity.answered': '回答了「{option}」',
+    'activity.answeredNote': '记录了回答',
+    'activity.approved': '批准了 {id}',
+    'activity.rejected': '驳回了 {id}',
+    'activity.blocked': '阻塞：{reason}',
+    'activity.unblocked': '解除阻塞',
+    'activity.attached': '添加了附件 {name}',
+    'activity.detached': '移除了附件 {name}',
+    'activity.commented': '评论：{body}',
+    'activity.moved': '移动：{from} → {to}',
+    'activity.archived': '归档',
+    'activity.restored': '恢复',
+    'activity.updated': '更新：{fields}',
+    'activity.reordered': '调整了排序',
+    'activity.field.title': '标题',
+    'activity.field.description': '描述',
+    'activity.field.priority': '优先级',
+    'activity.field.labels': '标签',
+    'activity.field.links': '链接',
+    'activity.field.status': '状态',
     'toast.networkError': '看板没有响应，请检查服务后重试。',
     'toast.refreshed': '看板已刷新',
     'toast.projectCreated': '项目已创建',
@@ -373,12 +454,11 @@ export const STRINGS = Object.freeze({
     'project.archived': '已归档',
     'project.active': '活跃',
     'project.renamePrompt': '为 {name} 输入新名称',
-    'project.archiveConfirm': '归档 {name}？在恢复之前，其任务将变为只读。',
     'project.close': '关闭',
     'project.readOnly': '该项目已归档。恢复之前，任务和附件修改均被禁用。',
     'project.restoreSelected': '恢复项目',
     'project.none': '还没有项目，先创建一个。',
-    'shortcuts.hint': '按 / 搜索，n 新建任务，Esc 关闭。',
+    'shortcuts.hint': '按 / 搜索，Esc 清除或关闭，n 新建任务。',
     'shortcuts.label': '键盘快捷键',
     'drawer.title': '任务详情',
     'drawer.close': '关闭',
@@ -394,7 +474,6 @@ export const STRINGS = Object.freeze({
     'drawer.versionLabel': '版本',
     'drawer.archive': '归档',
     'drawer.restore': '恢复',
-    'drawer.archiveConfirm': '归档 {id}？恢复前它将从看板隐藏。',
     'drawer.archived': '任务已归档',
     'drawer.restored': '任务已恢复',
     'drawer.titleField': '标题',
@@ -424,12 +503,14 @@ export const STRINGS = Object.freeze({
     'drawer.attachments': '附件',
     'drawer.attachmentsEmpty': '暂无附件。',
     'drawer.upload': '上传文件',
+    'drawer.chooseFile': '选择文件',
+    'drawer.dropHint': '或将文件拖到这里 · 最大 10 MB',
+    'drawer.fileSelected': '已选择 {name}',
     'drawer.attachmentHint': '每个文件最大 10 MB。',
     'drawer.attachmentTooLarge': '文件超过 10 MB，未上传。',
     'drawer.attachmentReadError': '无法读取该文件。',
     'drawer.attachmentUploaded': '附件已上传',
     'drawer.attachmentRemoved': '附件已删除',
-    'drawer.removeAttachmentConfirm': '移除 {name}？',
     'drawer.download': '下载 {name}',
     'drawer.delete': '删除',
     'drawer.sizeBytes': '{n} B',
@@ -474,9 +555,24 @@ export const STRINGS = Object.freeze({
     'drawer.project': '项目',
     'drawer.assignee': '负责人',
     'drawer.status': '状态：{status}',
+    'drawer.statusChanged': '状态已改为{status}',
     'drawer.created': '创建于 {time}',
     'drawer.selected': '已选择：{option}',
     'drawer.noOptions': '没有选项。',
+    'confirm.cancel': '取消',
+    'confirm.archive': '确认归档',
+    'confirm.restore': '确认恢复',
+    'confirm.remove': '确认移除',
+    'confirm.archiveTaskTitle': '归档任务',
+    'confirm.archiveTaskDetail': '恢复前它将从看板隐藏。',
+    'confirm.archiveProjectTitle': '归档项目',
+    'confirm.archiveProjectDetail': '恢复前，其任务将变为只读。',
+    'confirm.restoreTaskTitle': '恢复任务',
+    'confirm.restoreTaskDetail': '它将重新出现在看板上。',
+    'confirm.restoreProjectTitle': '恢复项目',
+    'confirm.restoreProjectDetail': '其任务将恢复可编辑。',
+    'confirm.removeAttachmentTitle': '移除附件',
+    'confirm.removeAttachmentDetail': '删除后不可恢复。',
   }),
 })
 
@@ -584,6 +680,40 @@ export function renderLiveHtml({ project = {} } = {}) {
     position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
     display: inline-flex; color: var(--muted); pointer-events: none;
   }
+  /* ---- styled select --------------------------------------------------- */
+  .select-field { position: relative; display: block; width: 100%; min-width: 0; }
+  .select-field > select { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+  .select-trigger {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    width: 100%; height: 40px; padding: 0 11px;
+    border: 1px solid var(--border); border-radius: 10px; background: var(--surface);
+    color: var(--text); font-size: 13px; font-weight: 500; text-align: left;
+  }
+  .select-trigger:hover:not(:disabled) { border-color: var(--border-strong); }
+  .select-trigger:disabled { opacity: 0.6; cursor: default; }
+  .select-field.open .select-trigger { border-color: var(--border-strong); }
+  .select-value { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .select-field .select-chevron {
+    display: inline-flex; flex: none; color: var(--muted); pointer-events: none;
+    transition: transform 0.14s ease;
+  }
+  .select-field.open .select-chevron { transform: rotate(180deg); }
+  .select-menu {
+    position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 50;
+    display: grid; gap: 2px; max-height: 260px; overflow: auto;
+    margin: 0; padding: 5px; list-style: none;
+    border: 1px solid var(--border); border-radius: 10px; background: var(--surface);
+    box-shadow: 0 14px 34px light-dark(rgba(16, 24, 40, 0.14), rgba(0, 0, 0, 0.55));
+  }
+  .select-menu[hidden] { display: none; }
+  .select-option {
+    padding: 7px 9px; border-radius: 7px; color: var(--text);
+    font-size: 13px; line-height: 1.3; cursor: pointer; outline: none;
+    overflow-wrap: anywhere;
+  }
+  .select-option:hover, .select-option:focus { background: var(--surface-soft); }
+  .select-option.selected { background: var(--surface-soft); font-weight: 600; }
+  .select-option.selected::after { content: '✓'; float: right; color: var(--muted); font-weight: 500; }
   .search-wrap { position: relative; flex: 1 1 520px; max-width: 520px; min-width: 0; height: 40px; }
   .search-wrap .search-icon {
     position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
@@ -637,7 +767,6 @@ export function renderLiveHtml({ project = {} } = {}) {
   }
   .filters-popover[hidden] { display: none; }
   .filters-popover label { display: grid; gap: 4px; color: var(--muted); font-size: 12px; }
-  .filters-popover select { width: 100%; font-size: 13px; padding: 7px 9px; }
   .filters-foot { display: flex; align-items: center; gap: 8px; padding-top: 2px; }
   #clear-filters {
     height: 30px; padding: 0 10px; border: 1px solid var(--border); border-radius: 8px;
@@ -732,7 +861,7 @@ export function renderLiveHtml({ project = {} } = {}) {
     background: var(--surface);
   }
   .board-empty[hidden] { display: none; }
-  .board-empty p { margin: 0; color: var(--muted); font-size: 13px; }
+  .board-empty p { margin: 0; color: light-dark(#4b5563, #aab4c2); font-size: 13px; }
   .board-empty button {
     height: 32px; padding: 0 14px; border: 1px solid var(--border-strong);
     border-radius: 8px; background: var(--surface); color: var(--text);
@@ -782,7 +911,7 @@ export function renderLiveHtml({ project = {} } = {}) {
   .column-toggle svg { transition: transform 0.14s ease; }
   section.column[data-collapsed="true"] .column-toggle svg { transform: rotate(-90deg); }
   .cards { display: flex; flex-direction: column; gap: 12px; }
-  .column-empty { color: var(--muted); font-size: 12px; padding: 12px 6px; margin: 0; text-align: center; }
+  .column-empty { color: light-dark(#4b5563, #aab4c2); font-size: 12px; padding: 12px 6px; margin: 0; text-align: center; }
   .column-empty[hidden] { display: none; }
   .column-foot { margin-top: auto; padding-top: 2px; }
   .column-new-card {
@@ -866,7 +995,7 @@ export function renderLiveHtml({ project = {} } = {}) {
   }
   .card-status { display: inline-flex; align-items: center; gap: 5px; min-width: 0; color: var(--muted); font-size: 12px; white-space: nowrap; }
   .card-status-label { min-width: 0; }
-  .card-dwell { color: var(--muted-soft); }
+  .card-dwell { color: light-dark(#6b7280, #9aa4b2); font-size: 12px; }
   .card-archived { color: var(--muted); }
   .status-dot { width: 6px; height: 6px; flex: none; border-radius: 50%; background: var(--muted-soft); }
   .status-backlog .status-dot { background: var(--text); }
@@ -876,9 +1005,10 @@ export function renderLiveHtml({ project = {} } = {}) {
   .status-canceled .status-dot { background: var(--muted-soft); }
   .status-done { color: var(--success); }
   .status-needs { color: var(--warn); }
-  .card-metrics { display: flex; align-items: center; gap: 9px; flex: none; margin-left: auto; color: var(--muted-soft); font-size: 11px; }
+  .card-metrics { display: flex; align-items: center; gap: 9px; flex: none; margin-left: auto; color: light-dark(#6b7280, #9aa4b2); font-size: 12px; }
+  .card-metrics .metric { color: light-dark(#6b7280, #9aa4b2); font-size: 12px; }
   .metric { display: inline-flex; align-items: center; gap: 3px; font-variant-numeric: tabular-nums; }
-  .metric svg { flex: none; }
+  .metric svg { flex: none; width: 12px; height: 12px; }
 
   /* ---- inline question panel ------------------------------------------ */
   .question-panel {
@@ -892,8 +1022,22 @@ export function renderLiveHtml({ project = {} } = {}) {
   .question-panel-prompt { margin: 0; color: var(--text); font-size: 12.5px; font-weight: 500; line-height: 1.45; overflow-wrap: anywhere; }
   .question-context { margin: 0; color: var(--muted); font-size: 11.5px; line-height: 1.4; }
   .question-options { display: flex; flex-direction: column; gap: 3px; }
-  .question-option { display: flex; align-items: flex-start; gap: 6px; color: var(--text); font-size: 12px; line-height: 1.35; cursor: pointer; }
-  .question-option input { margin: 2px 0 0; padding: 0; accent-color: light-dark(#111827, #e8ecf2); }
+  .question-option,
+  .option {
+    display: grid; grid-template-columns: 16px minmax(0, 1fr);
+    align-items: start; gap: 8px; min-height: 28px;
+    color: var(--text); font-size: 12px; line-height: 1.35; cursor: pointer;
+  }
+  .question-option { padding: 3px 6px; border-radius: 7px; }
+  .question-option:hover { background: light-dark(rgba(17, 24, 39, 0.04), rgba(255, 255, 255, 0.05)); }
+  .question-option:has(input:checked) {
+    background: var(--surface); box-shadow: inset 0 0 0 1px var(--warn-border);
+  }
+  .question-option input[type="radio"],
+  .option input[type="radio"] {
+    width: 16px; height: 16px; margin: 0; margin-top: 2px; padding: 0;
+    accent-color: light-dark(#111827, #e8ecf2);
+  }
   .question-option-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
   .question-option-label { overflow-wrap: anywhere; }
   .question-option-detail { color: var(--muted); font-size: 11px; overflow-wrap: anywhere; }
@@ -1010,20 +1154,52 @@ export function renderLiveHtml({ project = {} } = {}) {
   .link-row button { height: 32px; padding: 0 9px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); }
   .feed { display: grid; gap: 9px; margin: 0; padding: 0; list-style: none; }
   .feed-item { display: grid; gap: 1px; padding-left: 9px; border-left: 2px solid var(--border); }
+  .feed-day {
+    display: flex; align-items: center; gap: 8px; margin: 3px 0 0;
+    color: var(--muted); font-size: 11px; font-weight: 600; letter-spacing: 0.01em;
+    list-style: none;
+  }
+  .feed-day::after { content: ''; flex: 1; height: 1px; background: var(--border); }
   .feed-summary { font-size: 12.5px; overflow-wrap: anywhere; }
   .feed-note { margin: 0; font-size: 12.5px; line-height: 1.45; overflow-wrap: anywhere; }
   .attachment { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   .attachment .attachment-name { font-size: 12.5px; font-weight: 500; overflow-wrap: anywhere; }
   .attachment .hint { flex: 1; min-width: 110px; }
   .attachment button { padding: 3px 8px; font-size: 11.5px; }
-  .option {
-    display: flex; gap: 8px; align-items: flex-start; padding: 8px 10px;
-    border: 1px solid var(--border); border-radius: 8px; background: var(--surface); cursor: pointer;
+  /* ---- attachment dropzone -------------------------------------------- */
+  .dropzone {
+    display: flex; flex-direction: column; align-items: flex-start; gap: 8px;
+    padding: 12px; border: 1.5px dashed var(--border-strong); border-radius: 10px;
+    background: var(--surface-soft);
+    transition: border-color 0.12s ease, background 0.12s ease;
   }
+  .dropzone.dragover {
+    border-color: var(--text);
+    background: light-dark(#eef2f7, #1f2733);
+  }
+  .dropzone.disabled { opacity: 0.55; }
+  .dropzone-row { display: flex; align-items: center; flex-wrap: wrap; gap: 9px; }
+  .dropzone .dropzone-button {
+    height: 32px; padding: 0 12px; border: 1px solid var(--border-strong);
+    border-radius: 8px; background: var(--surface); color: var(--text);
+    font-size: 12.5px; font-weight: 600;
+  }
+  .dropzone .dropzone-button:hover:not(:disabled) { border-color: var(--text); }
+  .dropzone-hint { color: var(--muted); font-size: 11.5px; }
+  .dropzone-file {
+    display: flex; align-items: center; gap: 6px; margin: 0;
+    color: var(--text); font-size: 12px; font-weight: 500; overflow-wrap: anywhere;
+  }
+  .dropzone-file[hidden] { display: none; }
+  .dropzone-file::before { content: ''; width: 6px; height: 6px; flex: none; border-radius: 50%; background: var(--success); }
+  .option {
+    padding: 5px 8px; border: 1px solid var(--border); border-radius: 8px;
+    background: var(--surface);
+  }
+  .option:hover { border-color: var(--border-strong); }
   .option:has(input:checked) { border-color: var(--text); background: var(--warn-bg); }
-  .option input { margin: 2px 0 0; padding: 0; accent-color: light-dark(#111827, #e8ecf2); }
-  .option-text { display: grid; gap: 1px; }
-  .option-label { font-size: 12.5px; }
+  .option-text { display: grid; gap: 1px; min-width: 0; }
+  .option-label { font-size: 12.5px; overflow-wrap: anywhere; }
   #drawer-readonly.banner { margin: 14px 0 0; }
   #question-section { border-top: 0; }
 
@@ -1056,6 +1232,40 @@ export function renderLiveHtml({ project = {} } = {}) {
   .project-row .badge { padding: 1px 7px; border-radius: 999px; background: var(--surface); border: 1px solid var(--border); color: var(--muted); font-size: 10.5px; }
   .project-row .actions { margin-top: 2px; }
   .project-row .actions button { height: 28px; padding: 0 9px; font-size: 11.5px; }
+  /* ---- confirm sheet --------------------------------------------------- */
+  .confirm-backdrop {
+    position: fixed; inset: 0; z-index: 60;
+    background: light-dark(rgba(16, 24, 40, 0.32), rgba(0, 0, 0, 0.55));
+  }
+  .confirm-sheet {
+    position: fixed; left: 50%; top: 50%; z-index: 61;
+    display: grid; gap: 10px; width: min(420px, calc(100vw - 32px));
+    max-height: calc(100vh - 40px); overflow: auto;
+    padding: 20px; transform: translate(-50%, -50%);
+    border: 1px solid var(--border); border-radius: 14px; background: var(--surface);
+    box-shadow: 0 24px 60px light-dark(rgba(16, 24, 40, 0.22), rgba(0, 0, 0, 0.6));
+  }
+  .confirm-sheet[hidden] { display: none; }
+  .confirm-sheet h2 { margin: 0; font-size: 16px; font-weight: 650; }
+  .confirm-target { margin: 0; font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+  .confirm-detail { margin: 0; color: var(--muted); font-size: 12.5px; line-height: 1.45; }
+  .confirm-actions { display: flex; justify-content: flex-end; gap: 8px; padding-top: 4px; }
+  .confirm-actions button {
+    height: 34px; padding: 0 14px; border: 1px solid var(--border);
+    border-radius: 8px; background: var(--surface); color: var(--text);
+    font-size: 12.5px; font-weight: 600;
+  }
+  .confirm-actions button:hover { border-color: var(--border-strong); background: var(--surface-soft); }
+  #confirm-ok.danger-solid {
+    border-color: transparent; background: light-dark(#b42318, #d4524a); color: #ffffff;
+  }
+  #confirm-ok.danger-solid:hover { background: light-dark(#961a12, #d97f77); border-color: transparent; }
+  #confirm-ok.primary {
+    border-color: transparent; background: light-dark(#111827, #f1f5f9);
+    color: light-dark(#ffffff, #111827);
+  }
+  #confirm-ok.primary:hover { background: light-dark(#1f2937, #ffffff); }
+  body.confirm-open { overflow: hidden; }
   .toast {
     position: fixed; left: 50%; bottom: 22px; z-index: 20; max-width: min(560px, calc(100vw - 32px));
     padding: 8px 14px; border-radius: 999px; background: light-dark(#111827, #f1f5f9);
@@ -1149,19 +1359,40 @@ export function renderLiveHtml({ project = {} } = {}) {
         </button>
         <div class="filters-popover" id="filters-popover" role="group" data-i18n-aria="filter.toolbar" aria-label="Filters" hidden>
           <label for="filter-priority"><span data-i18n="filter.priority">All priorities</span>
-            <select id="filter-priority" aria-label="Priority">
-              <option value="">All priorities</option>
-            </select>
+            <span class="select-field" data-select-field>
+              <select id="filter-priority" aria-label="Priority" data-i18n-aria="filter.priorityAria" tabindex="-1" hidden>
+                <option value="">All priorities</option>
+              </select>
+              <button class="select-trigger" type="button" role="combobox" aria-haspopup="listbox" aria-expanded="false" aria-controls="filter-priority-menu" aria-label="Priority">
+                <span class="select-value">All priorities</span>
+                <span class="select-chevron" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m7 10 5 5 5-5"/></svg></span>
+              </button>
+              <ul class="select-menu" id="filter-priority-menu" role="listbox" aria-label="Priority" hidden></ul>
+            </span>
           </label>
           <label for="filter-label"><span data-i18n="filter.label">All labels</span>
-            <select id="filter-label" aria-label="Label">
-              <option value="">All labels</option>
-            </select>
+            <span class="select-field" data-select-field>
+              <select id="filter-label" aria-label="Label" data-i18n-aria="filter.labelAria" tabindex="-1" hidden>
+                <option value="">All labels</option>
+              </select>
+              <button class="select-trigger" type="button" role="combobox" aria-haspopup="listbox" aria-expanded="false" aria-controls="filter-label-menu" aria-label="Label">
+                <span class="select-value">All labels</span>
+                <span class="select-chevron" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m7 10 5 5 5-5"/></svg></span>
+              </button>
+              <ul class="select-menu" id="filter-label-menu" role="listbox" aria-label="Label" hidden></ul>
+            </span>
           </label>
           <label for="filter-assignee"><span data-i18n="filter.assignee">All assignees</span>
-            <select id="filter-assignee" aria-label="Assignee">
-              <option value="">All assignees</option>
-            </select>
+            <span class="select-field" data-select-field>
+              <select id="filter-assignee" aria-label="Assignee" data-i18n-aria="filter.assigneeAria" tabindex="-1" hidden>
+                <option value="">All assignees</option>
+              </select>
+              <button class="select-trigger" type="button" role="combobox" aria-haspopup="listbox" aria-expanded="false" aria-controls="filter-assignee-menu" aria-label="Assignee">
+                <span class="select-value">All assignees</span>
+                <span class="select-chevron" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m7 10 5 5 5-5"/></svg></span>
+              </button>
+              <ul class="select-menu" id="filter-assignee-menu" role="listbox" aria-label="Assignee" hidden></ul>
+            </span>
           </label>
           <div class="filters-foot">
             <button id="clear-filters" type="button" data-i18n="filter.clear">Clear filters</button>
@@ -1346,18 +1577,39 @@ export function renderLiveHtml({ project = {} } = {}) {
           <input id="edit-title" type="text" maxlength="240" data-write />
         </div>
         <div class="attr">
-          <span class="attr-label" data-i18n="drawer.statusLabel">Status</span>
-          <span class="attr-static" id="attr-status"></span>
+          <label for="attr-status" data-i18n="drawer.statusLabel">Status</label>
+          <span class="select-field" data-select-field>
+            <select id="attr-status" data-write aria-label="Status" data-i18n-aria="drawer.statusLabel" tabindex="-1" hidden>
+              <option value="backlog" data-i18n="status.backlog">Backlog</option>
+              <option value="todo" data-i18n="status.todo">Unclaimed</option>
+              <option value="in_progress" data-i18n="status.in_progress">In progress</option>
+              <option value="in_review" data-i18n="status.in_review">Needs you</option>
+              <option value="done" data-i18n="status.done">Done</option>
+              <option value="canceled" data-i18n="status.canceled">Canceled</option>
+            </select>
+            <button class="select-trigger" type="button" role="combobox" aria-haspopup="listbox" aria-expanded="false" aria-controls="attr-status-menu" aria-label="Status">
+              <span class="select-value">Backlog</span>
+              <span class="select-chevron" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m7 10 5 5 5-5"/></svg></span>
+            </button>
+            <ul class="select-menu" id="attr-status-menu" role="listbox" aria-label="Status" hidden></ul>
+          </span>
         </div>
         <div class="attr">
           <label for="edit-priority"><span data-i18n="drawer.priority">Priority</span>
-            <select id="edit-priority" data-write>
-              <option value="none" data-i18n="priority.none">None</option>
-              <option value="low" data-i18n="priority.low">Low</option>
-              <option value="medium" data-i18n="priority.medium">Medium</option>
-              <option value="high" data-i18n="priority.high">High</option>
-              <option value="urgent" data-i18n="priority.urgent">Urgent</option>
-            </select>
+            <span class="select-field" data-select-field>
+              <select id="edit-priority" data-write aria-label="Priority" data-i18n-aria="drawer.priority" tabindex="-1" hidden>
+                <option value="none" data-i18n="priority.none">None</option>
+                <option value="low" data-i18n="priority.low">Low</option>
+                <option value="medium" data-i18n="priority.medium">Medium</option>
+                <option value="high" data-i18n="priority.high">High</option>
+                <option value="urgent" data-i18n="priority.urgent">Urgent</option>
+              </select>
+              <button class="select-trigger" type="button" role="combobox" aria-haspopup="listbox" aria-expanded="false" aria-controls="edit-priority-menu" aria-label="Priority">
+                <span class="select-value">None</span>
+                <span class="select-chevron" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m7 10 5 5 5-5"/></svg></span>
+              </button>
+              <ul class="select-menu" id="edit-priority-menu" role="listbox" aria-label="Priority" hidden></ul>
+            </span>
           </label>
         </div>
         <div class="attr">
@@ -1420,8 +1672,14 @@ export function renderLiveHtml({ project = {} } = {}) {
         <h4 data-i18n="drawer.attachments">Attachments</h4>
         <ul id="attachment-list" class="feed"></ul>
         <p id="attachment-empty" class="hint" hidden data-i18n="drawer.attachmentsEmpty">No attachments.</p>
-        <label for="attachment-input" data-i18n="drawer.upload">Upload file</label>
-        <input id="attachment-input" type="file" data-write />
+        <div class="dropzone" id="attachment-dropzone">
+          <div class="dropzone-row">
+            <button class="dropzone-button" id="attachment-browse" type="button" data-i18n="drawer.chooseFile">Choose file</button>
+            <span class="dropzone-hint" data-i18n="drawer.dropHint">or drag a file here · up to 10 MB</span>
+          </div>
+          <p class="dropzone-file" id="attachment-filename" hidden></p>
+          <input id="attachment-input" type="file" data-write hidden />
+        </div>
         <p class="hint" data-i18n="drawer.attachmentHint">Up to 10 MB per file.</p>
         <p class="error" id="attachment-error" role="alert" hidden></p>
       </div>
@@ -1465,6 +1723,17 @@ export function renderLiveHtml({ project = {} } = {}) {
     </div>
   </footer>
 </aside>
+
+<div class="confirm-backdrop" id="confirm-backdrop" hidden></div>
+<div class="confirm-sheet" id="confirm-sheet" role="alertdialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-detail" hidden>
+  <h2 id="confirm-title"></h2>
+  <p class="confirm-target" id="confirm-target"></p>
+  <p class="confirm-detail" id="confirm-detail"></p>
+  <div class="confirm-actions">
+    <button id="confirm-cancel" type="button" data-i18n="confirm.cancel">Cancel</button>
+    <button id="confirm-ok" class="danger-solid" type="button"></button>
+  </div>
+</div>
 
 <dialog id="new-task-dialog" aria-labelledby="new-task-heading">
   <div class="dialog-head">
@@ -1634,7 +1903,9 @@ export function renderLiveHtml({ project = {} } = {}) {
     pendingTaskRef: readTaskRef(),
     dragTask: null,
     focusReturn: null,
-    dirty: false
+    dirty: false,
+    confirmHandler: null,
+    confirmReturn: null
   };
 
   var boardTitle = document.getElementById('board-title');
@@ -1698,6 +1969,9 @@ export function renderLiveHtml({ project = {} } = {}) {
   var attachmentList = document.getElementById('attachment-list');
   var attachmentEmpty = document.getElementById('attachment-empty');
   var attachmentInput = document.getElementById('attachment-input');
+  var attachmentDropzone = document.getElementById('attachment-dropzone');
+  var attachmentBrowse = document.getElementById('attachment-browse');
+  var attachmentFilename = document.getElementById('attachment-filename');
   var attachmentError = document.getElementById('attachment-error');
   var questionSection = document.getElementById('question-section');
   var questionPrompt = document.getElementById('question-prompt');
@@ -1730,6 +2004,13 @@ export function renderLiveHtml({ project = {} } = {}) {
   var projectPrefixInput = document.getElementById('project-prefix');
   var projectWorkspaceInput = document.getElementById('project-workspace');
   var projectList = document.getElementById('project-list');
+  var confirmBackdrop = document.getElementById('confirm-backdrop');
+  var confirmSheet = document.getElementById('confirm-sheet');
+  var confirmTitle = document.getElementById('confirm-title');
+  var confirmTarget = document.getElementById('confirm-target');
+  var confirmDetail = document.getElementById('confirm-detail');
+  var confirmCancel = document.getElementById('confirm-cancel');
+  var confirmOk = document.getElementById('confirm-ok');
 
   var prefersReducedMotion = false;
   try {
@@ -1787,17 +2068,35 @@ export function renderLiveHtml({ project = {} } = {}) {
     }
   }
 
-  function age(iso) {
-    if (!iso) return '';
+  function ageParts(iso) {
+    if (!iso) return null;
     var then = new Date(iso).getTime();
-    if (!isFinite(then)) return '';
+    if (!isFinite(then)) return null;
     var seconds = Math.max(0, Math.round((Date.now() - then) / 1000));
-    if (seconds < 60) return t('age.seconds', { n: seconds });
+    if (seconds < 60) return { justNow: true, value: '' };
     var minutes = Math.round(seconds / 60);
-    if (minutes < 60) return t('age.minutes', { n: minutes });
+    if (minutes < 60) return { justNow: false, value: t('age.minutes', { n: minutes }) };
     var hours = Math.round(minutes / 60);
-    if (hours < 24) return t('age.hours', { n: hours });
-    return t('age.days', { n: Math.round(hours / 24) });
+    if (hours < 24) return { justNow: false, value: t('age.hours', { n: hours }) };
+    return { justNow: false, value: t('age.days', { n: Math.round(hours / 24) }) };
+  }
+
+  function agoText(iso) {
+    var parts = ageParts(iso);
+    if (!parts) return '';
+    return parts.justNow ? t('age.justNow') : t('card.dwell', { time: parts.value });
+  }
+
+  function updatedText(iso) {
+    var parts = ageParts(iso);
+    if (!parts) return '';
+    return parts.justNow ? t('card.updatedJustNow') : t('card.updatedAgo', { time: parts.value });
+  }
+
+  function dwellText(iso) {
+    var parts = ageParts(iso);
+    if (!parts) return '';
+    return parts.justNow ? t('card.dwellJustNow') : t('card.dwellLabel', { time: parts.value });
   }
 
   function formatSize(bytes) {
@@ -1972,6 +2271,7 @@ export function renderLiveHtml({ project = {} } = {}) {
     state.assignee = fillFilter(filterAssignee, t('filter.assignee'), filters.assignees || [], state.assignee, function (value) {
       return value;
     });
+    syncSelectFields();
   }
 
   function hasFilters() {
@@ -2134,12 +2434,7 @@ export function renderLiveHtml({ project = {} } = {}) {
       else if (attention === 'blocked') since = task.blockedSince || task.statusSince;
       else since = task.statusSince;
     }
-    return age(since);
-  }
-
-  function dwellLabel(iso) {
-    var value = age(iso);
-    return value ? t('card.dwell', { time: value }) : '';
+    return since;
   }
 
   function metric(name, count, label) {
@@ -2277,11 +2572,11 @@ export function renderLiveHtml({ project = {} } = {}) {
     if (archived) chips.appendChild(el('span', 'chip archived', t('card.archived')));
     if (chips.childElementCount) card.appendChild(chips);
 
-    var updated = age(task.updatedAt || task.statusSince);
+    var updated = updatedText(task.updatedAt || task.statusSince);
     if (updated) {
       var meta = el('div', 'card-meta');
       meta.appendChild(icon('clock'));
-      meta.appendChild(el('span', '', t('card.updatedAgo', { time: updated })));
+      meta.appendChild(el('span', '', updated));
       card.appendChild(meta);
     }
 
@@ -2296,7 +2591,7 @@ export function renderLiveHtml({ project = {} } = {}) {
     status.appendChild(el('span', 'status-dot'));
     status.appendChild(el('span', 'card-status-label', taskStatusLabel(task)));
     var elapsed = taskElapsed(task);
-    if (elapsed) status.appendChild(el('span', 'card-dwell', ' · ' + t('card.dwell', { time: elapsed })));
+    if (elapsed) status.appendChild(el('span', 'card-dwell', ' · ' + dwellText(elapsed)));
     footer.appendChild(status);
     var metrics = el('span', 'card-metrics');
     var comments = Array.isArray(task.comments) ? task.comments.length : (task.commentCount || 0);
@@ -2569,9 +2864,8 @@ export function renderLiveHtml({ project = {} } = {}) {
     archivedToggle.title = t(key);
   }
 
-  drawer.addEventListener('keydown', function (event) {
-    if (event.key !== 'Tab' || !drawer.classList.contains('open')) return;
-    var nodes = drawer.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+  function trapFocus(container, event) {
+    var nodes = container.querySelectorAll('button, [href], input, select:not([tabindex="-1"]), textarea, [tabindex]:not([tabindex="-1"])');
     var list = Array.prototype.filter.call(nodes, function (node) {
       return !node.disabled && node.offsetParent !== null;
     });
@@ -2585,6 +2879,205 @@ export function renderLiveHtml({ project = {} } = {}) {
       event.preventDefault();
       first.focus();
     }
+  }
+
+  function selectFields() {
+    return document.querySelectorAll('[data-select-field]');
+  }
+
+  function syncSelectField(field) {
+    if (!field) return;
+    var select = field.querySelector('select');
+    var trigger = field.querySelector('.select-trigger');
+    var valueEl = field.querySelector('.select-value');
+    var menu = field.querySelector('.select-menu');
+    if (!select || !trigger || !menu) return;
+    var selected = select.options[select.selectedIndex];
+    if (valueEl) valueEl.textContent = selected ? selected.textContent : '';
+    trigger.disabled = Boolean(select.disabled);
+    trigger.setAttribute('aria-expanded', field.classList.contains('open') ? 'true' : 'false');
+    trigger.setAttribute('aria-label', select.getAttribute('aria-label') || trigger.textContent.trim());
+    menu.textContent = '';
+    for (var i = 0; i < select.options.length; i += 1) {
+      var option = select.options[i];
+      var item = el('li', 'select-option', option.textContent);
+      item.setAttribute('role', 'option');
+      item.setAttribute('data-value', option.value);
+      item.setAttribute('aria-selected', option.value === select.value ? 'true' : 'false');
+      item.classList.toggle('selected', option.value === select.value);
+      item.tabIndex = -1;
+      menu.appendChild(item);
+    }
+  }
+
+  function syncSelectFields() {
+    var fields = selectFields();
+    for (var i = 0; i < fields.length; i += 1) syncSelectField(fields[i]);
+  }
+
+  function closeSelectField(field, restoreFocus) {
+    if (!field) return;
+    field.classList.remove('open');
+    var menu = field.querySelector('.select-menu');
+    if (menu) menu.hidden = true;
+    var trigger = field.querySelector('.select-trigger');
+    if (trigger) {
+      trigger.setAttribute('aria-expanded', 'false');
+      if (restoreFocus) trigger.focus({ preventScroll: true });
+    }
+  }
+
+  function closeSelectFields(except) {
+    var fields = selectFields();
+    for (var i = 0; i < fields.length; i += 1) {
+      if (fields[i] === except) continue;
+      if (fields[i].classList.contains('open')) closeSelectField(fields[i], false);
+    }
+  }
+
+  function activeSelectField() {
+    return document.querySelector('[data-select-field].open');
+  }
+
+  function openSelectField(field) {
+    var select = field.querySelector('select');
+    if (!select || select.disabled) return;
+    closeSelectFields(field);
+    field.classList.add('open');
+    var menu = field.querySelector('.select-menu');
+    menu.hidden = false;
+    var trigger = field.querySelector('.select-trigger');
+    if (trigger) trigger.setAttribute('aria-expanded', 'true');
+    var options = menu.querySelectorAll('.select-option');
+    var selected = menu.querySelector('.select-option[aria-selected="true"]') || options[0];
+    if (selected) {
+      for (var i = 0; i < options.length; i += 1) options[i].tabIndex = -1;
+      selected.tabIndex = 0;
+      selected.focus({ preventScroll: true });
+    }
+  }
+
+  function chooseSelectOption(field, value) {
+    var select = field.querySelector('select');
+    if (!select) return;
+    if (select.value !== value) {
+      select.value = value;
+      select.dispatchEvent(new Event('change', { bubbles: true }));
+      syncSelectField(field);
+    }
+    closeSelectField(field, true);
+  }
+
+  function handleSelectNav(event, field) {
+    var menu = field.querySelector('.select-menu');
+    if (!menu) return;
+    var options = Array.prototype.slice.call(menu.querySelectorAll('.select-option'));
+    var index = options.indexOf(document.activeElement);
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      event.stopPropagation();
+      closeSelectField(field, true);
+      return;
+    }
+    if (event.key === 'Tab') {
+      closeSelectField(field, false);
+      return;
+    }
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault();
+      var next = index + (event.key === 'ArrowDown' ? 1 : -1);
+      if (next < 0) next = options.length - 1;
+      if (next >= options.length) next = 0;
+      if (options[next]) options[next].focus();
+      return;
+    }
+    if (event.key === 'Home' || event.key === 'End') {
+      event.preventDefault();
+      var edge = event.key === 'Home' ? options[0] : options[options.length - 1];
+      if (edge) edge.focus();
+      return;
+    }
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      if (index >= 0) chooseSelectOption(field, options[index].getAttribute('data-value'));
+    }
+  }
+
+  function setupSelectFields() {
+    var fields = selectFields();
+    for (var i = 0; i < fields.length; i += 1) {
+      (function (field) {
+        var select = field.querySelector('select');
+        var trigger = field.querySelector('.select-trigger');
+        var menu = field.querySelector('.select-menu');
+        if (!select || !trigger || !menu) return;
+        trigger.addEventListener('click', function () {
+          if (field.classList.contains('open')) closeSelectField(field, true);
+          else openSelectField(field);
+        });
+        trigger.addEventListener('keydown', function (event) {
+          if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+            event.preventDefault();
+            openSelectField(field);
+          }
+        });
+        menu.addEventListener('keydown', function (event) {
+          handleSelectNav(event, field);
+        });
+        menu.addEventListener('click', function (event) {
+          var option = event.target && event.target.closest
+            ? event.target.closest('.select-option')
+            : null;
+          if (!option) return;
+          chooseSelectOption(field, option.getAttribute('data-value'));
+        });
+        select.addEventListener('change', function () {
+          syncSelectField(field);
+        });
+        syncSelectField(field);
+      })(fields[i]);
+    }
+  }
+
+  function openConfirm(options) {
+    state.confirmReturn = document.activeElement && document.activeElement.focus
+      ? document.activeElement
+      : null;
+    state.confirmHandler = options && typeof options.onConfirm === 'function' ? options.onConfirm : null;
+    confirmTitle.textContent = (options && options.title) || '';
+    confirmTarget.textContent = (options && options.target) || '';
+    confirmTarget.hidden = !confirmTarget.textContent;
+    confirmDetail.textContent = (options && options.detail) || '';
+    confirmOk.textContent = (options && options.confirmLabel) || t('confirm.archive');
+    confirmOk.className = options && options.destructive === false ? 'primary' : 'danger-solid';
+    confirmBackdrop.hidden = false;
+    confirmSheet.hidden = false;
+    document.body.classList.add('confirm-open');
+    confirmCancel.focus({ preventScroll: true });
+  }
+
+  function closeConfirm() {
+    if (confirmSheet.hidden) return;
+    confirmSheet.hidden = true;
+    confirmBackdrop.hidden = true;
+    document.body.classList.remove('confirm-open');
+    state.confirmHandler = null;
+    var target = state.confirmReturn;
+    state.confirmReturn = null;
+    if (target && document.contains(target) && typeof target.focus === 'function') {
+      target.focus({ preventScroll: true });
+    }
+  }
+
+  function confirmAccept() {
+    var handler = state.confirmHandler;
+    closeConfirm();
+    if (typeof handler === 'function') handler();
+  }
+
+  drawer.addEventListener('keydown', function (event) {
+    if (event.key !== 'Tab' || !drawer.classList.contains('open')) return;
+    trapFocus(drawer, event);
   });
 
   function openTask(ref) {
@@ -2637,10 +3130,7 @@ export function renderLiveHtml({ project = {} } = {}) {
     editDescription.value = task.description || '';
     editPriority.value = task.priority || 'none';
     editLabels.value = (Array.isArray(task.labels) ? task.labels : []).join(', ');
-    attrStatus.textContent = '';
-    attrStatus.appendChild(el('span', 'status-dot'));
-    attrStatus.appendChild(el('span', '', t('status.' + (task.status || 'backlog'))));
-    attrStatus.className = 'attr-static attr-status ' + statusClass(task);
+    attrStatus.value = task.status || 'backlog';
     attrAssignee.textContent = (task.assignee && task.assignee.name) || t('card.unassigned');
     attrUpdated.textContent = formatTime(task.updatedAt);
     attrCreated.textContent = formatTime(task.createdAt);
@@ -2671,6 +3161,7 @@ export function renderLiveHtml({ project = {} } = {}) {
       updateQuestionButtons();
     }
     attachmentError.hidden = true;
+    syncSelectFields();
     syncDirty();
   }
 
@@ -2720,18 +3211,131 @@ export function renderLiveHtml({ project = {} } = {}) {
     if (label) label.focus();
   }
 
+  function actorName(actor) {
+    var name = actor && actor.name ? String(actor.name) : '';
+    if (!name) return '';
+    var lower = name.toLowerCase();
+    if (lower === 'you') return t('actor.you');
+    if (lower === 'codex') return t('actor.codex');
+    return name;
+  }
+
+  function activityFieldLabel(field) {
+    var key = 'activity.field.' + field;
+    if (I18N.en && typeof I18N.en[key] === 'string') return t(key);
+    return field;
+  }
+
+  function activityText(entry, task) {
+    var kind = entry.kind || '';
+    var summary = String(entry.summary || '');
+    var changes = Array.isArray(entry.changes) ? entry.changes : [];
+    var id = (task && task.identifier) || '';
+    if (kind === 'created') {
+      var created = / in ([a-z_]+)$/.exec(summary);
+      var createdStatus = created ? created[1] : ((task && task.status) || 'backlog');
+      return t('activity.created', { id: id, status: t('status.' + createdStatus) });
+    }
+    if (kind === 'answered') {
+      var answered = summary.indexOf('answered: ') === 0 ? summary.slice('answered: '.length) : '';
+      return answered
+        ? t('activity.answered', { option: answered })
+        : t('activity.answeredNote');
+    }
+    if (kind === 'approved') return t('activity.approved', { id: id });
+    if (kind === 'rejected') return t('activity.rejected', { id: id });
+    if (kind === 'blocked') {
+      var reason = changes[0] && changes[0].after ? changes[0].after : summary.replace(/^blocked [^:]+: /, '');
+      return t('activity.blocked', { reason: reason });
+    }
+    if (kind === 'unblocked') return t('activity.unblocked');
+    if (kind === 'attached') {
+      return t('activity.attached', { name: summary.replace(/^attached /, '') });
+    }
+    if (kind === 'detached') {
+      return t('activity.detached', { name: summary.replace(/^removed attachment /, '') });
+    }
+    if (kind === 'commented') return t('activity.commented', { body: summary });
+    if (kind === 'moved') {
+      var before = changes[0] && changes[0].before;
+      var after = changes[0] && changes[0].after;
+      if (!before || !after) {
+        var moved = /from ([a-z_]+) to ([a-z_]+)$/.exec(summary);
+        if (moved) {
+          before = before || moved[1];
+          after = after || moved[2];
+        }
+      }
+      return t('activity.moved', {
+        from: before ? t('status.' + before) : '',
+        to: after ? t('status.' + after) : ''
+      });
+    }
+    if (kind === 'archived') return t('activity.archived');
+    if (kind === 'restored') return t('activity.restored');
+    if (kind === 'question') return t('activity.question', { prompt: summary.replace(/^asked: /, '') });
+    if (kind === 'reordered') return t('activity.reordered');
+    if (kind === 'updated') {
+      var fields = [];
+      for (var i = 0; i < changes.length; i += 1) {
+        var field = changes[i] && changes[i].field;
+        if (field) fields.push(activityFieldLabel(field));
+      }
+      if (!fields.length) fields.push(summary.replace(/^updated /, ''));
+      return t('activity.updated', {
+        fields: fields.join(state.lang === 'zh' ? '、' : ', ')
+      });
+    }
+    return summary || kind;
+  }
+
+  function dayKey(iso) {
+    var date = new Date(iso);
+    if (isNaN(date.getTime())) return '';
+    return date.getFullYear() + '-' + date.getMonth() + '-' + date.getDate();
+  }
+
+  function dayLabel(iso) {
+    var date = new Date(iso);
+    if (isNaN(date.getTime())) return '';
+    var now = new Date();
+    var today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    var yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1).getTime();
+    var day = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+    if (day === today) return t('activity.today');
+    if (day === yesterday) return t('activity.yesterday');
+    try {
+      return new Intl.DateTimeFormat(state.lang === 'zh' ? 'zh-CN' : 'en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: date.getFullYear() === now.getFullYear() ? undefined : 'numeric'
+      }).format(date);
+    } catch (error) {
+      return date.toDateString();
+    }
+  }
+
   function renderActivity(task) {
     activityList.textContent = '';
     var activity = Array.isArray(task.activity) ? task.activity : [];
     var latest = activity.slice(-12);
     activityEmpty.hidden = latest.length > 0;
+    var lastDay = '';
     for (var i = latest.length - 1; i >= 0; i -= 1) {
       var entry = latest[i] || {};
+      var day = dayKey(entry.at);
+      if (day && day !== lastDay) {
+        lastDay = day;
+        var head = el('li', 'feed-day', dayLabel(entry.at));
+        head.setAttribute('role', 'presentation');
+        activityList.appendChild(head);
+      }
       var item = el('li', 'feed-item');
-      item.appendChild(el('span', 'feed-summary', entry.summary || entry.kind || ''));
+      item.appendChild(el('span', 'feed-summary', activityText(entry, task)));
       var meta = el('span', 'hint');
-      var actor = entry.actor && entry.actor.name ? entry.actor.name : '';
-      meta.textContent = (actor ? actor + ' · ' : '') + dwellLabel(entry.at);
+      var actor = actorName(entry.actor);
+      var when = agoText(entry.at);
+      meta.textContent = (actor ? actor + ' · ' : '') + when;
       item.appendChild(meta);
       activityList.appendChild(item);
     }
@@ -2746,7 +3350,7 @@ export function renderLiveHtml({ project = {} } = {}) {
       var item = el('li', 'feed-item');
       item.appendChild(el('p', 'feed-note', comment.body || ''));
       var meta = el('span', 'hint');
-      var author = comment.author && comment.author.name ? comment.author.name : '';
+      var author = actorName(comment.author);
       meta.textContent = (author ? author + ' · ' : '') + formatTime(comment.createdAt);
       item.appendChild(meta);
       commentList.appendChild(item);
@@ -2775,7 +3379,18 @@ export function renderLiveHtml({ project = {} } = {}) {
         attachmentList.appendChild(item);
       })(attachments[i]);
     }
-    attachmentInput.disabled = !isWritable(task);
+    var writable = isWritable(task);
+    attachmentInput.disabled = !writable;
+    attachmentBrowse.disabled = !writable;
+    attachmentDropzone.classList.toggle('disabled', !writable);
+    attachmentDropzone.setAttribute('aria-disabled', writable ? 'false' : 'true');
+    if (!attachmentInput.files || !attachmentInput.files.length) setAttachmentFilename('');
+  }
+
+  function setAttachmentFilename(name) {
+    if (!attachmentFilename) return;
+    attachmentFilename.hidden = !name;
+    attachmentFilename.textContent = name ? t('drawer.fileSelected', { name: name }) : '';
   }
 
   function renderQuestion(task) {
@@ -2893,6 +3508,27 @@ export function renderLiveHtml({ project = {} } = {}) {
     });
   }
 
+  function changeStatus() {
+    var task = currentTask();
+    if (!task) return;
+    var next = attrStatus.value;
+    var previous = task.status || 'backlog';
+    if (!next || next === previous) return;
+    if (!isWritable(task)) {
+      attrStatus.value = previous;
+      return;
+    }
+    act('task.move', { id: task.id, version: task.version, to: next }).then(function (body) {
+      if (body) {
+        notify(t('drawer.statusChanged', { status: t('status.' + next) }));
+      } else {
+        var fresh = currentTask();
+        if (fresh) renderDrawer(fresh);
+        else attrStatus.value = previous;
+      }
+    });
+  }
+
   function linkRowsSnapshot() {
     var rows = editLinks.querySelectorAll('[data-link-row]');
     var parts = [];
@@ -2964,17 +3600,36 @@ export function renderLiveHtml({ project = {} } = {}) {
   function archiveCurrentTask() {
     var task = currentTask();
     if (!task || !isWritable(task)) return;
-    if (!window.confirm(t('drawer.archiveConfirm', { id: task.identifier }))) return;
-    act('task.archive', { id: task.id, version: task.version }).then(function (body) {
-      if (body) notify(t('drawer.archived'));
+    openConfirm({
+      title: t('confirm.archiveTaskTitle'),
+      target: task.identifier + ' · ' + task.title,
+      detail: t('confirm.archiveTaskDetail'),
+      confirmLabel: t('confirm.archive'),
+      destructive: true,
+      onConfirm: function () {
+        var fresh = findTask(task.id) || task;
+        act('task.archive', { id: fresh.id, version: fresh.version }).then(function (body) {
+          if (body) notify(t('drawer.archived'));
+        });
+      }
     });
   }
 
   function restoreCurrentTask() {
     var task = currentTask();
     if (!task || !task.archivedAt) return;
-    act('task.restore', { id: task.id, version: task.version }).then(function (body) {
-      if (body) notify(t('drawer.restored'));
+    openConfirm({
+      title: t('confirm.restoreTaskTitle'),
+      target: task.identifier + ' · ' + task.title,
+      detail: t('confirm.restoreTaskDetail'),
+      confirmLabel: t('confirm.restore'),
+      destructive: false,
+      onConfirm: function () {
+        var fresh = findTask(task.id) || task;
+        act('task.restore', { id: fresh.id, version: fresh.version }).then(function (body) {
+          if (body) notify(t('drawer.restored'));
+        });
+      }
     });
   }
 
@@ -3030,7 +3685,10 @@ export function renderLiveHtml({ project = {} } = {}) {
         data: data
       }).then(function (body) {
         attachmentInput.value = '';
-        if (body) notify(t('drawer.attachmentUploaded'));
+        if (body) {
+          setAttachmentFilename('');
+          notify(t('drawer.attachmentUploaded'));
+        }
       });
     };
     reader.readAsDataURL(file);
@@ -3038,13 +3696,21 @@ export function renderLiveHtml({ project = {} } = {}) {
 
   function removeAttachment(task, attachment) {
     if (!isWritable(task)) return;
-    if (!window.confirm(t('drawer.removeAttachmentConfirm', { name: attachment.filename }))) return;
-    act('attachment.remove', {
-      id: task.id,
-      version: task.version,
-      attachmentId: attachment.id
-    }).then(function (body) {
-      if (body) notify(t('drawer.attachmentRemoved'));
+    openConfirm({
+      title: t('confirm.removeAttachmentTitle'),
+      target: attachment.filename,
+      detail: t('confirm.removeAttachmentDetail'),
+      confirmLabel: t('confirm.remove'),
+      destructive: true,
+      onConfirm: function () {
+        act('attachment.remove', {
+          id: task.id,
+          version: task.version,
+          attachmentId: attachment.id
+        }).then(function (body) {
+          if (body) notify(t('drawer.attachmentRemoved'));
+        });
+      }
     });
   }
 
@@ -3220,15 +3886,32 @@ export function renderLiveHtml({ project = {} } = {}) {
   }
 
   function archiveProject(project) {
-    if (!window.confirm(t('project.archiveConfirm', { name: project.name }))) return;
-    act('project.archive', { id: project.id }).then(function (body) {
-      if (body) notify(t('toast.projectArchived'));
+    openConfirm({
+      title: t('confirm.archiveProjectTitle'),
+      target: project.name,
+      detail: t('confirm.archiveProjectDetail'),
+      confirmLabel: t('confirm.archive'),
+      destructive: true,
+      onConfirm: function () {
+        act('project.archive', { id: project.id }).then(function (body) {
+          if (body) notify(t('toast.projectArchived'));
+        });
+      }
     });
   }
 
   function restoreProject(project) {
-    act('project.restore', { id: project.id }).then(function (body) {
-      if (body) notify(t('toast.projectRestored'));
+    openConfirm({
+      title: t('confirm.restoreProjectTitle'),
+      target: project.name,
+      detail: t('confirm.restoreProjectDetail'),
+      confirmLabel: t('confirm.restore'),
+      destructive: false,
+      onConfirm: function () {
+        act('project.restore', { id: project.id }).then(function (body) {
+          if (body) notify(t('toast.projectRestored'));
+        });
+      }
     });
   }
 
@@ -3290,6 +3973,7 @@ export function renderLiveHtml({ project = {} } = {}) {
   }
 
   function bindEvents() {
+    setupSelectFields();
     projectSelect.addEventListener('change', function () {
       state.projectId = projectSelect.value || 'all';
       storeSet(STORAGE.project, state.projectId);
@@ -3327,6 +4011,10 @@ export function renderLiveHtml({ project = {} } = {}) {
       filterToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
     });
     document.addEventListener('click', function (event) {
+      var field = event.target && event.target.closest
+        ? event.target.closest('[data-select-field]')
+        : null;
+      if (!field) closeSelectFields();
       if (filtersPopover.hidden) return;
       var wrap = filtersPopover.parentNode;
       if (wrap && wrap.contains(event.target)) return;
@@ -3354,6 +4042,7 @@ export function renderLiveHtml({ project = {} } = {}) {
     backdrop.addEventListener('click', closeDrawer);
     drawer.addEventListener('input', syncDirty);
     drawer.addEventListener('change', syncDirty);
+    attrStatus.addEventListener('change', changeStatus);
     saveTaskButton.addEventListener('click', saveTask);
     archiveButton.addEventListener('click', archiveCurrentTask);
     restoreButton.addEventListener('click', restoreCurrentTask);
@@ -3367,7 +4056,45 @@ export function renderLiveHtml({ project = {} } = {}) {
     askButton.addEventListener('click', askQuestion);
     attachmentInput.addEventListener('change', function () {
       var file = attachmentInput.files && attachmentInput.files[0];
-      if (file) uploadAttachment(file);
+      if (file) {
+        setAttachmentFilename(file.name);
+        uploadAttachment(file);
+      }
+    });
+    attachmentBrowse.addEventListener('click', function () {
+      if (!attachmentInput.disabled) attachmentInput.click();
+    });
+    attachmentDropzone.addEventListener('dragover', function (event) {
+      if (attachmentInput.disabled) return;
+      event.preventDefault();
+      attachmentDropzone.classList.add('dragover');
+    });
+    attachmentDropzone.addEventListener('dragleave', function (event) {
+      if (event.relatedTarget && attachmentDropzone.contains(event.relatedTarget)) return;
+      attachmentDropzone.classList.remove('dragover');
+    });
+    attachmentDropzone.addEventListener('drop', function (event) {
+      event.preventDefault();
+      attachmentDropzone.classList.remove('dragover');
+      if (attachmentInput.disabled) return;
+      var dropped = event.dataTransfer && event.dataTransfer.files
+        ? event.dataTransfer.files[0]
+        : null;
+      if (!dropped) return;
+      setAttachmentFilename(dropped.name);
+      uploadAttachment(dropped);
+    });
+    confirmCancel.addEventListener('click', closeConfirm);
+    confirmOk.addEventListener('click', confirmAccept);
+    confirmBackdrop.addEventListener('click', closeConfirm);
+    confirmSheet.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        event.stopPropagation();
+        closeConfirm();
+        return;
+      }
+      if (event.key === 'Tab') trapFocus(confirmSheet, event);
     });
     document.getElementById('new-task-close').addEventListener('click', function () { newTaskDialog.close(); });
     document.getElementById('new-task-cancel').addEventListener('click', function () { newTaskDialog.close(); });
@@ -3389,6 +4116,29 @@ export function renderLiveHtml({ project = {} } = {}) {
     document.addEventListener('keydown', function (event) {
       if (event.defaultPrevented) return;
       if (event.key === 'Escape') {
+        if (!confirmSheet.hidden) {
+          closeConfirm();
+          event.preventDefault();
+          return;
+        }
+        var openSelect = activeSelectField();
+        if (openSelect) {
+          closeSelectField(openSelect, true);
+          event.preventDefault();
+          return;
+        }
+        if (document.activeElement === searchInput) {
+          if (searchInput.value) {
+            state.search = '';
+            searchInput.value = '';
+            renderBoard();
+            event.preventDefault();
+            return;
+          }
+          searchInput.blur();
+          event.preventDefault();
+          return;
+        }
         if (drawer.classList.contains('open')) {
           closeDrawer();
           event.preventDefault();
@@ -3413,6 +4163,7 @@ export function renderLiveHtml({ project = {} } = {}) {
         return;
       }
       if (event.ctrlKey || event.metaKey || event.altKey) return;
+      if (!confirmSheet.hidden || activeSelectField()) return;
       var target = event.target;
       var tag = target && target.tagName ? target.tagName : '';
       var typing = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (target && target.isContentEditable);
