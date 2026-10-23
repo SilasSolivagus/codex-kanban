@@ -5,3 +5,8 @@ node_modules/
 *.tmp
 .kanban/board.html
 .kanban/board.lock
+docs/ux-review/*
+!docs/ux-review/*.md
+!docs/ux-review/batch-*.png
+!docs/ux-review/board-1400.png
+!docs/ux-review/drawer-1400.png
