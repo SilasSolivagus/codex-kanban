@@ -152,6 +152,7 @@ export const STRINGS = Object.freeze({
     'toast.projectRenamed': 'Project renamed',
     'toast.projectArchived': 'Project archived',
     'toast.projectRestored': 'Project restored',
+    'toast.archivedDeepLink': 'This task is archived. Turn on "Show archived" to see it.',
     'newTask.title': 'New task',
     'newTask.titleLabel': 'Title',
     'newTask.titlePlaceholder': 'What needs doing?',
@@ -251,7 +252,7 @@ export const STRINGS = Object.freeze({
     'drawer.askOptionsRequired': 'Provide at least two options.',
     'drawer.asked': 'Question posted',
     'drawer.review': 'This task is waiting for review.',
-    'drawer.answerHint': 'Record an answer, then approve or reject.',
+    'drawer.answerHint': 'Pick an option, then approve or reject — one confirmation records it.',
     'drawer.answerNotePlaceholder': 'Optional note',
     'drawer.answer': 'Record answer',
     'drawer.answered': 'Answer recorded',
@@ -469,6 +470,7 @@ export const STRINGS = Object.freeze({
     'toast.projectRenamed': '项目已重命名',
     'toast.projectArchived': '项目已归档',
     'toast.projectRestored': '项目已恢复',
+    'toast.archivedDeepLink': '该任务已归档，打开「显示已归档」后可见',
     'newTask.title': '新建任务',
     'newTask.titleLabel': '标题',
     'newTask.titlePlaceholder': '需要做什么？',
@@ -568,7 +570,7 @@ export const STRINGS = Object.freeze({
     'drawer.askOptionsRequired': '至少需要两个选项。',
     'drawer.asked': '问题已提出',
     'drawer.review': '此任务等待审核。',
-    'drawer.answerHint': '先记录答案，再批准或拒绝。',
+    'drawer.answerHint': '选择答案后点「批准」或「拒绝」，一次确认即可记录。',
     'drawer.answerNotePlaceholder': '可选备注',
     'drawer.answer': '记录答案',
     'drawer.answered': '答案已记录',
@@ -1928,11 +1930,9 @@ export function renderLiveHtml({ project = {} } = {}) {
         <p class="feed-summary" id="question-prompt"></p>
         <p class="hint" id="question-note" hidden></p>
         <div id="question-options" class="feed" role="radiogroup" data-i18n-aria="drawer.question" aria-label="Needs your decision"></div>
-        <textarea id="answer-note" data-i18n-placeholder="drawer.answerNotePlaceholder" placeholder="Optional note" data-write></textarea>
-        <p class="hint" id="answer-hint" data-i18n="drawer.answerHint">Record an answer, then approve or reject.</p>
+        <p class="hint" id="answer-hint" data-i18n="drawer.answerHint">Pick an option, then approve or reject — one confirmation records it.</p>
         <p class="hint" id="resolution" hidden></p>
         <div class="actions">
-          <button id="answer-question" type="button" data-write data-i18n="drawer.answer">Record answer</button>
           <button id="approve" class="primary" type="button" data-write data-i18n="drawer.approve">Approve</button>
           <button id="reject" class="danger" type="button" data-write data-i18n="drawer.reject">Reject</button>
         </div>
@@ -2255,10 +2255,10 @@ export function renderLiveHtml({ project = {} } = {}) {
     lang: readLang(),
     collapsed: readCollapsed(),
     selectedId: null,
-    selectedOption: null,
+    optionDrafts: Object.create(null),
     newTaskColumn: 'backlog',
     readOnly: false,
-    includeArchived: readArchived() || Boolean(readTaskRef()),
+    includeArchived: readArchived(),
     pendingTaskRef: readTaskRef(),
     dragTask: null,
     focusReturn: null,
@@ -2267,6 +2267,8 @@ export function renderLiveHtml({ project = {} } = {}) {
     confirmReturn: null,
     drawerTab: 'details',
     decisionKind: 'approve',
+    decisionTaskId: null,
+    decisionBusy: false,
     skew: 0
   };
 
@@ -2347,8 +2349,6 @@ export function renderLiveHtml({ project = {} } = {}) {
   var questionPrompt = document.getElementById('question-prompt');
   var questionNote = document.getElementById('question-note');
   var questionOptions = document.getElementById('question-options');
-  var answerNote = document.getElementById('answer-note');
-  var answerButton = document.getElementById('answer-question');
   var answerHint = document.getElementById('answer-hint');
   var resolutionText = document.getElementById('resolution');
   var approveButton = document.getElementById('approve');
@@ -2609,6 +2609,21 @@ export function renderLiveHtml({ project = {} } = {}) {
       }
     }
     return null;
+  }
+
+  // Option clicks are client-side only: the draft never bumps the server version.
+  function selectedOptionFor(task) {
+    if (!task) return '';
+    if (Object.prototype.hasOwnProperty.call(state.optionDrafts, task.id)) {
+      return state.optionDrafts[task.id] || '';
+    }
+    var pending = task.pendingQuestion || {};
+    return pending.selected || '';
+  }
+
+  function selectOption(task, optionId) {
+    if (!task) return;
+    state.optionDrafts[task.id] = optionId;
   }
 
   function renderHeader() {
@@ -2883,13 +2898,18 @@ export function renderLiveHtml({ project = {} } = {}) {
         radio.type = 'radio';
         radio.name = radioName;
         radio.value = option.id || option.label || '';
-        radio.checked = question.selected === option.id;
+        radio.checked = selectedOptionFor(task) === option.id;
         label.appendChild(radio);
         var text = el('span', 'question-option-text');
         text.appendChild(el('span', 'question-option-label', option.label || option.id || ''));
         if (option.detail) text.appendChild(el('span', 'question-option-detail', option.detail));
         label.appendChild(text);
         box.appendChild(label);
+        radio.addEventListener('change', function () {
+          if (!radio.checked) return;
+          selectOption(task, radio.value);
+          sync();
+        });
       })(options[i]);
     }
     var note = panel.querySelector('[data-question-note]');
@@ -2901,12 +2921,10 @@ export function renderLiveHtml({ project = {} } = {}) {
     approve.textContent = t('drawer.approve');
     reject.textContent = t('drawer.reject');
     function sync() {
-      var checked = box.querySelector('input[type="radio"]:checked');
-      approve.disabled = !checked;
-      reject.disabled = !checked;
+      var selected = selectedOptionFor(task);
+      approve.disabled = !selected;
+      reject.disabled = false;
     }
-    var radios = box.querySelectorAll('input[type="radio"]');
-    for (var j = 0; j < radios.length; j += 1) radios[j].addEventListener('change', sync);
     approve.addEventListener('click', function () { inlineDecide(task, 'approve', panel); });
     reject.addEventListener('click', function () { inlineDecide(task, 'reject', panel); });
     sync();
@@ -2916,33 +2934,9 @@ export function renderLiveHtml({ project = {} } = {}) {
   function inlineDecide(task, decision, panel) {
     if (!isWritable(task)) return;
     var checked = panel.querySelector('.question-options input[type="radio"]:checked');
+    if (checked) selectOption(task, checked.value);
     var noteInput = panel.querySelector('[data-question-note]');
-    var note = noteInput ? noteInput.value : '';
-    if (!checked) {
-      notify(t('question.selectOption'), true);
-      return;
-    }
-    var approve = panel.querySelector('[data-question-approve]');
-    var reject = panel.querySelector('[data-question-reject]');
-    approve.disabled = true;
-    reject.disabled = true;
-    act('task.answer', {
-      id: task.id,
-      version: task.version,
-      option: checked.value,
-      note: note
-    }).then(function (body) {
-      if (!body) return null;
-      var fresh = findTask(task.id);
-      if (!fresh) return null;
-      return act(decision === 'approve' ? 'task.approve' : 'task.reject', {
-        id: fresh.id,
-        version: fresh.version,
-        note: note
-      });
-    }).then(function (body) {
-      if (body) notify(t(decision === 'approve' ? 'drawer.approved' : 'drawer.rejected'));
-    });
+    decide(decision, task.id, noteInput ? noteInput.value : '');
   }
 
   function renderCard(task, columnId) {
@@ -3170,6 +3164,7 @@ export function renderLiveHtml({ project = {} } = {}) {
       if (task) renderDrawer(task);
       else closeDrawer();
     }
+    if (decisionDialog.open) syncDecisionDialog();
     if (projectDialog.open) renderProjectList();
   }
 
@@ -3189,9 +3184,14 @@ export function renderLiveHtml({ project = {} } = {}) {
 
   function openDeepLink() {
     if (!state.pendingTaskRef || state.selectedId) return;
-    var task = findTask(state.pendingTaskRef);
-    if (!task) return;
+    var ref = state.pendingTaskRef;
     state.pendingTaskRef = null;
+    var task = findTask(ref);
+    if (!task) {
+      // Archived tasks are absent from a board loaded with the user's own archive setting.
+      notify(t('toast.archivedDeepLink'));
+      return;
+    }
     openTask(task.id);
   }
 
@@ -3590,7 +3590,6 @@ export function renderLiveHtml({ project = {} } = {}) {
     if (!task) return;
     state.focusReturn = document.activeElement && document.activeElement.focus ? document.activeElement : null;
     state.selectedId = task.id;
-    state.selectedOption = null;
     // A pending decision is the reason the drawer was opened; surface it first.
     var needsDecision = Boolean((task.pendingQuestion && !task.questionResolution) || task.blockedReason);
     state.drawerTab = needsDecision ? 'collaboration' : 'details';
@@ -3608,7 +3607,6 @@ export function renderLiveHtml({ project = {} } = {}) {
     var taskId = state.selectedId;
     var focusReturn = state.focusReturn;
     state.selectedId = null;
-    state.selectedOption = null;
     state.focusReturn = null;
     state.dirty = false;
     drawer.classList.remove('open');
@@ -3719,7 +3717,6 @@ export function renderLiveHtml({ project = {} } = {}) {
     if (readOnly) {
       approveButton.disabled = true;
       rejectButton.disabled = true;
-      answerButton.disabled = true;
     } else {
       updateQuestionButtons();
     }
@@ -3997,7 +3994,7 @@ export function renderLiveHtml({ project = {} } = {}) {
     questionNote.hidden = !note;
     questionNote.textContent = note;
     questionOptions.textContent = '';
-    state.selectedOption = pending && pending.selected ? pending.selected : null;
+    var selectedId = selectedOptionFor(task);
     if (pending) {
       var options = Array.isArray(pending.options) ? pending.options : [];
       for (var i = 0; i < options.length; i += 1) {
@@ -4007,9 +4004,10 @@ export function renderLiveHtml({ project = {} } = {}) {
           radio.type = 'radio';
           radio.name = 'question-option';
           radio.value = option.id;
-          radio.checked = pending.selected === option.id;
+          radio.checked = selectedId === option.id;
           radio.addEventListener('change', function () {
-            state.selectedOption = option.id;
+            if (!radio.checked) return;
+            selectOption(task, option.id);
             updateQuestionButtons();
           });
           label.appendChild(radio);
@@ -4035,10 +4033,8 @@ export function renderLiveHtml({ project = {} } = {}) {
     rejectButton.hidden = !showDecision;
     approveButton.textContent = t('drawer.approve');
     rejectButton.textContent = t('drawer.reject');
-    answerNote.hidden = !pending;
-    answerButton.hidden = !pending;
     answerHint.hidden = !pending;
-    if (pending && pending.answerNote) answerNote.value = pending.answerNote;
+    answerHint.textContent = t('drawer.answerHint');
   }
 
   function updateQuestionButtons() {
@@ -4046,15 +4042,13 @@ export function renderLiveHtml({ project = {} } = {}) {
     if (!task) return;
     var readOnly = !isWritable(task);
     var pending = Boolean(task.pendingQuestion && !task.questionResolution);
-    var selected = state.selectedOption;
+    var selected = selectedOptionFor(task);
     if (readOnly) {
-      answerButton.disabled = true;
       approveButton.disabled = true;
       rejectButton.disabled = true;
       return;
     }
-    answerButton.disabled = !pending || !selected;
-    approveButton.disabled = pending && !task.pendingQuestion.selected;
+    approveButton.disabled = pending && !selected;
     rejectButton.disabled = false;
   }
 
@@ -4305,23 +4299,6 @@ export function renderLiveHtml({ project = {} } = {}) {
     });
   }
 
-  function answerQuestion() {
-    var task = currentTask();
-    if (!task || !isWritable(task)) return;
-    if (!state.selectedOption) {
-      notify(t('drawer.answerRequired'), true);
-      return;
-    }
-    act('task.answer', {
-      id: task.id,
-      version: task.version,
-      option: state.selectedOption,
-      note: answerNote.value
-    }).then(function (body) {
-      if (body) notify(t('drawer.answered'));
-    });
-  }
-
   function pendingOptionLabel(task, id) {
     var pending = task && task.pendingQuestion ? task.pendingQuestion : {};
     var options = Array.isArray(pending.options) ? pending.options : [];
@@ -4332,8 +4309,7 @@ export function renderLiveHtml({ project = {} } = {}) {
   }
 
   function decisionAnswerText(task) {
-    var pending = task && task.pendingQuestion ? task.pendingQuestion : {};
-    var selected = state.selectedOption || pending.selected || '';
+    var selected = selectedOptionFor(task);
     var label = pendingOptionLabel(task, selected);
     if (label) return label;
     if (task && task.questionResolution && task.questionResolution.optionLabel) {
@@ -4353,36 +4329,76 @@ export function renderLiveHtml({ project = {} } = {}) {
     }
   }
 
-  function decide(kind) {
-    var task = currentTask();
-    if (!task || !isWritable(task)) return;
+  function syncDecisionDialog() {
+    var task = state.decisionTaskId ? findTask(state.decisionTaskId) : null;
+    if (!task) return;
+    var pending = task.pendingQuestion || {};
     decisionTarget.textContent = t('decision.target', {
       id: task.identifier,
       title: task.title
     });
-    var pending = task.pendingQuestion || {};
     decisionQuestion.textContent = pending.prompt || t('drawer.review');
     var answer = decisionAnswerText(task);
     decisionAnswer.textContent = answer || t('decision.noAnswer');
     decisionAnswer.classList.toggle('empty', !answer);
+    decisionApprove.disabled = state.decisionBusy || (Boolean(pending.prompt) && !answer);
+    decisionReject.disabled = state.decisionBusy;
+  }
+
+  function decide(kind, taskId, noteOverride) {
+    var task = taskId ? findTask(taskId) : currentTask();
+    if (!task || !isWritable(task)) return;
+    state.decisionTaskId = task.id;
+    state.decisionBusy = false;
     applyDecisionEmphasis(kind);
-    decisionNote.value = (task.pendingQuestion && task.pendingQuestion.answerNote) || '';
+    decisionNote.value = typeof noteOverride === 'string'
+      ? noteOverride
+      : ((task.pendingQuestion && task.pendingQuestion.answerNote) || '');
+    syncDecisionDialog();
     if (!decisionDialog.open) decisionDialog.showModal();
     decisionNote.focus();
   }
 
   function submitDecision(kind) {
-    var task = currentTask();
+    var task = state.decisionTaskId ? findTask(state.decisionTaskId) : currentTask();
     if (!task || !isWritable(task)) return;
     var action = kind === 'approve' ? 'task.approve' : 'task.reject';
     var doneKey = kind === 'approve' ? 'drawer.approved' : 'drawer.rejected';
-    act(action, {
-      id: task.id,
-      version: task.version,
-      note: decisionNote.value
-    }).then(function (body) {
-      if (!body) return;
+    var pending = task.pendingQuestion || {};
+    var selected = selectedOptionFor(task);
+    var note = decisionNote.value;
+    if (kind === 'approve' && pending.prompt && !selected) {
+      notify(t('drawer.answerRequired'), true);
+      return;
+    }
+    state.decisionBusy = true;
+    decisionApprove.disabled = true;
+    decisionReject.disabled = true;
+    // Record the answer first only when the local pick differs from the recorded one.
+    var write = selected && selected !== pending.selected
+      ? act('task.answer', {
+        id: task.id,
+        version: task.version,
+        option: selected,
+        note: note
+      }).then(function (body) {
+        if (!body) return null;
+        // The response board carries the new version; never reuse the pre-answer one.
+        var fresh = findTask(task.id);
+        if (!fresh) return null;
+        return act(action, { id: fresh.id, version: fresh.version, note: note });
+      })
+      : act(action, { id: task.id, version: task.version, note: note });
+    write.then(function (body) {
+      state.decisionBusy = false;
+      if (!body) {
+        // A successful first write still re-rendered the board; retry uses that version.
+        syncDecisionDialog();
+        return;
+      }
       decisionDialog.close();
+      state.decisionTaskId = null;
+      delete state.optionDrafts[task.id];
       notify(t(doneKey));
     });
   }
@@ -4824,7 +4840,6 @@ export function renderLiveHtml({ project = {} } = {}) {
     restoreButton.addEventListener('click', restoreCurrentTask);
     addLinkButton.addEventListener('click', addLink);
     addCommentButton.addEventListener('click', addComment);
-    answerButton.addEventListener('click', answerQuestion);
     approveButton.addEventListener('click', function () { decide('approve'); });
     rejectButton.addEventListener('click', function () { decide('reject'); });
     blockButton.addEventListener('click', blockTask);

@@ -352,3 +352,43 @@ All paths are relative to `docs/ux-review/`.
 ---
 
 **One-line verdict** · Round 2 is a substantial improvement — the board now matches the reference's scale, the phone and the dialogs are first-class, and nine of ten findings are fully closed — but the drawer's tabs hide the pending decision and the final confirm still puts the destructive action first, so the remaining work is about attention, not layout.
+
+---
+
+## Follow-up fixes (2026-10-23)
+
+Three remaining issues from the round-2 review were closed after this audit. Source changes are limited to `plugin/src/livehtml.mjs` and `test/web-ui.test.mjs`; the suite now has **266 passing tests** (up from 263, 3 new static tests). Commit: `fix(ux): respect archive state and one-step decisions`.
+
+### Deep links respect the archive setting
+
+`?task=<id>` no longer ORs the flag into the initial state. The board loads with `readArchived()` only, so archived cards appear only when 显示已归档 is on. When the linked task is absent from that payload, the page shows `该任务已归档，打开「显示已归档」后可见` and leaves the board and drawer alone; it does not silently open a different view. With 显示已归档 on, the same link opens the task read-only with 恢复 as before.
+
+- Evidence: [`batch-f-archived-link.png`](batch-f-archived-link.png) — 7 visible tasks, `aria-pressed="false"`, drawer closed, toast exact.
+- Static test: the deep-link handler contains no `include_archived`, reports `toast.archivedDeepLink`, and the initial `includeArchived` is `readArchived()`.
+
+### One-step answer + decision
+
+Option clicks in the inline panel and drawer now only write a local draft (`state.optionDrafts`); the radio updates immediately and no request or version bump happens. 批准 / 拒绝 open the existing decision sheet with `问题 → 所选答案` (or `尚未选择`). Confirming performs the writes in one handler:
+
+1. if the draft differs from `pendingQuestion.selected`, send `task.answer` with the current version;
+2. read the task from the returned board and send `task.approve` / `task.reject` with the **fresh** version;
+3. if the draft was already recorded, send the decision directly;
+4. reject is allowed without a selection; approve still requires one.
+
+If the second write fails, the API error is toasted and the dialog stays open against the board returned by the first write, so a retry uses the current version. The drawer's `记录答案` button and its duplicate note field are gone; the hint now reads `选择答案后点「批准」或「拒绝」，一次确认即可记录。`
+
+- Evidence: [`batch-f-inline.png`](batch-f-inline.png) — `最近项目` selected, 批准/拒绝 enabled, **0** `/api/action` calls, card still version 2. Opening the dialog showed `问题 首次打开看板时，默认显示哪个视图？` → `回答 最近项目`, still with 0 calls.
+- Static tests cover local-only selection, the removed record step, and the sequential `answer → decision` handler using `findTask(task.id)` and `fresh.version`.
+
+### R5 completeness evidence
+
+The filter summary was re-measured on the demo board with the popover closed and create buttons hidden:
+
+| Filter | Summary | Chip | Counts | Visible create controls | Screenshot |
+| --- | --- | --- | --- | --- | --- |
+| 优先级 = 高 | 115 × 32, transparent | `高 ×`, 24px | `4 / 8 个任务` | 0 of 8 | [`round2-filter-priority.png`](round2-filter-priority.png) |
+| 标签 = design | 142.1 × 32, transparent | `design ×`, 24px | `2 / 8 个任务` | 0 of 8 | [`round2-filter-label.png`](round2-filter-label.png) |
+
+Both show the compact inline chip row at y=67 with the H1 at y=101 and the board at y=157. The demo board was restored from its backup after capture; SHA-256 `5a2f09a5b65f3817b2ad718f52723365670fb98d6f0bbd57c544a215c606c869` matches the pristine file byte-for-byte.
+
+Residual: the drawer still has no version of the decision in the header; the decision sheet remains the only place that combines question, answer and confirm.

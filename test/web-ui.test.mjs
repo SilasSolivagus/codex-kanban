@@ -202,7 +202,7 @@ test('status dots and localized status labels are rendered on every card', () =>
   }
 })
 
-test('needs-you cards carry an inline question panel with options, note and decisions', () => {
+test('needs-you cards carry an inline question panel with local selection and one-step decisions', () => {
   assert.match(markup, /<template id="question-panel-template">/)
   assert.match(markup, /class="question-panel"/)
   assert.match(markup, /data-question-options/)
@@ -213,8 +213,8 @@ test('needs-you cards carry an inline question panel with options, note and deci
   assert.match(markup, /data-i18n="question.inlineTitle"/)
   assert.match(script, /function buildQuestionPanel\(task\)/)
   assert.match(script, /function inlineDecide\(task, decision, panel\)/)
-  assert.match(script, /act\('task\.answer'/)
-  assert.match(script, /decision === 'approve' \? 'task\.approve' : 'task\.reject'/)
+  assert.match(script, /decide\(decision, task\.id, noteInput \? noteInput\.value : ''\)/)
+  assert.match(script, /selectOption\(task, radio\.value\)/)
   assert.match(script, /t\('card\.blockedPrefix'\) \+ task\.blockedReason/)
 })
 
@@ -345,7 +345,7 @@ test('question options show label and detail, then a decision dialog approves or
   assert.match(markup, /<textarea id="decision-note"/)
   assert.match(script, /function submitDecision\(kind\)/)
   assert.match(script, /var action = kind === 'approve' \? 'task\.approve' : 'task\.reject'/)
-  assert.match(script, /note: decisionNote\.value/)
+  assert.match(script, /var note = decisionNote\.value/)
   assert.match(script, /act\('task\.ask'/)
   assert.match(script, /options: options/)
   assert.equal(STRINGS.zh['decision.approve'], '确认批准')
@@ -554,7 +554,8 @@ test('archived tasks can be shown, dimmed and restored from the drawer', () => {
   assert.match(markup, /data-i18n="filter\.archived"/)
   assert.match(markup, /<button id="archive-task"[^>]*data-i18n="drawer\.archive"/)
   assert.match(markup, /<button id="restore-task"[^>]*data-i18n="drawer\.restore"/)
-  assert.match(script, /includeArchived: readArchived\(\) \|\| Boolean\(readTaskRef\(\)\)/)
+  assert.match(script, /includeArchived: readArchived\(\)/)
+  assert.doesNotMatch(script, /includeArchived: readArchived\(\) \|\| Boolean\(readTaskRef\(\)\)/)
   assert.match(script, /'&include_archived=1'/)
   assert.match(script, /state\.includeArchived = !state\.includeArchived/)
   assert.match(script, /storeSet\(STORAGE\.archived/)
@@ -935,7 +936,7 @@ test('no native prompt or confirm survives; decisions, questions, blockers and r
   assert.equal(STRINGS.zh['decision.cancel'], '取消')
   assert.equal(STRINGS.zh['decision.approve'], '确认批准')
   assert.equal(STRINGS.zh['decision.reject'], '确认驳回')
-  assert.match(script, /note: decisionNote\.value/)
+  assert.match(script, /var note = decisionNote\.value/)
   // Ask: a question textarea plus 2–5 label/detail option rows with add, remove and validation.
   assert.match(markup, /<textarea id="ask-prompt"/)
   assert.match(markup, /<div class="ask-options" id="ask-options">/)
@@ -1120,3 +1121,64 @@ test('the details drawer sizes to content and only sticks the footer when it ove
   assert.match(script, /drawer\.classList\.add\('drawer-overflow'\)/)
   assert.match(script, /drawer\.setAttribute\('data-tab', name\)/)
 })
+
+// --- UX batch F -----------------------------------------------------------
+
+test('a ?task= deep link loads the user archive setting and reports a hidden archived task', () => {
+  // The deep link never changes the archive flag or appends include_archived itself.
+  assert.match(script, /includeArchived: readArchived\(\)/)
+  assert.doesNotMatch(script, /includeArchived: readArchived\(\) \|\| Boolean\(readTaskRef\(\)\)/)
+  const deepLink = script.slice(script.indexOf('function openDeepLink'), script.indexOf('function act('))
+  assert.doesNotMatch(deepLink, /include_archived/)
+  assert.match(deepLink, /var ref = state\.pendingTaskRef/)
+  assert.match(deepLink, /state\.pendingTaskRef = null/)
+  assert.match(deepLink, /if \(!task\) \{/)
+  assert.match(deepLink, /notify\(t\('toast\.archivedDeepLink'\)\)/)
+  assert.match(deepLink, /openTask\(task\.id\)/)
+  // The toast copy is the hard-coded zh requirement and is translated.
+  assert.equal(STRINGS.zh['toast.archivedDeepLink'], '该任务已归档，打开「显示已归档」后可见')
+  assert.match(STRINGS.en['toast.archivedDeepLink'], /archived/i)
+  assert.ok(I18N_KEYS.includes('toast.archivedDeepLink'))
+  // The flag still reaches /api/board when the user enabled 显示已归档.
+  assert.match(script, /state\.includeArchived \? '&include_archived=1' : ''/)
+})
+
+test('option clicks are local-only until the decision dialog confirm', () => {
+  const panel = script.slice(script.indexOf('function buildQuestionPanel'), script.indexOf('function renderCard'))
+  assert.doesNotMatch(panel, /act\(/)
+  assert.match(panel, /selectOption\(task, radio\.value\)/)
+  assert.match(panel, /approve\.disabled = !selected/)
+  assert.match(panel, /reject\.disabled = false/)
+  assert.match(panel, /decide\(decision, task\.id, noteInput \? noteInput\.value : ''\)/)
+  const drawerQuestion = script.slice(script.indexOf('function renderQuestion'), script.indexOf('function updateQuestionButtons'))
+  assert.doesNotMatch(drawerQuestion, /act\(/)
+  assert.match(drawerQuestion, /selectOption\(task, option\.id\)/)
+  assert.match(script, /optionDrafts: Object\.create\(null\)/)
+  assert.match(script, /function selectedOptionFor\(task\)/)
+  assert.match(script, /if \(Object\.prototype\.hasOwnProperty\.call\(state\.optionDrafts, task\.id\)\)/)
+  // The separate 记录答案 step is gone; the hint explains the single-confirm path.
+  assert.doesNotMatch(markup, /id="answer-question"/)
+  assert.doesNotMatch(markup, /id="answer-note"/)
+  assert.match(markup, /id="answer-hint"/)
+  assert.equal(STRINGS.zh['drawer.answerHint'], '选择答案后点「批准」或「拒绝」，一次确认即可记录。')
+})
+
+test('one confirm records the pending answer and then applies the decision with the fresh version', () => {
+  const submit = script.slice(script.indexOf('function submitDecision'), script.indexOf('function blockTask'))
+  assert.match(submit, /var selected = selectedOptionFor\(task\)/)
+  // Already recorded: go straight to the decision with the current version.
+  assert.match(submit, /selected !== pending\.selected/)
+  assert.match(submit, /: act\(action, \{ id: task\.id, version: task\.version, note: note \}\)/)
+  // Not recorded: answer first with the current version, then read the fresh task.
+  assert.match(submit, /act\('task\.answer', \{\s*id: task\.id,\s*version: task\.version,\s*option: selected,\s*note: note/)
+  assert.match(submit, /var fresh = findTask\(task\.id\)/)
+  assert.match(submit, /act\(action, \{ id: fresh\.id, version: fresh\.version, note: note \}\)/)
+  // A failed second write keeps the dialog open against the returned board.
+  assert.match(submit, /syncDecisionDialog\(\)/)
+  assert.match(script, /if \(decisionDialog\.open\) syncDecisionDialog\(\)/)
+  // Approve still requires a recorded selection; reject stays available.
+  assert.match(script, /decisionApprove\.disabled = state\.decisionBusy \|\| \(Boolean\(pending\.prompt\) && !answer\)/)
+  assert.match(script, /decisionReject\.disabled = state\.decisionBusy/)
+  assert.match(script, /if \(kind === 'approve' && pending\.prompt && !selected\)/)
+})
+
