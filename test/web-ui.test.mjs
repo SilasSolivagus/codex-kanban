@@ -1124,7 +1124,7 @@ test('the details drawer sizes to content and only sticks the footer when it ove
 
 // --- UX batch F -----------------------------------------------------------
 
-test('a ?task= deep link loads the user archive setting and reports a hidden archived task', () => {
+test('a ?task= deep link loads the user archive setting and looks up a task missing from the payload', () => {
   // The deep link never changes the archive flag or appends include_archived itself.
   assert.match(script, /includeArchived: readArchived\(\)/)
   assert.doesNotMatch(script, /includeArchived: readArchived\(\) \|\| Boolean\(readTaskRef\(\)\)/)
@@ -1133,7 +1133,7 @@ test('a ?task= deep link loads the user archive setting and reports a hidden arc
   assert.match(deepLink, /var ref = state\.pendingTaskRef/)
   assert.match(deepLink, /state\.pendingTaskRef = null/)
   assert.match(deepLink, /if \(!task\) \{/)
-  assert.match(deepLink, /notify\(t\('toast\.archivedDeepLink'\)\)/)
+  assert.match(deepLink, /lookupTaskRef\(ref\)/)
   assert.match(deepLink, /openTask\(task\.id\)/)
   // The toast copy is the hard-coded zh requirement and is translated.
   assert.equal(STRINGS.zh['toast.archivedDeepLink'], '该任务已归档，打开「显示已归档」后可见')
@@ -1141,6 +1141,57 @@ test('a ?task= deep link loads the user archive setting and reports a hidden arc
   assert.ok(I18N_KEYS.includes('toast.archivedDeepLink'))
   // The flag still reaches /api/board when the user enabled 显示已归档.
   assert.match(script, /state\.includeArchived \? '&include_archived=1' : ''/)
+})
+
+test('a missing deep link is looked up and reports archived, filtered or unknown', () => {
+  const lookup = script.slice(script.indexOf('function lookupTaskRef'), script.indexOf('function act('))
+  assert.match(script, /var API_TASK = '\/api\/task'/)
+  assert.match(lookup, /fetch\(API_TASK \+ '\?ref=' \+ encodeURIComponent\(ref\)/)
+  assert.match(lookup, /var info = result\.json && result\.json\.ok \? result\.json\.task : null/)
+  // Found: archived and filtered-out are different problems with different copy.
+  assert.match(lookup, /info\.archived \? 'toast\.archivedDeepLink' : 'toast\.taskFilteredOut'/)
+  // 404: the link itself is wrong.
+  assert.match(lookup, /result\.status === 404/)
+  assert.match(lookup, /notify\(t\('toast\.taskNotFound', \{ ref: ref \}\)\)/)
+  assert.match(lookup, /notify\(t\('toast\.networkError'\), true\)/)
+  assert.equal(STRINGS.zh['toast.archivedDeepLink'], '该任务已归档，打开「显示已归档」后可见')
+  assert.equal(STRINGS.zh['toast.taskFilteredOut'], '该任务不在当前筛选结果中')
+  assert.equal(STRINGS.zh['toast.taskNotFound'], '找不到任务 {ref}')
+  assert.match(STRINGS.en['toast.taskFilteredOut'], /filter/i)
+  assert.equal(STRINGS.en['toast.taskNotFound'], 'No task matches {ref}.')
+  for (const key of ['toast.archivedDeepLink', 'toast.taskFilteredOut', 'toast.taskNotFound']) {
+    assert.ok(I18N_KEYS.includes(key), `${key} is in both dictionaries`)
+  }
+})
+
+test('the decision sheet states the task version it will send', () => {
+  const dialog = markup.slice(
+    markup.indexOf('<dialog id="decision-dialog"'),
+    markup.indexOf('<dialog id="ask-dialog"'),
+  )
+  assert.match(dialog, /id="decision-version"/)
+  assert.match(dialog, /data-i18n="decision\.versionHint"/)
+  assert.ok(
+    dialog.indexOf('id="decision-target"') < dialog.indexOf('id="decision-version"'),
+    'the version line follows the task title',
+  )
+  assert.match(script, /var decisionVersion = document\.getElementById\('decision-version'\)/)
+  assert.match(
+    script,
+    /decisionVersion\.textContent = t\('decision\.versionMeta', \{\s*id: task\.identifier,\s*n: task\.version\s*\}\)/,
+  )
+  // syncDecisionDialog re-reads the current task, so a fresh board response
+  // refreshes the version line; renderAll calls it whenever the sheet is open.
+  const sync = script.slice(script.indexOf('function syncDecisionDialog'), script.indexOf('function decide('))
+  assert.match(sync, /findTask\(state\.decisionTaskId\)/)
+  assert.match(sync, /task\.version/)
+  assert.match(script, /if \(decisionDialog\.open\) syncDecisionDialog\(\)/)
+  assert.equal(STRINGS.zh['decision.versionMeta'], '{id} · 版本 {n}')
+  assert.equal(STRINGS.en['decision.versionMeta'], '{id} · v{n}')
+  assert.equal(STRINGS.zh['decision.versionHint'], '保存时会校验版本')
+  assert.equal(STRINGS.en['decision.versionHint'], 'The version is checked on save')
+  assert.ok(I18N_KEYS.includes('decision.versionMeta'))
+  assert.ok(I18N_KEYS.includes('decision.versionHint'))
 })
 
 test('option clicks are local-only until the decision dialog confirm', () => {

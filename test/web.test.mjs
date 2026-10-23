@@ -560,3 +560,68 @@ test('project counts exclude archived tasks', async (t) => {
   assert.equal(json.projects[0].taskCount, 0)
   assert.equal(json.projects[0].archivedCount, 1)
 })
+
+async function lookupTask(url, ref) {
+  const response = await fetch(`${url}/api/task?ref=${encodeURIComponent(ref)}`)
+  return { status: response.status, body: await response.json() }
+}
+
+test('task lookup finds a task by id or identifier regardless of case', async (t) => {
+  const { url } = await fixture(t)
+  const created = await act(url, { action: 'task.create', title: 'Look me up' })
+  const task = column(created.body, 'backlog')[0]
+  const project = created.body.projects[0]
+
+  const byIdentifier = await lookupTask(url, task.identifier.toLowerCase())
+  assert.equal(byIdentifier.status, 200)
+  assert.equal(byIdentifier.body.ok, true)
+  assert.deepEqual(Object.keys(byIdentifier.body.task).sort(), [
+    'archived', 'id', 'identifier', 'projectId', 'projectName',
+  ])
+  assert.deepEqual(byIdentifier.body.task, {
+    id: task.id,
+    identifier: task.identifier,
+    archived: false,
+    projectId: project.id,
+    projectName: project.name,
+  })
+
+  const byId = await lookupTask(url, task.id.toUpperCase())
+  assert.equal(byId.status, 200)
+  assert.equal(byId.body.task.identifier, task.identifier)
+})
+
+test('task lookup reports an archived task the board no longer shows', async (t) => {
+  const { url } = await fixture(t)
+  const created = await act(url, { action: 'task.create', title: 'Archive then look up' })
+  const task = column(created.body, 'backlog')[0]
+  await act(url, { action: 'task.archive', id: task.identifier, version: 1 })
+
+  const hidden = await board(url)
+  assert.equal(hidden.summary.total, 0)
+
+  const found = await lookupTask(url, task.identifier)
+  assert.equal(found.status, 200)
+  assert.equal(found.body.ok, true)
+  assert.equal(found.body.task.id, task.id)
+  assert.equal(found.body.task.archived, true)
+})
+
+test('task lookup answers 404 for a missing reference and stays read-only', async (t) => {
+  const { url } = await fixture(t)
+
+  const missing = await lookupTask(url, 'NOPE-404')
+  assert.equal(missing.status, 404)
+  assert.equal(missing.body.ok, false)
+  assert.equal(missing.body.error.code, 'TASK_NOT_FOUND')
+  assert.equal(missing.body.error.message, 'no task matches NOPE-404')
+
+  const empty = await fetch(`${url}/api/task`)
+  assert.equal(empty.status, 404)
+  assert.equal((await empty.json()).error.code, 'TASK_NOT_FOUND')
+
+  const posted = await fetch(`${url}/api/task?ref=NOPE-404`, { method: 'POST' })
+  assert.equal(posted.status, 404)
+  assert.equal((await posted.json()).error.code, 'NOT_FOUND')
+  assert.equal((await board(url)).summary.total, 0)
+})

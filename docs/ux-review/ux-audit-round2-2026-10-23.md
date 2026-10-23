@@ -392,3 +392,17 @@ The filter summary was re-measured on the demo board with the popover closed and
 Both show the compact inline chip row at y=67 with the H1 at y=101 and the board at y=157. The demo board was restored from its backup after capture; SHA-256 `5a2f09a5b65f3817b2ad718f52723365670fb98d6f0bbd57c544a215c606c869` matches the pristine file byte-for-byte.
 
 Residual: the drawer still has no version of the decision in the header; the decision sheet remains the only place that combines question, answer and confirm.
+
+### Versions and lookup failures (batch G)
+
+The decision sheet now states the task version it will send — `DSH-6 · 版本 3` / `DSH-6 · v3` — together with the save-time check `保存时会校验版本` / `The version is checked on save`. The line is recomputed from the current task whenever a fresh board response re-renders the open sheet.
+
+A new read-only `GET /api/task?ref=<id-or-identifier>` resolves tasks the loaded board hides, so a deep link now separates three cases instead of one:
+
+| Lookup result | Toast |
+| --- | --- |
+| Found, archived | `该任务已归档，打开「显示已归档」后可见` |
+| Found, not archived (filtered out) | `该任务不在当前筛选结果中` |
+| 404 | `找不到任务 <ref>` |
+
+Tasks present in the payload still open directly with no lookup. Evidence: [`batch-g-version.png`](batch-g-version.png), [`batch-g-lookup.png`](batch-g-lookup.png). Suite: **271 passing**; commit `fix(ux): show versions and distinguish lookup failures`.

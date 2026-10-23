@@ -12,6 +12,7 @@ import {
   boardView,
   createProject,
   createTask,
+  findTask,
   listProjects,
   moveTask,
   readAttachment,
@@ -160,6 +161,22 @@ function boardPayload(store, projectId, withArchived = false) {
   }
 }
 
+// Read-only lookup across every task, archived or not, so the UI can tell a
+// hidden archived task apart from a filtered-out one and a bad link from both.
+function lookupTask(store, ref) {
+  const board = store.read()
+  const task = findTask(board, ref)
+  if (!task) return null
+  const project = listProjects(board).find((entry) => entry.id === task.projectId)
+  return {
+    id: task.id,
+    identifier: task.identifier,
+    archived: Boolean(task.archivedAt),
+    projectId: task.projectId ?? null,
+    projectName: project ? project.name : null,
+  }
+}
+
 function askOptions(value) {
   if (!Array.isArray(value)) return value
   return value.map((entry) => (typeof entry === 'string' ? { label: entry } : entry))
@@ -300,6 +317,20 @@ export function createWebServer({ store, host = '127.0.0.1', port = 4317 }) {
 
       if (req.method === 'GET' && url.pathname === '/api/board') {
         sendJson(res, 200, boardPayload(store, projectFilter(url), includeArchived(url)))
+        return
+      }
+
+      if (req.method === 'GET' && url.pathname === '/api/task') {
+        const ref = url.searchParams.get('ref') ?? ''
+        const task = ref.trim() ? lookupTask(store, ref) : null
+        if (!task) {
+          sendJson(res, 404, {
+            ok: false,
+            error: { code: 'TASK_NOT_FOUND', message: `no task matches ${ref}` },
+          })
+          return
+        }
+        sendJson(res, 200, { ok: true, task })
         return
       }
 

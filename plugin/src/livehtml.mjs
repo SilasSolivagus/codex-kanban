@@ -153,6 +153,8 @@ export const STRINGS = Object.freeze({
     'toast.projectArchived': 'Project archived',
     'toast.projectRestored': 'Project restored',
     'toast.archivedDeepLink': 'This task is archived. Turn on "Show archived" to see it.',
+    'toast.taskFilteredOut': 'This task is not in the current filter results.',
+    'toast.taskNotFound': 'No task matches {ref}.',
     'newTask.title': 'New task',
     'newTask.titleLabel': 'Title',
     'newTask.titlePlaceholder': 'What needs doing?',
@@ -295,6 +297,8 @@ export const STRINGS = Object.freeze({
     'drawer.tabs': 'Task sections',
     'decision.title': 'Review decision',
     'decision.target': '{id} · {title}',
+    'decision.versionMeta': '{id} · v{n}',
+    'decision.versionHint': 'The version is checked on save',
     'decision.questionLabel': 'Question',
     'decision.answerLabel': 'Answer',
     'decision.noAnswer': 'Not selected',
@@ -471,6 +475,8 @@ export const STRINGS = Object.freeze({
     'toast.projectArchived': '项目已归档',
     'toast.projectRestored': '项目已恢复',
     'toast.archivedDeepLink': '该任务已归档，打开「显示已归档」后可见',
+    'toast.taskFilteredOut': '该任务不在当前筛选结果中',
+    'toast.taskNotFound': '找不到任务 {ref}',
     'newTask.title': '新建任务',
     'newTask.titleLabel': '标题',
     'newTask.titlePlaceholder': '需要做什么？',
@@ -613,6 +619,8 @@ export const STRINGS = Object.freeze({
     'drawer.tabs': '任务分区',
     'decision.title': '审核决定',
     'decision.target': '{id} · {title}',
+    'decision.versionMeta': '{id} · 版本 {n}',
+    'decision.versionHint': '保存时会校验版本',
     'decision.questionLabel': '问题',
     'decision.answerLabel': '回答',
     'decision.noAnswer': '尚未选择',
@@ -1410,6 +1418,9 @@ export function renderLiveHtml({ project = {} } = {}) {
   .decision-summary-question { margin: 0; color: var(--text); font-size: 12.5px; font-weight: 550; line-height: 1.4; overflow-wrap: anywhere; }
   .decision-summary-answer { margin: 0; color: var(--text); font-size: 12.5px; font-weight: 600; line-height: 1.4; overflow-wrap: anywhere; }
   .decision-summary-answer.empty { color: var(--muted-soft); font-weight: 500; }
+  .decision-meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; margin: -4px 0 0; }
+  .decision-version { color: var(--muted); font-size: 11.5px; font-weight: 600; letter-spacing: 0.01em; }
+  .decision-version-hint { color: var(--muted-soft); font-size: 11px; }
   #decision-dialog .dialog-actions { align-items: center; }
   #decision-dialog .dialog-actions #decision-approve,
   #decision-dialog .dialog-actions #decision-reject { min-width: 88px; }
@@ -2074,6 +2085,10 @@ export function renderLiveHtml({ project = {} } = {}) {
   </div>
   <form id="decision-form">
     <p class="hint" id="decision-target"></p>
+    <p class="decision-meta">
+      <span class="decision-version" id="decision-version"></span>
+      <span class="decision-version-hint" data-i18n="decision.versionHint">The version is checked on save</span>
+    </p>
     <div class="decision-summary" id="decision-summary" data-i18n-aria="decision.title" aria-label="Review decision">
       <div class="decision-summary-row">
         <span class="decision-summary-label" data-i18n="decision.questionLabel">Question</span>
@@ -2163,6 +2178,7 @@ export function renderLiveHtml({ project = {} } = {}) {
 (function () {
   var API_BOARD = '/api/board';
   var API_ACTION = '/api/action';
+  var API_TASK = '/api/task';
   var ATTACHMENT_API = '/api/attachments/';
   var MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024;
   var MIN_ASK_OPTIONS = 2;
@@ -2384,6 +2400,7 @@ export function renderLiveHtml({ project = {} } = {}) {
   var decisionDialog = document.getElementById('decision-dialog');
   var decisionForm = document.getElementById('decision-form');
   var decisionTarget = document.getElementById('decision-target');
+  var decisionVersion = document.getElementById('decision-version');
   var decisionQuestion = document.getElementById('decision-question');
   var decisionAnswer = document.getElementById('decision-answer');
   var decisionNote = document.getElementById('decision-note');
@@ -3188,11 +3205,39 @@ export function renderLiveHtml({ project = {} } = {}) {
     state.pendingTaskRef = null;
     var task = findTask(ref);
     if (!task) {
-      // Archived tasks are absent from a board loaded with the user's own archive setting.
-      notify(t('toast.archivedDeepLink'));
+      // The board payload only carries the current project and filters; ask the
+      // read-only lookup whether the task exists, is archived, or is filtered out.
+      lookupTaskRef(ref);
       return;
     }
     openTask(task.id);
+  }
+
+  function lookupTaskRef(ref) {
+    fetch(API_TASK + '?ref=' + encodeURIComponent(ref), {
+      cache: 'no-store',
+      headers: { accept: 'application/json' }
+    }).then(function (response) {
+      return response.json().then(function (json) {
+        return { status: response.status, json: json };
+      });
+    }).then(function (result) {
+      if (state.selectedId) return;
+      var info = result.json && result.json.ok ? result.json.task : null;
+      if (info) {
+        // Archived tasks are absent from a board loaded with the user's own archive setting.
+        notify(t(info.archived ? 'toast.archivedDeepLink' : 'toast.taskFilteredOut'));
+        return;
+      }
+      if (result.status === 404) {
+        notify(t('toast.taskNotFound', { ref: ref }));
+        return;
+      }
+      notify(t('toast.networkError'), true);
+    }).catch(function () {
+      if (state.selectedId) return;
+      notify(t('toast.networkError'), true);
+    });
   }
 
   function act(action, payload) {
@@ -4336,6 +4381,12 @@ export function renderLiveHtml({ project = {} } = {}) {
     decisionTarget.textContent = t('decision.target', {
       id: task.identifier,
       title: task.title
+    });
+    // The sheet always states the version it will send; a fresh board re-render
+    // refreshes this line together with the rest of the dialog.
+    decisionVersion.textContent = t('decision.versionMeta', {
+      id: task.identifier,
+      n: task.version
     });
     decisionQuestion.textContent = pending.prompt || t('drawer.review');
     var answer = decisionAnswerText(task);
