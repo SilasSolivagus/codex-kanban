@@ -28,6 +28,8 @@ import {
 } from '../src/domain.mjs'
 import { PRIORITIES, isOpen } from '../src/rules.mjs'
 import { renderLiveHtml } from '../src/livehtml.mjs'
+import { applySessionImport } from '../src/import.mjs'
+import { isSessionId, parseSinceDays, scanSessions } from '../src/sessions.mjs'
 
 // A 10 MB attachment is ~14 MB of base64 plus JSON overhead.
 const MAX_BODY = 16 * 1024 * 1024
@@ -182,6 +184,27 @@ function askOptions(value) {
   return value.map((entry) => (typeof entry === 'string' ? { label: entry } : entry))
 }
 
+function importLimit(value, fallback = 10) {
+  if (value === null || value === '') return fallback
+  if (!/^\d+$/.test(value) || Number(value) < 1) {
+    const error = new Error('limit must be a positive integer')
+    error.code = 'INVALID_INPUT'
+    throw error
+  }
+  return Math.min(Number(value), 100)
+}
+
+async function importCandidates(store, codexHome, since, limit) {
+  const sinceDays = parseSinceDays(since === null || since === '' ? undefined : since)
+  const candidates = await scanSessions({
+    root: store.root,
+    sinceDays,
+    limit: importLimit(limit),
+    codexHome,
+  })
+  return candidates
+}
+
 const ACTIONS = {
   'project.create': (store, input) => createProject(store, {
     name: input.name,
@@ -301,11 +324,40 @@ const ACTIONS = {
     version: input.version,
     attachmentId: input.attachmentId,
   }),
+
+  'import.apply': async (store, input, context = {}) => {
+    const ids = Array.isArray(input.sessionIds)
+      ? [...new Set(input.sessionIds.filter(isSessionId).map((id) => id.trim()))]
+      : []
+    if (!ids.length) {
+      const error = new Error('sessionIds must contain at least one session id')
+      error.code = 'INVALID_INPUT'
+      throw error
+    }
+    const sinceDays = parseSinceDays(input.since === undefined ? '30d' : input.since)
+    const candidates = await scanSessions({
+      root: store.root,
+      sinceDays,
+      limit: Math.max(ids.length, 10),
+      codexHome: context.codexHome,
+    })
+    const byId = new Map(candidates.map((candidate) => [candidate.id, candidate]))
+    const picked = ids.map((id) => byId.get(id)).filter(Boolean)
+    const missing = ids
+      .filter((id) => !byId.has(id))
+      .map((id) => ({ id, title: '', reason: 'not_found' }))
+    const result = await applySessionImport(store, {
+      candidates: picked,
+      projectId: input.projectId,
+      as: 'user',
+    })
+    return { created: result.created, skipped: [...result.skipped, ...missing] }
+  },
 }
 
 const CONFLICT_CODES = new Set(['TASK_VERSION_CONFLICT', 'PROJECT_ARCHIVED', 'TASK_ARCHIVED'])
 
-export function createWebServer({ store, host = '127.0.0.1', port = 4317 }) {
+export function createWebServer({ store, host = '127.0.0.1', port = 4317, codexHome } = {}) {
   const server = http.createServer(async (req, res) => {
     try {
       const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`)
@@ -331,6 +383,17 @@ export function createWebServer({ store, host = '127.0.0.1', port = 4317 }) {
           return
         }
         sendJson(res, 200, { ok: true, task })
+        return
+      }
+
+      if (req.method === 'GET' && url.pathname === '/api/import/candidates') {
+        const candidates = await importCandidates(
+          store,
+          codexHome,
+          url.searchParams.get('since'),
+          url.searchParams.get('limit'),
+        )
+        sendJson(res, 200, { ok: true, candidates })
         return
       }
 
@@ -378,8 +441,13 @@ export function createWebServer({ store, host = '127.0.0.1', port = 4317 }) {
           })
           return
         }
-        await handler(store, input)
-        sendJson(res, 200, boardPayload(store, projectFilter(url), includeArchived(url)))
+        const result = await handler(store, input, { codexHome })
+        const payload = boardPayload(store, projectFilter(url), includeArchived(url))
+        if (result && Array.isArray(result.created)) {
+          payload.created = result.created
+          payload.skipped = Array.isArray(result.skipped) ? result.skipped : []
+        }
+        sendJson(res, 200, payload)
         return
       }
 

@@ -20,6 +20,8 @@ import {
 import { renderMarkdown, renderTaskDetail } from '../src/render.mjs'
 import { renderHtml } from '../src/html.mjs'
 import { createStore, resolveRoot } from '../src/store.mjs'
+import { applySessionImport } from '../src/import.mjs'
+import { parseSinceDays, scanSessions } from '../src/sessions.mjs'
 
 const REPEATABLE_FLAGS = new Set(['option', 'label', 'link'])
 const COLUMN_ORDER = ['needs', 'running', 'backlog', 'done']
@@ -40,6 +42,7 @@ Usage:
   codex-kanban approve <id> --confirmed-by TEXT [--note TEXT]
   codex-kanban reject <id> --confirmed-by TEXT [--note TEXT]
   codex-kanban comment <id> --body TEXT
+  codex-kanban import [--root PATH] [--since 30d] [--limit 10] [--project ID|NAME] [--apply] [--json]
   codex-kanban render [--open]
   codex-kanban open
   codex-kanban serve [--port 4317] [--host 127.0.0.1] [--no-open]
@@ -97,6 +100,21 @@ function toArray(value) {
 
 function fail(code, message) {
   throw new KanbanError(code, message)
+}
+
+function importLimit(value) {
+  if (value === undefined) return 10
+  const raw = typeof value === 'string' ? value : ''
+  if (!/^\d+$/.test(raw) || Number(raw) < 1) {
+    fail('INVALID_INPUT', '--limit must be a positive integer')
+  }
+  return Math.min(Number(raw), 100)
+}
+
+function importDate(value) {
+  const parsed = typeof value === 'string' ? Date.parse(value) : NaN
+  if (Number.isNaN(parsed)) return '—'
+  return new Date(parsed).toISOString().slice(0, 10)
 }
 
 function actorOf(flags) {
@@ -207,6 +225,53 @@ async function main() {
           process.stdout.write(`${column.padEnd(8)} ${task.identifier.padEnd(10)} ${task.title}\n`)
         }
       }
+      return
+    }
+    case 'import': {
+      if (flags.since === true) fail('INVALID_INPUT', '--since needs a value such as 30d')
+      const sinceDays = parseSinceDays(stringFlag(flags, 'since'))
+      const limit = importLimit(flags.limit)
+      const candidates = await scanSessions({ root, sinceDays, limit })
+      if (flags.apply !== true) {
+        if (flags.json) {
+          process.stdout.write(`${JSON.stringify({ ok: true, candidates }, null, 2)}\n`)
+          return
+        }
+        process.stdout.write('# | date | turns | title | summary\n')
+        candidates.forEach((candidate, index) => {
+          process.stdout.write([
+            String(index + 1).padEnd(2),
+            importDate(candidate.updatedAt).padEnd(10),
+            String(candidate.userTurns).padEnd(5),
+            candidate.title,
+            candidate.summary,
+          ].join(' | ') + '\n')
+        })
+        process.stdout.write(
+          `${candidates.length} candidates; re-run with --apply to create them\n`,
+        )
+        return
+      }
+
+      const projectFlag = flags.project
+      if (projectFlag === true) {
+        fail('INVALID_INPUT', '--project needs a project id or name')
+      }
+      const result = await applySessionImport(store, {
+        candidates,
+        projectId: stringFlag(flags, 'project'),
+        as: actor,
+      })
+      if (flags.json) {
+        process.stdout.write(`${JSON.stringify({ ok: true, ...result }, null, 2)}\n`)
+        return
+      }
+      for (const task of result.created) {
+        process.stdout.write(`${task.identifier} · ${task.title}\n`)
+      }
+      process.stdout.write(
+        `created ${result.created.length} tasks; skipped ${result.skipped.length} duplicates\n`,
+      )
       return
     }
     case 'get': {

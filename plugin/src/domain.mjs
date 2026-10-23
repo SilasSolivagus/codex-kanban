@@ -128,6 +128,21 @@ function normalizeLinks(value) {
   })
 }
 
+function normalizeSource(value) {
+  if (value === undefined || value === null) return undefined
+  if (typeof value !== 'object' || Array.isArray(value)) {
+    throw new KanbanError('INVALID_INPUT', 'source must be an object')
+  }
+  if (value.kind !== 'session') {
+    throw new KanbanError('INVALID_INPUT', 'source.kind must be session')
+  }
+  const id = requireString(value.id, 'source.id', 200)
+  const title = value.title === undefined || value.title === null
+    ? undefined
+    : requireString(value.title, 'source.title', MAX_TITLE)
+  return title === undefined ? { kind: 'session', id } : { kind: 'session', id, title }
+}
+
 function sameStrings(a, b) {
   return a.length === b.length && a.every((entry, index) => entry === b[index])
 }
@@ -382,6 +397,7 @@ export async function createTask(store, input = {}) {
   }
   const labels = normalizeLabels(input.labels)
   const links = normalizeLinks(input.links)
+  const source = normalizeSource(input.source)
   const actor = actorOf(input)
 
   return store.mutate((board) => {
@@ -426,6 +442,7 @@ export async function createTask(store, input = {}) {
       createdAt,
       updatedAt: createdAt,
     }
+    if (source) task.source = source
     board.tasks.push(task)
     project.nextTaskNumber = Number(identifier.slice(identifier.lastIndexOf('-') + 1)) + 1
     return { ok: true, task }

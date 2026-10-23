@@ -33,6 +33,23 @@ Do not create a task for every step you take. Create one when the user asks to
 track work, when the work spans sessions, or when a finding must not be lost.
 Reading the board is cheap; writing noise is not.
 
+## First run
+
+If the board is empty, offer to import the Codex sessions already run in this
+repository instead of starting blank:
+
+- `codex-kanban import --root <root>` previews candidates. It is a dry run and
+  shows only title, date, turn count and a capped summary.
+- Show the candidate titles and ask which ones to keep.
+- Create only after an explicit yes, with
+  `codex-kanban import --root <root> --apply`; add `--project ID|NAME` to choose
+  a project and `--json` for machine output.
+- Never import silently, and never import by hand from another repository. The
+  scanner keeps only sessions whose cwd is inside this root.
+
+The web board makes the same offer when it opens empty; `导入历史` in the project
+menu reopens it after a skip.
+
 ## Projects
 
 A repository board can hold several projects (workstreams).

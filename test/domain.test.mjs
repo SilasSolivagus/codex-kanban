@@ -83,6 +83,40 @@ test('creating a task assigns CK-1, a version and a created activity entry', asy
   assert.deepEqual(task.activity[0].data, { status: 'backlog' })
   assert.equal(store.read().projects[0].nextTaskNumber, 2)
 })
+
+test('createTask persists an optional session source and validates its kind', async (t) => {
+  const { store } = fixture(t)
+  const { task } = await createTask(store, {
+    title: 'Imported conversation',
+    labels: ['imported'],
+    source: { kind: 'session', id: '019d94f4-226b', title: 'Imported conversation' },
+  })
+  assert.deepEqual(task.source, {
+    kind: 'session',
+    id: '019d94f4-226b',
+    title: 'Imported conversation',
+  })
+  assert.deepEqual(store.read().tasks[0].source, task.source)
+
+  const plain = await createTask(store, { title: 'Plain task' })
+  assert.equal('source' in plain.task, false)
+
+  await rejectsCode(
+    createTask(store, { title: 'Bad kind', source: { kind: 'git', id: 'x' } }),
+    'INVALID_INPUT',
+  )
+  await rejectsCode(
+    createTask(store, { title: 'Missing id', source: { kind: 'session' } }),
+    'INVALID_INPUT',
+  )
+  await rejectsCode(
+    createTask(store, {
+      title: 'Long source title',
+      source: { kind: 'session', id: 'x', title: 't'.repeat(300) },
+    }),
+    'INVALID_INPUT',
+  )
+})
 test('identifiers keep counting up and a created task can start in another status', async (t) => {
   const { store } = fixture(t)
   await newTask(store)

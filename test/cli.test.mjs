@@ -5,13 +5,15 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { createStore } from '../plugin/src/store.mjs'
+import { createProject } from '../plugin/src/domain.mjs'
 
 const CLI = fileURLToPath(new URL('../plugin/bin/codex-kanban.mjs', import.meta.url))
 
-function run(root, args, { expectFailure = false } = {}) {
+function run(root, args, { expectFailure = false, extraEnv = {} } = {}) {
   const result = spawnSync(process.execPath, [CLI, ...args, '--root', root], {
     encoding: 'utf8',
-    env: { ...process.env },
+    env: { ...process.env, ...extraEnv },
   })
   if (!expectFailure && result.status !== 0) {
     throw new Error(`cli failed (${result.status}): ${result.stderr}\n${result.stdout}`)
@@ -23,6 +25,31 @@ function tempRoot() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'codex-kanban-cli-'))
   fs.mkdirSync(path.join(root, '.git'))
   return root
+}
+
+function codexHome(root) {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'codex-kanban-cli-codex-'))
+  const dir = path.join(home, 'sessions', '2026', '10', '20')
+  fs.mkdirSync(dir, { recursive: true })
+  const rollout = (id, cwd, messages) => {
+    const file = path.join(dir, `rollout-2026-10-20T10-00-00-${id}.jsonl`)
+    const lines = [JSON.stringify({ type: 'session_meta', payload: { id, cwd } })]
+    for (const message of messages) {
+      lines.push(JSON.stringify({ type: 'event_msg', payload: { type: 'user_message', message } }))
+    }
+    fs.writeFileSync(file, `${lines.join('\n')}\n`)
+  }
+  rollout('session-inside', root, ['Fix the importer', 'Add CLI coverage'])
+  rollout('session-outside', path.join(root, '..', 'elsewhere'), ['Other repo', 'Other second turn'])
+  fs.writeFileSync(
+    path.join(home, 'session_index.jsonl'),
+    `${JSON.stringify({
+      id: 'session-inside',
+      thread_name: 'Fix the importer',
+      updated_at: '2026-10-20T12:00:00Z',
+    })}\n`,
+  )
+  return home
 }
 
 function jsonBoard(root) {
@@ -240,4 +267,75 @@ test('open writes the board and still succeeds when no opener exists', () => {
   assert.equal(opened.status, 0, opened.stderr)
   assert.match(opened.stdout, /board\.html/)
   assert.ok(fs.existsSync(path.join(fs.realpathSync(root), '.kanban', 'board.html')))
+})
+
+test('import is a dry run by default and writes nothing', () => {
+  const root = tempRoot()
+  const home = codexHome(root)
+  const preview = run(root, ['import'], { extraEnv: { CODEX_HOME: home } })
+
+  assert.match(preview.stdout, /^# \| date \| turns \| title \| summary$/m)
+  assert.match(preview.stdout, /Fix the importer/)
+  assert.doesNotMatch(preview.stdout, /Other repo/)
+  assert.match(preview.stdout, /1 candidates; re-run with --apply to create them/)
+  assert.equal(fs.existsSync(path.join(root, '.kanban', 'board.json')), false)
+
+  const json = run(root, ['import', '--json'], { extraEnv: { CODEX_HOME: home } })
+  const payload = JSON.parse(json.stdout)
+  assert.equal(payload.ok, true)
+  assert.deepEqual(payload.candidates.map((entry) => entry.title), ['Fix the importer'])
+  assert.equal(fs.existsSync(path.join(root, '.kanban', 'board.json')), false)
+})
+
+test('import --apply creates Backlog tasks with the imported label and source', () => {
+  const root = tempRoot()
+  const home = codexHome(root)
+  const applied = run(root, ['import', '--apply'], { extraEnv: { CODEX_HOME: home } })
+
+  assert.match(applied.stdout, /-1 · Fix the importer/)
+  assert.match(applied.stdout, /created 1 tasks; skipped 0 duplicates/)
+
+  const board = jsonBoard(root)
+  assert.equal(board.columns.backlog.length, 1)
+  const [task] = board.columns.backlog
+  assert.equal(task.title, 'Fix the importer')
+  assert.equal(task.status, 'backlog')
+  assert.equal(task.description, 'Add CLI coverage')
+  assert.deepEqual(task.labels, ['imported'])
+  assert.deepEqual(task.source, {
+    kind: 'session',
+    id: 'session-inside',
+    title: 'Fix the importer',
+  })
+
+  const again = run(root, ['import', '--apply', '--json'], { extraEnv: { CODEX_HOME: home } })
+  const second = JSON.parse(again.stdout)
+  assert.equal(second.ok, true)
+  assert.deepEqual(second.created, [])
+  assert.equal(second.skipped[0].reason, 'duplicate')
+  assert.equal(jsonBoard(root).columns.backlog.length, 1)
+})
+
+test('import --project creates in the named project and validates --since', async () => {
+  const root = tempRoot()
+  const home = codexHome(root)
+  const store = createStore({ root })
+  const { project } = await createProject(store, { name: 'Website', prefix: 'WEB' })
+
+  const applied = run(root, ['import', '--apply', '--project', 'Website'], {
+    extraEnv: { CODEX_HOME: home },
+  })
+  assert.match(applied.stdout, /WEB-1 · Fix the importer/)
+
+  const board = jsonBoard(root)
+  assert.equal(board.columns.backlog.length, 1)
+  assert.equal(board.columns.backlog[0].projectId, project.id)
+
+  const failed = run(root, ['import', '--since', 'soon'], {
+    expectFailure: true,
+    extraEnv: { CODEX_HOME: home },
+  })
+  assert.notEqual(failed.status, 0)
+  assert.match(failed.stderr, /^\[INVALID_INPUT\] --since /m)
+  assert.equal(jsonBoard(root).columns.backlog.length, 1)
 })

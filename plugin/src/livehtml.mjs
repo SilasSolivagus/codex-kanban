@@ -21,6 +21,7 @@ export const UI_ACTIONS = Object.freeze([
   'task.restore',
   'attachment.add',
   'attachment.remove',
+  'import.apply',
 ])
 
 // The entire visible interface lives here. The page embeds both dictionaries,
@@ -69,6 +70,21 @@ export const STRINGS = Object.freeze({
     'filter.archivedAria': 'Show archived tasks on the board',
     'filter.hideArchived': 'Hide archived',
     'filter.hideArchivedAria': 'Hide archived tasks on the board',
+    'import.discover': 'Found {n} Codex conversations for this repository',
+    'import.discoverHint': 'Turn work that already happened into Backlog tasks.',
+    'import.preview': 'Preview',
+    'import.skip': 'Skip',
+    'import.history': 'Import history',
+    'import.historyHint': 'Reopen the Codex session importer for this repository.',
+    'import.title': 'Import Codex sessions',
+    'import.hint': 'Choose conversations to turn into Backlog tasks. Only the title and summary are stored.',
+    'import.selectAll': 'Select all',
+    'import.cancel': 'Cancel',
+    'import.apply': 'Import selected ({n})',
+    'import.selected': '{n} selected',
+    'import.none': 'No Codex sessions found for this repository.',
+    'import.done': 'Imported {n} sessions into Backlog.',
+    'import.turns': '{n} turns',
     'toast.reordered': '{id} moved',
     'priority.none': 'None',
     'priority.low': 'Low',
@@ -391,6 +407,21 @@ export const STRINGS = Object.freeze({
     'filter.archivedAria': '在看板中显示已归档任务',
     'filter.hideArchived': '隐藏已归档',
     'filter.hideArchivedAria': '在看板中隐藏已归档任务',
+    'import.discover': '发现这个仓库有 {n} 段 Codex 对话',
+    'import.discoverHint': '把已经发生的对话变成 Backlog 任务。',
+    'import.preview': '预览',
+    'import.skip': '跳过',
+    'import.history': '导入历史',
+    'import.historyHint': '重新打开这个仓库的 Codex 对话导入。',
+    'import.title': '导入 Codex 对话',
+    'import.hint': '选择要转成 Backlog 任务的对话。只保存标题和摘要。',
+    'import.selectAll': '全选',
+    'import.cancel': '取消',
+    'import.apply': '导入选中 ({n})',
+    'import.selected': '已选 {n} 段',
+    'import.none': '没有找到这个仓库的 Codex 对话。',
+    'import.done': '已导入 {n} 段对话到 Backlog。',
+    'import.turns': '{n} 轮',
     'toast.reordered': '{id} 已移动',
     'priority.none': '无',
     'priority.low': '低',
@@ -968,6 +999,32 @@ export function renderLiveHtml({ project = {} } = {}) {
     padding: 5px 10px; font-size: 12px; font-weight: 600;
   }
 
+  /* ---- import onboarding ----------------------------------------------- */
+  .import-onboarding {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 12px;
+    margin: 0 0 14px; padding: 14px 16px;
+    border: 1px solid var(--border-strong); border-radius: var(--radius);
+    background: var(--surface);
+  }
+  .import-onboarding[hidden] { display: none; }
+  .import-onboarding-copy { flex: 1 1 320px; min-width: 0; }
+  .import-onboarding-title { margin: 0; font-size: 14px; font-weight: 650; overflow-wrap: anywhere; }
+  .import-onboarding-hint { margin: 3px 0 0; color: var(--muted); font-size: 12.5px; }
+  .import-onboarding-actions { display: flex; flex: none; gap: 8px; }
+  .import-onboarding-actions button {
+    height: 34px; padding: 0 14px; border: 1px solid var(--border);
+    border-radius: 8px; background: var(--surface); color: var(--text);
+    font-size: 12.5px; font-weight: 600;
+  }
+  .import-onboarding-actions button:hover { border-color: var(--border-strong); background: var(--surface-soft); }
+  .import-onboarding-actions button.primary {
+    border-color: transparent; background: light-dark(#111827, #f1f5f9);
+    color: light-dark(#ffffff, #111827);
+  }
+  .import-onboarding-actions button.primary:hover {
+    border-color: transparent; background: light-dark(#1f2937, #ffffff);
+  }
+
   /* ---- board ----------------------------------------------------------- */
   .board { display: grid; grid-template-columns: repeat(1, minmax(0, 1fr)); gap: 14px; align-items: start; }
   @media (min-width: 600px) { .board { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
@@ -1390,6 +1447,43 @@ export function renderLiveHtml({ project = {} } = {}) {
     border: 1px solid var(--border); border-radius: 14px; background: var(--surface); color: var(--text);
   }
   dialog#project-dialog { width: min(660px, calc(100vw - 28px)); }
+  dialog#import-dialog { width: min(760px, calc(100vw - 28px)); }
+  #import-dialog .dialog-body { max-height: calc(100vh - 190px); overflow: auto; }
+  .import-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+  .import-toolbar button {
+    height: 30px; padding: 0 11px; border: 1px solid var(--border);
+    border-radius: 8px; background: var(--surface); color: var(--text);
+    font-size: 12px; font-weight: 600;
+  }
+  .import-toolbar button:hover { border-color: var(--border-strong); background: var(--surface-soft); }
+  .import-selection { margin-left: auto; }
+  .import-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+  .import-row {
+    display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: start;
+    padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px;
+    background: var(--surface-soft);
+  }
+  .import-check { display: flex; padding-top: 2px; }
+  .import-choice { width: 16px; height: 16px; margin: 0; accent-color: light-dark(#111827, #f1f5f9); }
+  .import-main { display: grid; gap: 3px; min-width: 0; }
+  .import-title { font-size: 13px; font-weight: 600; overflow-wrap: anywhere; }
+  .import-meta { display: flex; flex-wrap: wrap; gap: 2px 10px; color: var(--muted); font-size: 11.5px; }
+  .import-summary {
+    display: -webkit-box; margin: 0; overflow: hidden;
+    color: var(--muted); font-size: 12.5px; line-height: 1.4; overflow-wrap: anywhere;
+    -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+  }
+  .import-history-row {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
+    padding: 10px 12px; border: 1px dashed var(--border-strong); border-radius: 10px;
+  }
+  .import-history-row button {
+    height: 30px; padding: 0 11px; border: 1px solid var(--border);
+    border-radius: 8px; background: var(--surface); color: var(--text);
+    font-size: 12px; font-weight: 600;
+  }
+  .import-history-row button:hover { border-color: var(--border-strong); background: var(--surface-soft); }
+  .import-history-row .hint { flex: 1 1 200px; min-width: 0; }
   dialog::backdrop { background: light-dark(rgba(16, 24, 40, 0.32), rgba(0, 0, 0, 0.55)); }
   dialog form, dialog .dialog-body { display: grid; gap: 10px; padding: 16px 18px 18px; }
   dialog label { display: grid; gap: 4px; color: var(--muted); font-size: 12px; }
@@ -1600,6 +1694,16 @@ export function renderLiveHtml({ project = {} } = {}) {
     .drawer-footer-actions { order: 2; width: 100%; margin-left: 0; justify-content: flex-end; }
     .filter-summary { align-items: center; }
     #filter-clear-all { margin-left: 2px; }
+    .import-onboarding { align-items: flex-start; padding: 12px; }
+    .import-onboarding-actions { width: 100%; }
+    .import-onboarding-actions button { flex: 1 1 0; min-width: 0; }
+    dialog#import-dialog { width: calc(100vw - 16px); max-height: calc(100vh - 16px); }
+    #import-dialog .dialog-body { max-height: none; padding: 12px 14px 14px; }
+    #import-dialog .dialog-head { padding: 12px 14px; }
+    .import-row { gap: 8px; padding: 9px 10px; }
+    .import-selection { margin-left: 0; }
+    #import-dialog .dialog-actions { flex-wrap: wrap; }
+    #import-dialog .dialog-actions button { flex: 1 1 auto; min-width: 0; }
   }
   @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto; }
@@ -1721,6 +1825,17 @@ export function renderLiveHtml({ project = {} } = {}) {
     <span data-i18n="project.readOnly">This project is archived. Task and attachment changes are disabled until you restore it.</span>
     <button id="restore-selected" type="button" data-i18n="project.restoreSelected">Restore project</button>
   </div>
+
+  <section class="import-onboarding" id="import-onboarding" aria-labelledby="import-onboarding-title" hidden>
+    <div class="import-onboarding-copy">
+      <p class="import-onboarding-title" id="import-onboarding-title" data-i18n="import.discover">Found {n} Codex conversations for this repository</p>
+      <p class="import-onboarding-hint" data-i18n="import.discoverHint">Turn work that already happened into Backlog tasks.</p>
+    </div>
+    <div class="import-onboarding-actions">
+      <button class="primary" id="import-preview" type="button" data-i18n="import.preview">Preview</button>
+      <button id="import-skip" type="button" data-i18n="import.skip">Skip</button>
+    </div>
+  </section>
 
   <main class="board" id="board">
     <div class="board-empty" id="board-empty" role="status" hidden>
@@ -2079,6 +2194,10 @@ export function renderLiveHtml({ project = {} } = {}) {
         <button class="primary" type="submit" data-i18n="project.create">Create project</button>
       </div>
     </form>
+    <div class="import-history-row">
+      <button id="import-history" type="button" data-i18n="import.history">Import history</button>
+      <span class="hint" data-i18n="import.historyHint">Reopen the Codex session importer for this repository.</span>
+    </div>
     <h3 data-i18n="project.listTitle">Existing projects</h3>
     <ul id="project-list" class="project-list"></ul>
   </div>
@@ -2178,6 +2297,25 @@ export function renderLiveHtml({ project = {} } = {}) {
   </form>
 </dialog>
 
+<dialog id="import-dialog" aria-labelledby="import-heading">
+  <div class="dialog-head">
+    <h2 id="import-heading" data-i18n="import.title">Import Codex sessions</h2>
+    <button id="import-close" type="button" data-i18n-aria="drawer.close" aria-label="Close">×</button>
+  </div>
+  <div class="dialog-body">
+    <p class="hint" data-i18n="import.hint">Choose conversations to turn into Backlog tasks. Only the title and summary are stored.</p>
+    <div class="import-toolbar">
+      <button id="import-select-all" type="button" data-i18n="import.selectAll">Select all</button>
+      <span class="hint import-selection" id="import-selection"></span>
+    </div>
+    <ul class="import-list" id="import-list"></ul>
+    <div class="dialog-actions">
+      <button id="import-cancel" type="button" data-i18n="import.cancel">Cancel</button>
+      <button id="import-apply" class="primary" type="button" disabled data-i18n="import.apply">Import selected (0)</button>
+    </div>
+  </div>
+</dialog>
+
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
@@ -2185,7 +2323,10 @@ export function renderLiveHtml({ project = {} } = {}) {
   var API_BOARD = '/api/board';
   var API_ACTION = '/api/action';
   var API_TASK = '/api/task';
+  var API_IMPORT = '/api/import/candidates';
   var ATTACHMENT_API = '/api/attachments/';
+  var IMPORT_SINCE = '30d';
+  var IMPORT_LIMIT = 10;
   var MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024;
   var MIN_ASK_OPTIONS = 2;
   var MAX_ASK_OPTIONS = 5;
@@ -2217,7 +2358,8 @@ export function renderLiveHtml({ project = {} } = {}) {
     lang: 'codex-kanban.lang',
     collapsed: 'codex-kanban.collapsed',
     project: 'codex-kanban.project',
-    archived: 'codex-kanban.archived'
+    archived: 'codex-kanban.archived',
+    importSkipped: 'codex-kanban.importSkipped'
   };
   var I18N = ${JSON.stringify(STRINGS)};
 
@@ -2244,6 +2386,10 @@ export function renderLiveHtml({ project = {} } = {}) {
 
   function readArchived() {
     return storeGet(STORAGE.archived, '0') === '1';
+  }
+
+  function readImportSkipped() {
+    return storeGet(STORAGE.importSkipped, '0') === '1';
   }
 
   function readTaskRef() {
@@ -2291,6 +2437,11 @@ export function renderLiveHtml({ project = {} } = {}) {
     decisionKind: 'approve',
     decisionTaskId: null,
     decisionBusy: false,
+    importSkipped: readImportSkipped(),
+    importCandidates: [],
+    importRequested: false,
+    importLoading: false,
+    importSelection: Object.create(null),
     skew: 0
   };
 
@@ -2324,6 +2475,18 @@ export function renderLiveHtml({ project = {} } = {}) {
   var board = document.getElementById('board');
   var boardEmpty = document.getElementById('board-empty');
   var boardEmptyClear = document.getElementById('board-empty-clear');
+  var importOnboarding = document.getElementById('import-onboarding');
+  var importOnboardingTitle = document.getElementById('import-onboarding-title');
+  var importPreview = document.getElementById('import-preview');
+  var importSkip = document.getElementById('import-skip');
+  var importDialog = document.getElementById('import-dialog');
+  var importList = document.getElementById('import-list');
+  var importSelectAll = document.getElementById('import-select-all');
+  var importSelection = document.getElementById('import-selection');
+  var importApply = document.getElementById('import-apply');
+  var importHistory = document.getElementById('import-history');
+  var importClose = document.getElementById('import-close');
+  var importCancel = document.getElementById('import-cancel');
   var questionTemplate = document.getElementById('question-panel-template');
   var backdrop = document.getElementById('backdrop');
   var drawer = document.getElementById('drawer');
@@ -3178,6 +3341,170 @@ export function renderLiveHtml({ project = {} } = {}) {
     });
   }
 
+  function totalTaskCount() {
+    var projects = (state.data && state.data.projects) || [];
+    var total = 0;
+    for (var i = 0; i < projects.length; i += 1) {
+      total += Number(projects[i].taskCount) || 0;
+      total += Number(projects[i].archivedCount) || 0;
+    }
+    return total;
+  }
+
+  function importEligible() {
+    return Boolean(state.data) && !state.importSkipped && totalTaskCount() === 0;
+  }
+
+  function maybeShowImport() {
+    if (!state.data || !importEligible()) {
+      importOnboarding.hidden = true;
+      return;
+    }
+    if (!state.importRequested && !state.importLoading) loadImportCandidates(false);
+    if (state.importCandidates.length) {
+      importOnboardingTitle.textContent = t('import.discover', {
+        n: state.importCandidates.length
+      });
+      importOnboarding.hidden = false;
+    } else {
+      importOnboarding.hidden = true;
+    }
+  }
+
+  function loadImportCandidates(openAfter) {
+    if (state.importLoading) return Promise.resolve([]);
+    state.importRequested = true;
+    state.importLoading = true;
+    return fetch(API_IMPORT + '?since=' + encodeURIComponent(IMPORT_SINCE) + '&limit=' + IMPORT_LIMIT, {
+      cache: 'no-store',
+      headers: { accept: 'application/json' }
+    }).then(function (response) {
+      return response.json().then(function (json) {
+        if (!response.ok || !json.ok) {
+          var error = new Error((json.error && json.error.message) || ('HTTP ' + response.status));
+          error.code = (json.error && json.error.code) || ('HTTP_' + response.status);
+          throw error;
+        }
+        return json;
+      });
+    }).then(function (json) {
+      state.importLoading = false;
+      state.importCandidates = Array.isArray(json.candidates) ? json.candidates : [];
+      maybeShowImport();
+      if (openAfter) openImportDialog();
+      return state.importCandidates;
+    }).catch(function (error) {
+      state.importLoading = false;
+      state.importRequested = false;
+      if (openAfter) notify(errorText(error), true);
+      return [];
+    });
+  }
+
+  function selectedImportIds() {
+    var ids = [];
+    for (var i = 0; i < state.importCandidates.length; i += 1) {
+      var id = state.importCandidates[i].id;
+      if (state.importSelection[id]) ids.push(id);
+    }
+    return ids;
+  }
+
+  function syncImportSelection() {
+    var total = state.importCandidates.length;
+    var count = selectedImportIds().length;
+    importSelection.textContent = t('import.selected', { n: count });
+    importApply.textContent = t('import.apply', { n: count });
+    importApply.disabled = count === 0 || state.importLoading;
+    importSelectAll.disabled = total === 0;
+  }
+
+  function renderImportList() {
+    importList.textContent = '';
+    for (var i = 0; i < state.importCandidates.length; i += 1) {
+      (function (candidate) {
+        var row = el('li', 'import-row');
+        var check = el('label', 'import-check');
+        var box = document.createElement('input');
+        box.type = 'checkbox';
+        box.className = 'import-choice';
+        box.value = candidate.id;
+        box.checked = Boolean(state.importSelection[candidate.id]);
+        box.setAttribute('aria-label', candidate.title);
+        box.addEventListener('change', function () {
+          state.importSelection[candidate.id] = box.checked;
+          syncImportSelection();
+        });
+        check.appendChild(box);
+        row.appendChild(check);
+        var main = el('div', 'import-main');
+        main.appendChild(el('span', 'import-title', candidate.title));
+        var meta = el('span', 'import-meta');
+        meta.appendChild(el('span', 'import-date', formatTime(candidate.updatedAt) || '—'));
+        meta.appendChild(el('span', 'import-turns', t('import.turns', {
+          n: Number(candidate.userTurns) || 0
+        })));
+        main.appendChild(meta);
+        if (candidate.summary) main.appendChild(el('p', 'import-summary', candidate.summary));
+        row.appendChild(main);
+        importList.appendChild(row);
+      })(state.importCandidates[i]);
+    }
+    syncImportSelection();
+  }
+
+  function openImportDialog() {
+    if (!state.importCandidates.length) {
+      notify(t('import.none'));
+      return;
+    }
+    state.importSelection = Object.create(null);
+    for (var i = 0; i < state.importCandidates.length; i += 1) {
+      state.importSelection[state.importCandidates[i].id] = true;
+    }
+    renderImportList();
+    if (!importDialog.open) importDialog.showModal();
+  }
+
+  function selectAllImport() {
+    for (var i = 0; i < state.importCandidates.length; i += 1) {
+      state.importSelection[state.importCandidates[i].id] = true;
+    }
+    var boxes = importList.querySelectorAll('.import-choice');
+    for (var j = 0; j < boxes.length; j += 1) boxes[j].checked = true;
+    syncImportSelection();
+  }
+
+  function submitImport() {
+    var ids = selectedImportIds();
+    if (!ids.length || state.importLoading) return;
+    var payload = { sessionIds: ids };
+    if (state.projectId && state.projectId !== 'all') payload.projectId = state.projectId;
+    importApply.disabled = true;
+    act('import.apply', payload).then(function (body) {
+      if (!body) {
+        syncImportSelection();
+        return;
+      }
+      var created = Array.isArray(body.created) ? body.created.length : 0;
+      importDialog.close();
+      state.importCandidates = [];
+      state.importRequested = false;
+      maybeShowImport();
+      notify(t('import.done', { n: created }));
+    });
+  }
+
+  function openImportHistory() {
+    if (state.importLoading) return;
+    if (projectDialog.open) projectDialog.close();
+    if (state.importCandidates.length) {
+      openImportDialog();
+      return;
+    }
+    loadImportCandidates(true);
+  }
+
   function renderAll() {
     renderHeader();
     renderProjectOptions();
@@ -3190,6 +3517,8 @@ export function renderLiveHtml({ project = {} } = {}) {
     }
     if (decisionDialog.open) syncDecisionDialog();
     if (projectDialog.open) renderProjectList();
+    if (importDialog.open) syncImportSelection();
+    maybeShowImport();
   }
 
   function applyPayload(payload) {
@@ -4875,6 +5204,20 @@ export function renderLiveHtml({ project = {} } = {}) {
       });
     }
     manageProjects.addEventListener('click', openProjectDialog);
+    importPreview.addEventListener('click', function () {
+      if (state.importCandidates.length) openImportDialog();
+      else loadImportCandidates(true);
+    });
+    importSkip.addEventListener('click', function () {
+      state.importSkipped = true;
+      storeSet(STORAGE.importSkipped, '1');
+      importOnboarding.hidden = true;
+    });
+    importHistory.addEventListener('click', openImportHistory);
+    importClose.addEventListener('click', function () { importDialog.close(); });
+    importCancel.addEventListener('click', function () { importDialog.close(); });
+    importSelectAll.addEventListener('click', selectAllImport);
+    importApply.addEventListener('click', submitImport);
     restoreSelected.addEventListener('click', function () {
       var project = state.data && state.data.board ? state.data.board.project : null;
       if (project) restoreProject(project);
@@ -5017,6 +5360,11 @@ export function renderLiveHtml({ project = {} } = {}) {
           event.preventDefault();
           return;
         }
+        if (importDialog.open) {
+          importDialog.close();
+          event.preventDefault();
+          return;
+        }
         if (!confirmSheet.hidden) {
           closeConfirm();
           event.preventDefault();
@@ -5070,7 +5418,7 @@ export function renderLiveHtml({ project = {} } = {}) {
       }
       if (event.ctrlKey || event.metaKey || event.altKey) return;
       if (!confirmSheet.hidden || activeSelectField()) return;
-      if (decisionDialog.open || askDialog.open || blockDialog.open || renameDialog.open) return;
+      if (decisionDialog.open || askDialog.open || blockDialog.open || renameDialog.open || importDialog.open) return;
       var target = event.target;
       var tag = target && target.tagName ? target.tagName : '';
       var typing = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (target && target.isContentEditable);

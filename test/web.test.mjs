@@ -19,6 +19,42 @@ async function fixture(t) {
   return { root, store, url }
 }
 
+async function importFixture(t) {
+  const base = fs.mkdtempSync(path.join(os.tmpdir(), 'codex-kanban-web-import-'))
+  const root = path.join(base, 'repo')
+  const home = path.join(base, 'codex')
+  fs.mkdirSync(path.join(root, '.git'), { recursive: true })
+  const dir = path.join(home, 'sessions', '2026', '10', '20')
+  fs.mkdirSync(dir, { recursive: true })
+  const rollout = (id, cwd, messages) => {
+    const file = path.join(dir, `rollout-2026-10-20T10-00-00-${id}.jsonl`)
+    const lines = [JSON.stringify({ type: 'session_meta', payload: { id, cwd } })]
+    for (const message of messages) {
+      lines.push(JSON.stringify({ type: 'event_msg', payload: { type: 'user_message', message } }))
+    }
+    fs.writeFileSync(file, `${lines.join('\n')}\n`)
+  }
+  rollout('inside', root, ['Ship the importer', 'Keep the summary short'])
+  rollout('outside', path.join(base, 'other-repo'), ['Not this repo', 'Second turn'])
+  rollout('single', root, ['Only one turn'])
+  fs.writeFileSync(
+    path.join(home, 'session_index.jsonl'),
+    `${JSON.stringify({
+      id: 'inside',
+      thread_name: 'Ship the importer',
+      updated_at: '2026-10-20T12:00:00Z',
+    })}\n`,
+  )
+  const store = createStore({ root })
+  const web = createWebServer({ store, port: 0, codexHome: home })
+  const url = await web.listen()
+  t.after(async () => {
+    await web.close()
+    fs.rmSync(base, { recursive: true, force: true })
+  })
+  return { base, root, home, store, url }
+}
+
 async function getBoard(url, project) {
   const target = project === undefined
     ? `${url}/api/board`
@@ -624,4 +660,81 @@ test('task lookup answers 404 for a missing reference and stays read-only', asyn
   assert.equal(posted.status, 404)
   assert.equal((await posted.json()).error.code, 'NOT_FOUND')
   assert.equal((await board(url)).summary.total, 0)
+})
+
+test('import candidates lists only this repository and never writes the board', async (t) => {
+  const { root, url } = await importFixture(t)
+
+  const response = await fetch(`${url}/api/import/candidates?since=30d&limit=10`)
+  const body = await response.json()
+  assert.equal(response.status, 200)
+  assert.equal(body.ok, true)
+  assert.equal(body.candidates.length, 1)
+  const [candidate] = body.candidates
+  assert.equal(candidate.id, 'inside')
+  assert.equal(candidate.title, 'Ship the importer')
+  assert.equal(candidate.summary, 'Keep the summary short')
+  assert.equal(candidate.userTurns, 2)
+  assert.ok(candidate.title.length <= 80)
+  assert.ok(candidate.summary.length <= 200)
+  assert.equal(fs.existsSync(path.join(root, '.kanban', 'board.json')), false)
+
+  const invalid = await fetch(`${url}/api/import/candidates?since=soon`)
+  const invalidBody = await invalid.json()
+  assert.equal(invalid.status, 400)
+  assert.equal(invalidBody.ok, false)
+  assert.equal(invalidBody.error.code, 'INVALID_INPUT')
+
+  const badLimit = await fetch(`${url}/api/import/candidates?limit=0`)
+  assert.equal(badLimit.status, 400)
+  assert.equal((await badLimit.json()).error.code, 'INVALID_INPUT')
+  assert.equal(fs.existsSync(path.join(root, '.kanban', 'board.json')), false)
+})
+
+test('import.apply creates Backlog tasks and returns the fresh board', async (t) => {
+  const { root, url } = await importFixture(t)
+
+  const applied = await act(url, { action: 'import.apply', sessionIds: ['inside'] })
+  assert.equal(applied.status, 200)
+  assert.equal(applied.body.ok, true)
+  assert.equal(applied.body.created.length, 1)
+  assert.equal(applied.body.created[0].title, 'Ship the importer')
+  assert.equal(applied.body.summary.total, 1)
+  assert.equal(applied.body.projects[0].taskCount, 1)
+
+  const [task] = column(applied.body, 'backlog')
+  assert.equal(task.status, 'backlog')
+  assert.equal(task.description, 'Keep the summary short')
+  assert.deepEqual(task.labels, ['imported'])
+  assert.deepEqual(task.source, {
+    kind: 'session',
+    id: 'inside',
+    title: 'Ship the importer',
+  })
+
+  const again = await act(url, { action: 'import.apply', sessionIds: ['inside'] })
+  assert.equal(again.status, 200)
+  assert.deepEqual(again.body.created, [])
+  assert.equal(again.body.skipped[0].reason, 'duplicate')
+  assert.equal((await board(url)).summary.total, 1)
+
+  const missing = await act(url, { action: 'import.apply', sessionIds: ['not-a-session'] })
+  assert.equal(missing.status, 200)
+  assert.equal(missing.body.skipped[0].reason, 'not_found')
+  assert.equal((await board(url)).summary.total, 1)
+  assert.ok(fs.existsSync(path.join(root, '.kanban', 'board.json')))
+})
+
+test('import.apply rejects an empty selection without writing', async (t) => {
+  const { root, url } = await importFixture(t)
+
+  const empty = await act(url, { action: 'import.apply', sessionIds: [] })
+  assert.equal(empty.status, 400)
+  assert.equal(empty.body.error.code, 'INVALID_INPUT')
+  assert.equal(fs.existsSync(path.join(root, '.kanban', 'board.json')), false)
+
+  const notArray = await act(url, { action: 'import.apply', sessionIds: 'inside' })
+  assert.equal(notArray.status, 400)
+  assert.equal(notArray.body.error.code, 'INVALID_INPUT')
+  assert.equal(fs.existsSync(path.join(root, '.kanban', 'board.json')), false)
 })

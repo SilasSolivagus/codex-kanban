@@ -476,6 +476,7 @@ test('UI_ACTIONS matches the v0.3 action vocabulary and is used by the script', 
   assert.deepEqual([...UI_ACTIONS].sort(), [
     'attachment.add',
     'attachment.remove',
+    'import.apply',
     'project.archive',
     'project.create',
     'project.restore',
@@ -1238,4 +1239,77 @@ test('the drawer header shows a visible version chip', () => {
   assert.match(markup, /id="drawer-version-chip"/)
   assert.match(markup, /drawer-version-chip \{/)
   assert.match(script, /drawerVersionChip\.textContent = 'v' \+ task\.version/)
+})
+
+// --- import onboarding ----------------------------------------------------
+
+test('an empty board offers repository sessions with preview and skip', () => {
+  assert.match(markup, /<section class="import-onboarding" id="import-onboarding"/)
+  assert.ok(
+    markup.indexOf('id="import-onboarding"') < markup.indexOf('<main class="board"'),
+    'the onboarding card sits above the columns',
+  )
+  assert.match(markup, /data-i18n="import.discover"/)
+  assert.match(markup, /<button class="primary" id="import-preview"[^>]*data-i18n="import.preview">/)
+  assert.match(markup, /<button id="import-skip"[^>]*data-i18n="import.skip">/)
+
+  assert.equal(STRINGS.zh['import.discover'], '发现这个仓库有 {n} 段 Codex 对话')
+  assert.equal(STRINGS.zh['import.preview'], '预览')
+  assert.equal(STRINGS.zh['import.skip'], '跳过')
+  assert.equal(STRINGS.zh['import.history'], '导入历史')
+
+  assert.match(script, /function importEligible\(\)/)
+  assert.match(script, /totalTaskCount\(\) === 0/)
+  assert.match(script, /!state\.importSkipped/)
+  assert.match(script, /state\.importCandidates\.length/)
+  assert.match(script, /importOnboarding\.hidden = true/)
+  assert.match(script, /importOnboardingTitle\.textContent = t\('import\.discover'/)
+  assert.match(script, /function readImportSkipped\(\)/)
+  assert.match(script, /importSkipped: 'codex-kanban\.importSkipped'/)
+  assert.match(script, /storeSet\(STORAGE\.importSkipped, '1'\)/)
+  assert.match(script, /state\.importSkipped = true/)
+
+  assert.match(script, /API_IMPORT = '\/api\/import\/candidates'/)
+  assert.match(script, /fetch\(API_IMPORT/)
+  assert.match(script, /import\.apply/)
+  assert.ok(UI_ACTIONS.includes('import.apply'))
+})
+
+test('the import modal is a checkbox list with select all, cancel and a count', () => {
+  assert.match(markup, /<dialog id="import-dialog"/)
+  assert.match(markup, /id="import-list"/)
+  assert.match(markup, /id="import-select-all"[^>]*data-i18n="import.selectAll"/)
+  assert.match(markup, /id="import-cancel"[^>]*data-i18n="import.cancel"/)
+  assert.match(markup, /id="import-apply"[^>]*data-i18n="import.apply"/)
+  assert.match(markup, /id="import-history"[^>]*data-i18n="import.history"/)
+  assert.match(markup, /id="project-dialog"/)
+  assert.match(script, /function renderImportList/)
+  assert.match(script, /box\.type = 'checkbox'/)
+  assert.match(script, /box\.setAttribute\('aria-label', candidate\.title\)/)
+  assert.match(script, /importSelectAll\.addEventListener\('click', selectAllImport\)/)
+  assert.match(script, /importApply\.addEventListener\('click', submitImport\)/)
+  assert.match(script, /act\('import\.apply', payload\)/)
+  assert.match(script, /payload = \{ sessionIds: ids \}/)
+  assert.match(script, /importApply\.textContent = t\('import\.apply', \{ n: count \}\)/)
+  assert.match(script, /importApply\.disabled = count === 0/)
+  assert.match(script, /function openImportHistory/)
+  assert.match(script, /importHistory\.addEventListener\('click', openImportHistory\)/)
+
+  assert.equal(STRINGS.zh['import.selectAll'], '全选')
+  assert.equal(STRINGS.zh['import.cancel'], '取消')
+  assert.equal(STRINGS.zh['import.apply'], '导入选中 ({n})')
+})
+
+test('the import surfaces stay usable at 390px and make no external requests', () => {
+  const mobile = markup.split('@media (max-width: 600px)')[1].split('@media (prefers-reduced-motion')[0]
+  assert.match(markup, /dialog#import-dialog \{ width: min\(760px, calc\(100vw - 28px\)\); \}/)
+  assert.match(mobile, /dialog#import-dialog \{ width: calc\(100vw - 16px\); max-height: calc\(100vh - 16px\); \}/)
+  assert.match(mobile, /\.import-onboarding-actions \{ width: 100%; \}/)
+  assert.match(mobile, /#import-dialog \.dialog-actions \{ flex-wrap: wrap; \}/)
+  assert.match(markup, /\.import-row \{[^}]*grid-template-columns: auto minmax\(0, 1fr\)/)
+  assert.match(markup, /\.import-main \{[^}]*min-width: 0/)
+  assert.match(markup, /\.import-title \{[^}]*overflow-wrap: anywhere/)
+  assert.match(markup, /\.import-summary \{[^}]*overflow-wrap: anywhere/)
+  assert.doesNotMatch(html, /https?:\/\//)
+  assert.doesNotMatch(html, /<(?:script|link|img)[^>]+(?:src|href)=/i)
 })
