@@ -1224,6 +1224,11 @@ export function renderLiveHtml({ project = {} } = {}) {
   }
   .drawer-sub { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 0; color: var(--muted); font-size: 12px; }
   .drawer-meta { display: flex; flex-wrap: wrap; gap: 8px; margin: 3px 0 0; color: var(--muted-soft); font-size: 11.5px; }
+  .drawer-version-chip {
+    align-self: center; padding: 1px 7px; border: 1px solid var(--border);
+    border-radius: 999px; color: var(--muted); background: var(--surface-2);
+    font-size: 10.5px; font-weight: 650; letter-spacing: 0.02em;
+  }
   #drawer-close {
     display: inline-flex; align-items: center; justify-content: center;
     width: 30px; height: 30px; flex: none; margin-left: auto; padding: 0;
@@ -1841,6 +1846,7 @@ export function renderLiveHtml({ project = {} } = {}) {
       <p class="drawer-pending" id="drawer-pending" hidden></p>
       <p class="drawer-sub">
         <span id="drawer-identifier"></span>
+        <span id="drawer-version-chip" class="drawer-version-chip"></span>
         <span id="drawer-project"></span>
       </p>
       <p class="drawer-meta">
@@ -2325,6 +2331,7 @@ export function renderLiveHtml({ project = {} } = {}) {
   var drawerTitle = document.getElementById('drawer-title');
   var drawerIdentifier = document.getElementById('drawer-identifier');
   var drawerVersion = document.getElementById('drawer-version');
+  var drawerVersionChip = document.getElementById('drawer-version-chip');
   var drawerUpdatedMeta = document.getElementById('drawer-updated-meta');
   var drawerStatusChip = document.getElementById('drawer-status-chip');
   var drawerPendingLine = document.getElementById('drawer-pending');
@@ -3726,6 +3733,7 @@ export function renderLiveHtml({ project = {} } = {}) {
     drawerTitle.textContent = task.title || t('drawer.title');
     drawerIdentifier.textContent = task.identifier || '';
     drawerVersion.textContent = t('drawer.version', { n: task.version });
+    drawerVersionChip.textContent = 'v' + task.version;
     drawerUpdatedMeta.textContent = t('drawer.updatedMeta', { time: formatTime(task.updatedAt) });
     drawerProject.textContent = task.projectName ? t('drawer.project') + ': ' + task.projectName : '';
     drawerStatusChip.textContent = t('status.' + (task.status || 'backlog'));

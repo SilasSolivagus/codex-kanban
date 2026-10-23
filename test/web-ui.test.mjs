@@ -1233,3 +1233,9 @@ test('one confirm records the pending answer and then applies the decision with 
   assert.match(script, /if \(kind === 'approve' && pending\.prompt && !selected\)/)
 })
 
+
+test('the drawer header shows a visible version chip', () => {
+  assert.match(markup, /id="drawer-version-chip"/)
+  assert.match(markup, /drawer-version-chip \{/)
+  assert.match(script, /drawerVersionChip\.textContent = 'v' \+ task\.version/)
+})
