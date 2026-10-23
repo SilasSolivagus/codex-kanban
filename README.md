@@ -8,7 +8,7 @@
 
 <p align="center">
   <a href="https://github.com/SilasSolivagus/codex-kanban/actions/workflows/ci.yml"><img src="https://github.com/SilasSolivagus/codex-kanban/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <a href="https://github.com/SilasSolivagus/codex-kanban"><img src="https://img.shields.io/badge/version-0.6.0-2F6FB2" alt="Version 0.6.0"></a>
+  <a href="https://github.com/SilasSolivagus/codex-kanban"><img src="https://img.shields.io/badge/version-0.6.1-2F6FB2" alt="Version 0.6.1"></a>
   <img src="https://img.shields.io/badge/tests-213%20passing-2ea043" alt="213 tests passing">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-2F6FB2" alt="MIT license"></a>
 </p>
