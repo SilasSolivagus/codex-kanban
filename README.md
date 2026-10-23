@@ -8,8 +8,8 @@
 
 <p align="center">
   <a href="https://github.com/SilasSolivagus/codex-kanban/actions/workflows/ci.yml"><img src="https://github.com/SilasSolivagus/codex-kanban/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <img src="https://img.shields.io/badge/version-0.6.5-2F6FB2" alt="Version 0.6.5">
-  <img src="https://img.shields.io/badge/tests-274%20passing-2ea043" alt="274 tests passing">
+  <img src="https://img.shields.io/badge/version-0.7.0-2F6FB2" alt="Version 0.7.0">
+  <img src="https://img.shields.io/badge/tests-293%20passing-2ea043" alt="293 tests passing">
   <img src="https://img.shields.io/badge/design-B%203.42%2F4-6C5CE7" alt="UX audit B">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-2F6FB2" alt="MIT license"></a>
 </p>
@@ -95,7 +95,7 @@ attention queue.
 node plugin/bin/codex-kanban.mjs serve
 
 # from the installed plugin (version may differ)
-node "$HOME/.codex/plugins/cache/silassolivagus/codex-kanban/0.6.5/bin/codex-kanban.mjs" serve
+node "$HOME/.codex/plugins/cache/silassolivagus/codex-kanban/0.7.0/bin/codex-kanban.mjs" serve
 ```
 
 Opens `http://127.0.0.1:4317`: four columns with drag ordering, project switcher,
@@ -170,6 +170,29 @@ also require `as: "user"` and `confirmed_by`.
 | `kanban_project_update` | Rename a project, change its prefix, or set its workspace path. |
 | `kanban_project_archive` | Archive a project; its tasks become read-only. |
 | `kanban_project_restore` | Restore an archived project. |
+
+## Bring your history
+
+A new board does not have to start empty. On first run the web board offers to turn
+this repository's existing Codex sessions into Backlog tasks:
+
+- It scans `$CODEX_HOME/sessions` for sessions whose `cwd` is inside this repository
+  (default: last 30 days, at most 10 candidates, sessions with at least two user turns).
+- It reads only the thread name and the last user message; the rest of the
+  conversation stays on disk.
+- You get a checklist before anything is written. Imported tasks get the `imported`
+  label and a `source` pointing at the session.
+
+```bash
+# preview only (default)
+node plugin/bin/codex-kanban.mjs import --root "$PWD" --since 30d
+
+# create the previewed tasks
+node plugin/bin/codex-kanban.mjs import --root "$PWD" --since 30d --apply
+```
+
+Skip the offer once and it stays hidden; reopen it from **Projects → Import history**.
+In a Codex chat, the skill asks the same question when the board is empty.
 
 ## Projects, archive and attachments
 
@@ -298,7 +321,7 @@ cd codex-kanban
 node --test
 ```
 
-The suite has 274 tests at `v0.6.3`, uses only `node:test`, and needs no dependencies.
+The suite has 293 tests at `v0.6.3`, uses only `node:test`, and needs no dependencies.
 `npm test` runs the same command.
 
 ```
