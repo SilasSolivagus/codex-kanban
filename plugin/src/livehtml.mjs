@@ -570,7 +570,7 @@ export function renderLiveHtml({ project = {} } = {}) {
     position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
     display: inline-flex; color: var(--muted); pointer-events: none;
   }
-  .search-wrap { position: relative; flex: 1 1 520px; max-width: 520px; min-width: 200px; height: 40px; }
+  .search-wrap { position: relative; flex: 1 1 520px; max-width: 520px; min-width: 0; height: 40px; }
   .search-wrap .search-icon {
     position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
     display: inline-flex; color: var(--muted); pointer-events: none;
@@ -590,10 +590,13 @@ export function renderLiveHtml({ project = {} } = {}) {
   #filter-toggle:hover { border-color: var(--border-strong); background: var(--surface-soft); }
   #filter-toggle[aria-expanded="true"] { border-color: var(--border-strong); background: var(--surface-soft); }
   .archived-toggle {
-    display: inline-flex; align-items: center; gap: 5px; height: 30px; flex: none;
-    padding: 0 9px; border: 1px solid var(--border); border-radius: 8px;
-    background: var(--surface); color: var(--muted); font-size: 11.5px; font-weight: 600;
+    display: inline-flex; align-items: center; gap: 6px; height: 40px; flex: none;
+    padding: 0 12px; border: 1px solid var(--border); border-radius: 10px;
+    background: var(--surface); color: var(--muted); font-size: 12.5px; font-weight: 600;
   }
+  .btn-label { display: inline; }
+  .btn-icon { display: none; align-items: center; justify-content: center; }
+  #filter-toggle, .archived-toggle, #lang-toggle, #manage-projects { white-space: nowrap; }
   .archived-toggle:hover { border-color: var(--border-strong); color: var(--text); }
   .archived-toggle[aria-pressed="true"] {
     border-color: var(--border-strong); background: var(--surface-soft); color: var(--text);
@@ -616,6 +619,7 @@ export function renderLiveHtml({ project = {} } = {}) {
   #clear-filters:hover { background: var(--surface-soft); }
   .filter-count { margin-left: auto; color: var(--muted); font-size: 11.5px; }
   .topbar-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+  .topbar-tools { display: contents; }
   .running-chip {
     display: inline-flex; align-items: center; gap: 7px; padding: 0 4px;
     color: var(--muted); font-size: 12.5px; white-space: nowrap;
@@ -626,20 +630,21 @@ export function renderLiveHtml({ project = {} } = {}) {
     box-shadow: 0 0 0 3px light-dark(#dcfce7, rgba(74, 222, 128, 0.16));
   }
   #lang-toggle {
-    height: 30px; min-width: 34px; padding: 0 8px; border: 1px solid var(--border);
-    border-radius: 8px; background: transparent; color: var(--muted);
-    font-size: 12px; font-weight: 600;
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    height: 40px; min-width: 40px; padding: 0 10px; border: 1px solid var(--border);
+    border-radius: 10px; background: transparent; color: var(--muted);
+    font-size: 12.5px; font-weight: 600;
   }
   #lang-toggle:hover { border-color: var(--border-strong); color: var(--text); }
   .icon-button {
-    display: inline-flex; align-items: center; justify-content: center;
-    width: 32px; height: 32px; padding: 0; border: 0; border-radius: 8px;
+    display: inline-flex; align-items: center; justify-content: center; flex: none;
+    width: 40px; height: 40px; padding: 0; border: 0; border-radius: 10px;
     background: transparent; color: var(--muted);
   }
   .icon-button:hover:not(:disabled) { background: var(--surface-soft); color: var(--text); }
   #manage-projects {
-    display: inline-flex; align-items: center; gap: 5px; height: 32px;
-    padding: 0 8px; border: 0; border-radius: 8px; background: transparent;
+    display: inline-flex; align-items: center; gap: 6px; flex: none; height: 40px;
+    padding: 0 10px; border: 0; border-radius: 10px; background: transparent;
     color: var(--text); font-size: 13px; font-weight: 600;
   }
   #manage-projects:hover { background: var(--surface-soft); }
@@ -666,7 +671,7 @@ export function renderLiveHtml({ project = {} } = {}) {
   }
 
   /* ---- board ----------------------------------------------------------- */
-  .board { display: grid; grid-template-columns: repeat(1, minmax(0, 1fr)); gap: 10px; align-items: start; }
+  .board { display: grid; grid-template-columns: repeat(1, minmax(0, 1fr)); gap: 14px; align-items: start; }
   @media (min-width: 600px) { .board { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   @media (min-width: 980px) { .board { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
   section.column {
@@ -691,7 +696,7 @@ export function renderLiveHtml({ project = {} } = {}) {
   section.column[data-column="needs"] .column-icon { color: var(--warn); }
   section.column[data-column="done"] .column-icon { color: var(--success); }
   .column-title {
-    min-width: 0; margin: 0; font-size: 13px; font-weight: 600; line-height: 1.3;
+    min-width: 0; margin: 0; font-size: 15px; font-weight: 650; line-height: 1.3;
     letter-spacing: 0; text-transform: none; color: var(--text);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
@@ -710,7 +715,7 @@ export function renderLiveHtml({ project = {} } = {}) {
   .column-toggle:hover, .column-add:hover { background: light-dark(rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.08)); color: var(--text); }
   .column-toggle svg { transition: transform 0.14s ease; }
   section.column[data-collapsed="true"] .column-toggle svg { transform: rotate(-90deg); }
-  .cards { display: flex; flex-direction: column; gap: 8px; }
+  .cards { display: flex; flex-direction: column; gap: 12px; }
   .column-empty { color: var(--muted); font-size: 12px; padding: 12px 6px; margin: 0; text-align: center; }
   .column-empty[hidden] { display: none; }
   .column-foot { margin-top: auto; padding-top: 2px; }
@@ -726,8 +731,8 @@ export function renderLiveHtml({ project = {} } = {}) {
 
   /* ---- cards ----------------------------------------------------------- */
   article.card {
-    display: flex; flex-direction: column; gap: 7px;
-    padding: 11px; border: 1px solid var(--border); border-radius: 12px;
+    display: flex; flex-direction: column; gap: 8px;
+    padding: 14px; border: 1px solid var(--border); border-radius: 12px;
     background: var(--surface); box-shadow: none;
     transition: border-color 0.12s ease, box-shadow 0.12s ease;
     position: relative;
@@ -749,11 +754,15 @@ export function renderLiveHtml({ project = {} } = {}) {
     content: ''; position: absolute; left: 0; right: 0; bottom: -5px; height: 2px;
     border-radius: 2px; background: light-dark(#111827, #e8ecf2); z-index: 2;
   }
-  .card-top { display: flex; align-items: center; gap: 8px; min-height: 18px; }
-  .card-identifier { font-size: 12px; font-weight: 600; color: var(--muted); letter-spacing: 0.01em; }
-  .card-chevron { display: inline-flex; margin-left: auto; color: var(--muted-soft); }
+  .card-head { display: flex; align-items: baseline; gap: 8px; }
+  .card-identifier {
+    flex: none; font-size: 13px; font-weight: 600; line-height: 1.3;
+    color: var(--muted); letter-spacing: 0.01em;
+  }
+  .card-chevron { display: inline-flex; flex: none; align-self: flex-start; margin-top: 2px; margin-left: auto; color: var(--muted-soft); }
   .card-title {
-    margin: 0; font-size: 14.5px; line-height: 1.3; font-weight: 600; letter-spacing: -0.01em;
+    flex: 1 1 auto; min-width: 0; margin: 0;
+    font-size: 17px; line-height: 1.3; font-weight: 600; letter-spacing: -0.01em;
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
     overflow: hidden; overflow-wrap: anywhere;
   }
@@ -765,13 +774,13 @@ export function renderLiveHtml({ project = {} } = {}) {
   .card-desc[hidden] { display: none; }
   .chips { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
   .chip {
-    display: inline-flex; align-items: center; max-width: 100%; height: 20px;
-    padding: 0 6px; border: 0; border-radius: 5px; background: transparent;
-    color: light-dark(#4b5563, #aab4c2); font-size: 11px; font-weight: 500;
-    line-height: 20px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    display: inline-flex; align-items: center; max-width: 100%; height: 22px;
+    padding: 0 7px; border: 0; border-radius: 5px; background: transparent;
+    color: light-dark(#4b5563, #aab4c2); font-size: 12px; font-weight: 500;
+    line-height: 22px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
   .chip.project { border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); }
-  .chip.tag { padding: 0 4px; color: var(--muted); }
+  .chip.tag { padding: 0 5px; color: var(--muted); }
   .chip.archived { border: 1px solid var(--border-strong); background: var(--surface-soft); color: var(--muted); }
   .chip.priority-high { background: light-dark(#fef3c7, #3a2f16); color: light-dark(#92400e, #f2c46a); }
   .chip.priority-urgent { background: light-dark(#fee2e2, #3d1d1d); color: light-dark(#b91c1c, #f19a92); }
@@ -789,8 +798,8 @@ export function renderLiveHtml({ project = {} } = {}) {
     display: flex; align-items: center; justify-content: space-between; gap: 8px;
     margin-top: 1px; padding-top: 7px; border-top: 1px solid light-dark(#f0f1f3, #242a33);
   }
-  .card-status { display: inline-flex; align-items: center; gap: 5px; min-width: 0; color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; }
-  .card-status-label { overflow: hidden; text-overflow: ellipsis; }
+  .card-status { display: inline-flex; align-items: center; gap: 5px; min-width: 0; color: var(--muted); font-size: 12px; white-space: nowrap; }
+  .card-status-label { min-width: 0; }
   .card-dwell { color: var(--muted-soft); }
   .card-archived { color: var(--muted); }
   .status-dot { width: 6px; height: 6px; flex: none; border-radius: 50%; background: var(--muted-soft); }
@@ -801,7 +810,7 @@ export function renderLiveHtml({ project = {} } = {}) {
   .status-canceled .status-dot { background: var(--muted-soft); }
   .status-done { color: var(--success); }
   .status-needs { color: var(--warn); }
-  .card-metrics { display: flex; align-items: center; gap: 9px; flex: none; color: var(--muted-soft); font-size: 11px; }
+  .card-metrics { display: flex; align-items: center; gap: 9px; flex: none; margin-left: auto; color: var(--muted-soft); font-size: 11px; }
   .metric { display: inline-flex; align-items: center; gap: 3px; font-variant-numeric: tabular-nums; }
   .metric svg { flex: none; }
 
@@ -969,6 +978,38 @@ export function renderLiveHtml({ project = {} } = {}) {
     position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
     overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
   }
+  /* ---- responsive: density, footer wrap, compact toolbar --------------- */
+  @media (max-width: 1120px) {
+    .card-footer { flex-wrap: wrap; row-gap: 4px; }
+  }
+  @media (max-width: 720px) {
+    .topbar-inner {
+      display: grid; grid-template-columns: auto minmax(0, 1fr);
+      align-items: center; gap: 8px; padding: 8px 12px; min-height: 0;
+    }
+    .project-chip { grid-column: 1; max-width: 46vw; min-width: 0; }
+    .project-chip select { max-width: calc(46vw - 46px); min-width: 0; }
+    .search-wrap {
+      grid-column: 2; flex: none; width: 100%; max-width: none; min-width: 0; height: 44px;
+    }
+    #search { min-width: 0; height: 44px; }
+    .topbar-tools {
+      display: flex; grid-column: 1 / -1; align-items: center;
+      justify-content: flex-start; gap: 8px;
+    }
+    .topbar-actions { display: contents; }
+    .running-chip { display: none; }
+    #filter-toggle, .archived-toggle, #lang-toggle, .icon-button, #manage-projects {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 44px; min-width: 44px; height: 44px; padding: 0; gap: 0; border-radius: 10px;
+    }
+    .topbar-tools .icon-button, .topbar-tools #manage-projects {
+      border: 1px solid var(--border); background: var(--surface); color: var(--muted);
+    }
+    .btn-label { display: none; }
+    .btn-icon { display: inline-flex; }
+    .filters-popover { width: min(300px, calc(100vw - 24px)); }
+  }
   @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto; }
     *, *::before, *::after { transition: none !important; animation: none !important; }
@@ -993,38 +1034,52 @@ export function renderLiveHtml({ project = {} } = {}) {
       <span class="search-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="6.2"/><path d="m15.6 15.6 4 4"/></svg></span>
       <input id="search" type="search" data-i18n-placeholder="header.searchPlaceholder" data-i18n-aria="header.searchLabel" placeholder="Search title / summary / project / label" aria-label="Search title, summary, project or label" autocomplete="off" />
     </div>
-    <div class="filters-wrap">
-      <button id="filter-toggle" type="button" data-i18n="header.filter" aria-expanded="false" aria-controls="filters-popover">Filters</button>
-      <div class="filters-popover" id="filters-popover" role="group" data-i18n-aria="filter.toolbar" aria-label="Filters" hidden>
-        <label for="filter-priority"><span data-i18n="filter.priority">All priorities</span>
-          <select id="filter-priority" aria-label="Priority">
-            <option value="">All priorities</option>
-          </select>
-        </label>
-        <label for="filter-label"><span data-i18n="filter.label">All labels</span>
-          <select id="filter-label" aria-label="Label">
-            <option value="">All labels</option>
-          </select>
-        </label>
-        <label for="filter-assignee"><span data-i18n="filter.assignee">All assignees</span>
-          <select id="filter-assignee" aria-label="Assignee">
-            <option value="">All assignees</option>
-          </select>
-        </label>
-        <div class="filters-foot">
-          <button id="clear-filters" type="button" data-i18n="filter.clear">Clear filters</button>
-          <span class="filter-count" id="filter-count" aria-live="polite"></span>
+    <div class="topbar-tools">
+      <div class="filters-wrap">
+        <button id="filter-toggle" type="button" aria-expanded="false" aria-controls="filters-popover" data-i18n-aria="header.filter" aria-label="Filters" data-i18n-title="header.filter" title="Filters">
+          <span class="btn-icon" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16l-6.4 7.3V19l-3.2 1.6v-8.3L4 5Z"/></svg></span>
+          <span class="btn-label" data-i18n="header.filter">Filters</span>
+        </button>
+        <div class="filters-popover" id="filters-popover" role="group" data-i18n-aria="filter.toolbar" aria-label="Filters" hidden>
+          <label for="filter-priority"><span data-i18n="filter.priority">All priorities</span>
+            <select id="filter-priority" aria-label="Priority">
+              <option value="">All priorities</option>
+            </select>
+          </label>
+          <label for="filter-label"><span data-i18n="filter.label">All labels</span>
+            <select id="filter-label" aria-label="Label">
+              <option value="">All labels</option>
+            </select>
+          </label>
+          <label for="filter-assignee"><span data-i18n="filter.assignee">All assignees</span>
+            <select id="filter-assignee" aria-label="Assignee">
+              <option value="">All assignees</option>
+            </select>
+          </label>
+          <div class="filters-foot">
+            <button id="clear-filters" type="button" data-i18n="filter.clear">Clear filters</button>
+            <span class="filter-count" id="filter-count" aria-live="polite"></span>
+          </div>
         </div>
       </div>
-    </div>
-    <button id="archived-toggle" class="archived-toggle" type="button" aria-pressed="false" data-i18n="filter.archived" data-i18n-aria="filter.archivedAria" aria-label="Show archived tasks on the board" title="Show archived">Show archived</button>
-    <div class="topbar-actions">
-      <span class="running-chip"><span class="live-dot" aria-hidden="true"></span><span id="running-count">0 running</span></span>
-      <button id="lang-toggle" type="button" data-i18n="header.langToggle" data-i18n-aria="header.langLabel" aria-label="Switch to Chinese">中文</button>
-      <button id="refresh" class="icon-button" type="button" data-i18n-aria="header.refresh" aria-label="Refresh">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6v5h-5"/><path d="M4 18v-5h5"/><path d="M5.6 9a7.5 7.5 0 0 1 12.6-2.7L20 8"/><path d="M18.4 15a7.5 7.5 0 0 1-12.6 2.7L4 16"/></svg>
+      <button id="archived-toggle" class="archived-toggle" type="button" aria-pressed="false" data-i18n-aria="filter.archivedAria" aria-label="Show archived tasks on the board" data-i18n-title="filter.archived" title="Show archived">
+        <span class="btn-icon" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4.5" width="16" height="4" rx="1"/><path d="M6 8.5V19a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V8.5"/><path d="M10 12.5h4"/></svg></span>
+        <span class="btn-label" data-i18n="filter.archived">Show archived</span>
       </button>
-      <button id="manage-projects" type="button" data-i18n="header.projects">Projects</button>
+      <div class="topbar-actions">
+        <span class="running-chip"><span class="live-dot" aria-hidden="true"></span><span id="running-count">0 running</span></span>
+        <button id="lang-toggle" type="button" data-i18n-aria="header.langLabel" aria-label="Switch to Chinese" data-i18n-title="header.langLabel" title="Switch to Chinese">
+          <span class="btn-icon" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17"/><path d="M12 3.5c2.3 2.3 3.5 5.2 3.5 8.5S14.3 18.2 12 20.5C9.7 18.2 8.5 15.3 8.5 12S9.7 5.8 12 3.5Z"/></svg></span>
+          <span class="btn-label" data-i18n="header.langToggle">中文</span>
+        </button>
+        <button id="refresh" class="icon-button" type="button" data-i18n-aria="header.refresh" aria-label="Refresh" data-i18n-title="header.refresh" title="Refresh">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6v5h-5"/><path d="M4 18v-5h5"/><path d="M5.6 9a7.5 7.5 0 0 1 12.6-2.7L20 8"/><path d="M18.4 15a7.5 7.5 0 0 1-12.6 2.7L4 16"/></svg>
+        </button>
+        <button id="manage-projects" type="button" data-i18n-aria="header.projects" aria-label="Projects" data-i18n-title="header.projects" title="Projects">
+          <span class="btn-icon" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2v-10Z"/></svg></span>
+          <span class="btn-label" data-i18n="header.projects">Projects</span>
+        </button>
+      </div>
     </div>
   </div>
 </header>
@@ -1661,7 +1716,13 @@ export function renderLiveHtml({ project = {} } = {}) {
     for (var k = 0; k < labels.length; k += 1) {
       labels[k].setAttribute('aria-label', t(labels[k].getAttribute('data-i18n-aria')));
     }
-    langToggle.textContent = t('header.langToggle');
+    var titles = document.querySelectorAll('[data-i18n-title]');
+    for (var m = 0; m < titles.length; m += 1) {
+      titles[m].setAttribute('title', t(titles[m].getAttribute('data-i18n-title')));
+    }
+    var langLabel = langToggle.querySelector('.btn-label');
+    if (langLabel) langLabel.textContent = t('header.langToggle');
+    else langToggle.textContent = t('header.langToggle');
     langToggle.setAttribute('aria-label', t('header.langLabel'));
   }
 
@@ -1998,13 +2059,13 @@ export function renderLiveHtml({ project = {} } = {}) {
     var draggable = DRAG_COLUMNS.indexOf(columnId) !== -1 && isWritable(task);
     card.draggable = draggable;
 
-    var top = el('div', 'card-top');
-    top.appendChild(el('span', 'card-identifier', task.identifier));
+    var head = el('div', 'card-head');
+    head.appendChild(el('span', 'card-identifier', task.identifier));
+    head.appendChild(el('h3', 'card-title', task.title));
     var open = icon('chevron');
     open.className = 'card-chevron';
-    top.appendChild(open);
-    card.appendChild(top);
-    card.appendChild(el('h3', 'card-title', task.title));
+    head.appendChild(open);
+    card.appendChild(head);
 
     var description = el('p', 'card-desc', task.description || '');
     description.hidden = !task.description;
@@ -2045,10 +2106,13 @@ export function renderLiveHtml({ project = {} } = {}) {
     var comments = Array.isArray(task.comments) ? task.comments.length : (task.commentCount || 0);
     var attachments = Array.isArray(task.attachments) ? task.attachments.length : (task.attachmentCount || 0);
     var links = Array.isArray(task.links) ? task.links.length : (task.linkCount || 0);
-    metrics.appendChild(metric('comment', comments, t('card.comments', { n: comments })));
-    metrics.appendChild(metric('attachment', attachments, t('card.attachments', { n: attachments })));
-    metrics.appendChild(metric('link', links, t('card.links', { n: links })));
-    footer.appendChild(metrics);
+    function addMetric(name, count, key) {
+      if (count > 0) metrics.appendChild(metric(name, count, t(key, { n: count })));
+    }
+    addMetric('comment', comments, 'card.comments');
+    addMetric('attachment', attachments, 'card.attachments');
+    addMetric('link', links, 'card.links');
+    if (metrics.childElementCount) footer.appendChild(metrics);
     card.appendChild(footer);
 
     card.addEventListener('click', function () { openTask(task.id); });
@@ -2296,11 +2360,17 @@ export function renderLiveHtml({ project = {} } = {}) {
   function syncArchivedToggle() {
     var key = state.includeArchived ? 'filter.hideArchived' : 'filter.archived';
     var ariaKey = state.includeArchived ? 'filter.hideArchivedAria' : 'filter.archivedAria';
-    archivedToggle.setAttribute('data-i18n', key);
+    var label = archivedToggle.querySelector('.btn-label');
+    if (label) {
+      label.setAttribute('data-i18n', key);
+      label.textContent = t(key);
+    } else {
+      archivedToggle.textContent = t(key);
+    }
     archivedToggle.setAttribute('aria-pressed', state.includeArchived ? 'true' : 'false');
-    archivedToggle.textContent = t(key);
     archivedToggle.setAttribute('aria-label', t(ariaKey));
-    archivedToggle.title = archivedToggle.textContent;
+    archivedToggle.setAttribute('data-i18n-title', key);
+    archivedToggle.title = t(key);
   }
 
   drawer.addEventListener('keydown', function (event) {

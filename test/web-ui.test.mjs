@@ -43,6 +43,43 @@ test('the layout keeps four columns, two at 600px and one below', () => {
   assert.match(markup, /@media \(min-width: 980px\)[^}]*\{[^}]*repeat\(4, minmax\(0, 1fr\)\)/)
 })
 
+test('below 720px the toolbar becomes two rows with 44px icon-only controls', () => {
+  assert.match(markup, /<div class="topbar-tools">/)
+  const compact = markup.split('@media (max-width: 720px)')[1].split('@media (prefers-reduced-motion')[0]
+  assert.match(compact, /\.topbar-inner \{[^}]*display: grid/)
+  assert.match(compact, /\.topbar-inner \{[^}]*grid-template-columns: auto minmax\(0, 1fr\)/)
+  assert.match(compact, /\.search-wrap \{[^}]*grid-column: 2/)
+  assert.match(compact, /\.search-wrap \{[^}]*min-width: 0/)
+  assert.match(compact, /\.topbar-tools \{[^}]*grid-column: 1 \/ -1/)
+  assert.match(compact, /\.topbar-actions \{ display: contents; \}/)
+  assert.match(compact, /\.btn-label \{ display: none; \}/)
+  assert.match(compact, /\.btn-icon \{ display: inline-flex; \}/)
+  assert.match(compact, /width: 44px; min-width: 44px; height: 44px/)
+  // Every compact control keeps an accessible name and a tooltip.
+  for (const id of ['filter-toggle', 'archived-toggle', 'lang-toggle', 'refresh', 'manage-projects']) {
+    assert.match(markup, new RegExp(`<button id="${id}"[^>]*aria-label="[^"]+"[^>]*title="[^"]+"`), `${id} has aria-label and title`)
+  }
+})
+
+test('desktop toolbar controls share one 40px height', () => {
+  for (const selector of ['\\.archived-toggle', '#lang-toggle', '\\.icon-button', '#manage-projects']) {
+    assert.match(markup, new RegExp(`${selector} \\{[^}]*height: 40px`), `${selector} is 40px tall`)
+  }
+})
+
+test('the card header puts the identifier inline with a 17px title and a 15px column title', () => {
+  assert.match(markup, /\.card-head \{ display: flex; align-items: baseline; gap: 8px; \}/)
+  assert.match(markup, /\.card-identifier \{[^}]*font-size: 13px[^}]*font-weight: 600/)
+  assert.match(markup, /\.card-title \{[^}]*font-size: 17px[^}]*line-height: 1\.3/)
+  assert.match(markup, /\.card-chevron \{[^}]*margin-left: auto/)
+  assert.match(markup, /\.column-title \{[^}]*font-size: 15px[^}]*font-weight: 650/)
+  assert.doesNotMatch(markup, /\.card-top \{/)
+  assert.match(script, /var head = el\('div', 'card-head'\)/)
+  assert.match(script, /head\.appendChild\(el\('span', 'card-identifier', task\.identifier\)\)/)
+  assert.match(script, /head\.appendChild\(el\('h3', 'card-title', task\.title\)\)/)
+  assert.match(script, /head\.appendChild\(open\)/)
+})
+
 test('a project name cannot inject markup into the title', () => {
   const evil = renderLiveHtml({ project: { name: '<b>demo & co</b>' } })
   assert.match(evil, /<title>Codex Kanban · &lt;b&gt;demo &amp; co&lt;\/b&gt;<\/title>/)
@@ -70,13 +107,16 @@ test('header has page title, project switcher, wide search, filters, running cou
   assert.match(markup, /<option value="all">All projects<\/option>/)
   assert.match(markup, /<input id="search" type="search"/)
   assert.match(markup, /data-i18n-placeholder="header.searchPlaceholder"/)
-  assert.match(markup, /<button id="filter-toggle"[^>]*>Filters<\/button>/)
+  assert.match(markup, /<button id="filter-toggle"[^>]*aria-label="Filters"/)
+  assert.match(markup, /<span class="btn-label" data-i18n="header.filter">Filters<\/span>/)
   assert.match(markup, /<select id="filter-priority"/)
   assert.match(markup, /<select id="filter-label"/)
   assert.match(markup, /<select id="filter-assignee"/)
-  assert.match(markup, /<button id="lang-toggle"[^>]*>中文<\/button>/)
+  assert.match(markup, /<button id="lang-toggle"[^>]*aria-label="Switch to Chinese"/)
+  assert.match(markup, /<span class="btn-label" data-i18n="header.langToggle">中文<\/span>/)
   assert.match(markup, /<button id="refresh"[^>]*aria-label="Refresh"/)
-  assert.match(markup, /<button id="manage-projects"[^>]*>Projects<\/button>/)
+  assert.match(markup, /<button id="manage-projects"[^>]*aria-label="Projects"/)
+  assert.match(markup, /<span class="btn-label" data-i18n="header.projects">Projects<\/span>/)
   assert.match(markup, /id="running-count"/)
   assert.match(markup, /id="counts" aria-live="polite"/)
 })
@@ -289,7 +329,7 @@ test('both dictionaries cover every key and every static translated label', () =
   assert.equal(STRINGS.zh['columns.needs'], 'Needs you')
   assert.notEqual(STRINGS.en['header.newTask'], STRINGS.zh['header.newTask'])
 
-  const attributes = ['data-i18n', 'data-i18n-placeholder', 'data-i18n-aria']
+  const attributes = ['data-i18n', 'data-i18n-placeholder', 'data-i18n-aria', 'data-i18n-title']
   for (const attribute of attributes) {
     const pattern = new RegExp(`${attribute}="([^"]+)"`, 'g')
     for (const match of markup.matchAll(pattern)) {
@@ -405,7 +445,7 @@ test('the new task dialog creates through the api with project and priority', ()
 
 // --- parity gaps ----------------------------------------------------------
 
-test('the card footer shows status, dwell time and the metric counts', () => {
+test('the card footer shows status, dwell time and only non-zero metric counts', () => {
   assert.match(markup, /\.card-dwell \{/)
   assert.match(script, /function taskStatusLabel\(task\)/)
   assert.match(script, /function taskElapsed\(task\)/)
@@ -414,9 +454,17 @@ test('the card footer shows status, dwell time and the metric counts', () => {
   assert.match(script, /task\.attentionSince/)
   assert.match(script, /pendingQuestion\.createdAt/)
   assert.match(script, /blockedSince \|\| task\.statusSince/)
-  assert.match(script, /metric\('comment'/)
-  assert.match(script, /metric\('attachment'/)
-  assert.match(script, /metric\('link'/)
+  assert.match(script, /function addMetric\(name, count, key\)/)
+  assert.match(script, /if \(count > 0\) metrics\.appendChild\(metric\(name, count/)
+  assert.match(script, /addMetric\('comment'/)
+  assert.match(script, /addMetric\('attachment'/)
+  assert.match(script, /addMetric\('link'/)
+  assert.match(script, /if \(metrics\.childElementCount\) footer\.appendChild\(metrics\)/)
+  const cardBody = script.slice(script.indexOf('function renderCard'), script.indexOf('function clearDropMarkers'))
+  assert.doesNotMatch(cardBody, /^\s*metrics\.appendChild\(metric\(/m)
+  // The status label is never ellipsized and the footer wraps before packing it.
+  assert.doesNotMatch(markup, /\.card-status-label \{[^}]*text-overflow: ellipsis/)
+  assert.match(markup, /@media \(max-width: 1120px\) \{\s*\.card-footer \{ flex-wrap: wrap;/)
   assert.equal(STRINGS.en['card.dwell'], '{time} ago')
   assert.equal(STRINGS.zh['card.dwell'], '{time}前')
 })
@@ -504,14 +552,17 @@ test('the drawer takes focus, restores it and supports the ?task= deep link', ()
   assert.match(script, /event\.key === 'Escape'/)
 })
 
-test('the fold trims header, padding and gaps without cramping cards', () => {
+test('the density scale gives cards room while keeping the fold', () => {
   assert.match(markup, /min-height: 56px/)
   assert.match(markup, /padding: 9px 24px/)
   assert.match(markup, /section\.column \{[^}]*gap: 8px/)
   assert.match(markup, /section\.column \{[^}]*padding: 10px/)
-  assert.match(markup, /article\.card \{[^}]*gap: 7px/)
-  assert.match(markup, /article\.card \{[^}]*padding: 11px/)
-  assert.match(markup, /\.cards \{ display: flex; flex-direction: column; gap: 8px; \}/)
+  assert.match(markup, /article\.card \{[^}]*gap: 8px/)
+  assert.match(markup, /article\.card \{[^}]*padding: 14px/)
+  assert.match(markup, /\.board \{[^}]*gap: 14px/)
+  assert.match(markup, /\.cards \{ display: flex; flex-direction: column; gap: 12px; \}/)
+  assert.match(markup, /\.chip \{[^}]*height: 22px/)
+  assert.match(markup, /\.chip \{[^}]*font-size: 12px/)
   assert.match(markup, /\.card-footer \{[^}]*padding-top: 7px/)
 })
 
