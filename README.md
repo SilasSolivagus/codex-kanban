@@ -8,8 +8,8 @@
 
 <p align="center">
   <a href="https://github.com/SilasSolivagus/codex-kanban/actions/workflows/ci.yml"><img src="https://github.com/SilasSolivagus/codex-kanban/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <img src="https://img.shields.io/badge/version-0.7.1-2F6FB2" alt="Version 0.7.1">
-  <img src="https://img.shields.io/badge/tests-295%20passing-2ea043" alt="295 tests passing">
+  <img src="https://img.shields.io/badge/version-0.7.2-2F6FB2" alt="Version 0.7.2">
+  <img src="https://img.shields.io/badge/tests-296%20passing-2ea043" alt="296 tests passing">
   <img src="https://img.shields.io/badge/design-B%203.42%2F4-6C5CE7" alt="UX audit B">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-2F6FB2" alt="MIT license"></a>
 </p>
@@ -95,7 +95,7 @@ attention queue.
 node plugin/bin/codex-kanban.mjs serve
 
 # from the installed plugin (version may differ)
-node "$HOME/.codex/plugins/cache/silassolivagus/codex-kanban/0.7.1/bin/codex-kanban.mjs" serve
+node "$HOME/.codex/plugins/cache/silassolivagus/codex-kanban/0.7.2/bin/codex-kanban.mjs" serve
 ```
 
 Opens `http://127.0.0.1:4317`: four columns with drag ordering, project switcher,
@@ -177,8 +177,8 @@ A new board does not have to start empty. On first run the web board offers to t
 this repository's existing Codex sessions into Backlog tasks:
 
 - It scans `$CODEX_HOME/sessions` for sessions whose `cwd` is inside this repository
-  (at most 10 candidates, sessions with at least two user turns). Pick a range in the
-  dialog: last 30 days, 90 days, or all time.
+  (sessions with at least two user turns). Pick a range (30 days, 90 days, all time)
+  and a cap (10–100) in the dialog.
 - It reads only the thread name and the last user message; the rest of the
   conversation stays on disk.
 - You get a checklist before anything is written. Imported tasks get the `imported`
@@ -323,7 +323,7 @@ cd codex-kanban
 node --test
 ```
 
-The suite has 295 tests at `v0.6.3`, uses only `node:test`, and needs no dependencies.
+The suite has 296 tests at `v0.6.3`, uses only `node:test`, and needs no dependencies.
 `npm test` runs the same command.
 
 ```

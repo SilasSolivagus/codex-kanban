@@ -8,8 +8,8 @@
 
 <p align="center">
   <a href="https://github.com/SilasSolivagus/codex-kanban/actions/workflows/ci.yml"><img src="https://github.com/SilasSolivagus/codex-kanban/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <img src="https://img.shields.io/badge/version-0.7.1-2F6FB2" alt="版本 0.6.3">
-  <img src="https://img.shields.io/badge/tests-295%20passing-2ea043" alt="295 项测试通过">
+  <img src="https://img.shields.io/badge/version-0.7.2-2F6FB2" alt="版本 0.6.3">
+  <img src="https://img.shields.io/badge/tests-296%20passing-2ea043" alt="296 项测试通过">
   <img src="https://img.shields.io/badge/design-B%203.42%2F4-6C5CE7" alt="UX 评审 B">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-2F6FB2" alt="MIT 许可证"></a>
 </p>
@@ -89,7 +89,7 @@ Codex 建任务、带着选项提问，任务停在 Needs you。你回答后说�
 node plugin/bin/codex-kanban.mjs serve
 
 # 从已安装的插件（版本号可能不同）
-node "$HOME/.codex/plugins/cache/silassolivagus/codex-kanban/0.7.1/bin/codex-kanban.mjs" serve
+node "$HOME/.codex/plugins/cache/silassolivagus/codex-kanban/0.7.2/bin/codex-kanban.mjs" serve
 ```
 
 打开 `http://127.0.0.1:4317`：四列、拖拽排序、项目切换、搜索筛选、完整任务抽屉
@@ -166,8 +166,8 @@ node plugin/bin/codex-kanban.mjs render --open
 新看板不必从空白开始。首次打开网页看板时，它会提议把这个仓库已有的 Codex 对话变成
 Backlog 任务：
 
-- 扫描 `$CODEX_HOME/sessions`，只取 `cwd` 在当前仓库内的会话（最多 10 条、至少两轮对话）。
-  对话框里可选时间范围：最近 30 天、90 天或全部。
+- 扫描 `$CODEX_HOME/sessions`，只取 `cwd` 在当前仓库内的会话（至少两轮对话）。对话框里
+  可选时间范围（30 天 / 90 天 / 全部）和条数上限（10–100）。
 - 只读线程名和最后一条用户消息，其余对话内容留在磁盘上。
 - 写入前一定先给勾选清单。导入的任务带 `imported` 标签和指向会话的 `source`。
 

@@ -1,6 +1,6 @@
 {
   "name": "codex-kanban",
-  "version": "0.7.1",
+  "version": "0.7.2",
   "private": true,
   "description": "A Codex-native task board: four columns, approvals, blockers and durable repository state.",
   "license": "MIT",

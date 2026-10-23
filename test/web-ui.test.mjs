@@ -1291,7 +1291,7 @@ test('the import modal is a checkbox list with select all, cancel and a count', 
   assert.match(script, /importSelectAll\.addEventListener\('click', selectAllImport\)/)
   assert.match(script, /importApply\.addEventListener\('click', submitImport\)/)
   assert.match(script, /act\('import\.apply', payload\)/)
-  assert.match(script, /payload = \{ sessionIds: ids, since: state\.importSince \}/)
+  assert.match(script, /payload = \{ sessionIds: ids, since: state\.importSince, limit: state\.importLimit \}/)
   assert.match(script, /importApply\.textContent = t\('import\.apply', \{ n: count \}\)/)
   assert.match(script, /importApply\.disabled = count === 0/)
   assert.match(script, /function openImportHistory/)
@@ -1323,4 +1323,12 @@ test('the import range is selectable and skip is per repository', () => {
   assert.match(script, /state\.importSince = value/)
   assert.match(script, /since=' \+ encodeURIComponent\(state\.importSince\)/)
   assert.match(script, /function importSkipKey\(\)/)
+})
+
+test('the import limit is selectable up to 100', () => {
+  assert.match(markup, /id="import-limit"/)
+  assert.match(markup, /id="import-limit-dialog"/)
+  assert.match(markup, /value="100"/)
+  assert.match(script, /state\.importLimit = Number\(value\) \|\| 10/)
+  assert.match(script, /&limit=' \+ state\.importLimit/)
 })

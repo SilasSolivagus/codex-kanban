@@ -188,7 +188,7 @@ function askOptions(value) {
 }
 
 function importLimit(value, fallback = 10) {
-  if (value === null || value === '') return fallback
+  if (value === undefined || value === null || value === '') return fallback
   if (!/^\d+$/.test(value) || Number(value) < 1) {
     const error = new Error('limit must be a positive integer')
     error.code = 'INVALID_INPUT'
@@ -341,7 +341,7 @@ const ACTIONS = {
     const candidates = await scanSessions({
       root: store.root,
       sinceDays,
-      limit: Math.max(ids.length, 10),
+      limit: Math.max(ids.length, importLimit(input.limit, 10)),
       codexHome: context.codexHome,
     })
     const byId = new Map(candidates.map((candidate) => [candidate.id, candidate]))

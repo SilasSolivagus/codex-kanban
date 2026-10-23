@@ -78,6 +78,8 @@ export const STRINGS = Object.freeze({
     'import.range90': 'Last 90 days',
     'import.rangeAll': 'All time',
     'import.rangeLabel': 'Time range',
+    'import.limitLabel': 'Max sessions',
+    'import.limitValue': '{n} sessions',
     'import.history': 'Import history',
     'import.historyHint': 'Reopen the Codex session importer for this repository.',
     'import.title': 'Import Codex sessions',
@@ -419,6 +421,8 @@ export const STRINGS = Object.freeze({
     'import.range90': '最近 90 天',
     'import.rangeAll': '全部时间',
     'import.rangeLabel': '时间范围',
+    'import.limitLabel': '最多条数',
+    'import.limitValue': '{n} 条',
     'import.history': '导入历史',
     'import.historyHint': '重新打开这个仓库的 Codex 对话导入。',
     'import.title': '导入 Codex 对话',
@@ -1849,6 +1853,12 @@ export function renderLiveHtml({ project = {} } = {}) {
         <option value="90d" data-i18n="import.range90">Last 90 days</option>
         <option value="all" data-i18n="import.rangeAll">All time</option>
       </select>
+      <select id="import-limit" class="import-range" data-i18n-aria="import.limitLabel" aria-label="Max sessions">
+        <option value="10">10</option>
+        <option value="25">25</option>
+        <option value="50">50</option>
+        <option value="100">100</option>
+      </select>
       <button class="primary" id="import-preview" type="button" data-i18n="import.preview">Preview</button>
       <button id="import-skip" type="button" data-i18n="import.skip">Skip</button>
     </div>
@@ -2327,6 +2337,12 @@ export function renderLiveHtml({ project = {} } = {}) {
         <option value="90d" data-i18n="import.range90">Last 90 days</option>
         <option value="all" data-i18n="import.rangeAll">All time</option>
       </select>
+      <select id="import-limit-dialog" class="import-range" data-i18n-aria="import.limitLabel" aria-label="Max sessions">
+        <option value="10">10</option>
+        <option value="25">25</option>
+        <option value="50">50</option>
+        <option value="100">100</option>
+      </select>
       <button id="import-select-all" type="button" data-i18n="import.selectAll">Select all</button>
       <span class="hint import-selection" id="import-selection"></span>
     </div>
@@ -2466,6 +2482,7 @@ export function renderLiveHtml({ project = {} } = {}) {
     importSkipped: false,
     importCandidates: [],
     importSince: '30d',
+    importLimit: 10,
     importRequested: false,
     importLoading: false,
     importSelection: Object.create(null),
@@ -2508,6 +2525,8 @@ export function renderLiveHtml({ project = {} } = {}) {
   var importSkip = document.getElementById('import-skip');
   var importRange = document.getElementById('import-range');
   var importRangeDialog = document.getElementById('import-range-dialog');
+  var importLimit = document.getElementById('import-limit');
+  var importLimitDialog = document.getElementById('import-limit-dialog');
   var importDialog = document.getElementById('import-dialog');
   var importList = document.getElementById('import-list');
   var importSelectAll = document.getElementById('import-select-all');
@@ -3404,7 +3423,7 @@ export function renderLiveHtml({ project = {} } = {}) {
     if (state.importLoading) return Promise.resolve([]);
     state.importRequested = true;
     state.importLoading = true;
-    return fetch(API_IMPORT + '?since=' + encodeURIComponent(state.importSince) + '&limit=' + IMPORT_LIMIT, {
+    return fetch(API_IMPORT + '?since=' + encodeURIComponent(state.importSince) + '&limit=' + state.importLimit, {
       cache: 'no-store',
       headers: { accept: 'application/json' }
     }).then(function (response) {
@@ -3507,7 +3526,7 @@ export function renderLiveHtml({ project = {} } = {}) {
   function submitImport() {
     var ids = selectedImportIds();
     if (!ids.length || state.importLoading) return;
-    var payload = { sessionIds: ids, since: state.importSince };
+    var payload = { sessionIds: ids, since: state.importSince, limit: state.importLimit };
     if (state.projectId && state.projectId !== 'all') payload.projectId = state.projectId;
     importApply.disabled = true;
     act('import.apply', payload).then(function (body) {
@@ -5253,6 +5272,23 @@ export function renderLiveHtml({ project = {} } = {}) {
     }
     if (importRangeDialog) {
       importRangeDialog.addEventListener('change', function () { setImportSince(this.value); });
+    }
+
+    function setImportLimit(value) {
+      state.importLimit = Number(value) || 10;
+      state.importRequested = false;
+      state.importCandidates = [];
+      if (importLimit) importLimit.value = String(state.importLimit);
+      if (importLimitDialog) importLimitDialog.value = String(state.importLimit);
+      var wasOpen = importDialog.open;
+      loadImportCandidates(wasOpen);
+    }
+
+    if (importLimit) {
+      importLimit.addEventListener('change', function () { setImportLimit(this.value); });
+    }
+    if (importLimitDialog) {
+      importLimitDialog.addEventListener('change', function () { setImportLimit(this.value); });
     }
     importSkip.addEventListener('click', function () {
       state.importSkipped = true;
