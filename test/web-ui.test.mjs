@@ -43,18 +43,27 @@ test('the layout keeps four columns, two at 600px and one below', () => {
   assert.match(markup, /@media \(min-width: 980px\)[^}]*\{[^}]*repeat\(4, minmax\(0, 1fr\)\)/)
 })
 
-test('below 720px the toolbar becomes two rows with 44px icon-only controls', () => {
+test('below 720px the toolbar keeps labelled primaries and an overflow menu', () => {
   assert.match(markup, /<div class="topbar-tools">/)
   const compact = markup.split('@media (max-width: 720px)')[1].split('@media (prefers-reduced-motion')[0]
   assert.match(compact, /\.topbar-inner \{[^}]*display: grid/)
   assert.match(compact, /\.topbar-inner \{[^}]*grid-template-columns: auto minmax\(0, 1fr\)/)
-  assert.match(compact, /\.search-wrap \{[^}]*grid-column: 2/)
+  assert.match(compact, /\.search-wrap \{[^}]*grid-column: 1 \/ -1/)
   assert.match(compact, /\.search-wrap \{[^}]*min-width: 0/)
-  assert.match(compact, /\.topbar-tools \{[^}]*grid-column: 1 \/ -1/)
+  assert.match(compact, /\.topbar-tools \{[^}]*grid-column: 2/)
   assert.match(compact, /\.topbar-actions \{ display: contents; \}/)
-  assert.match(compact, /\.btn-label \{ display: none; \}/)
-  assert.match(compact, /\.btn-icon \{ display: inline-flex; \}/)
+  assert.match(compact, /\.running-chip, \.needs-chip \{ display: none; \}/)
   assert.match(compact, /width: 44px; min-width: 44px; height: 44px/)
+  // 筛选 and 项目 keep their text; language, refresh and archive move into ⋯.
+  assert.match(compact, /#filter-toggle, #manage-projects \{[^}]*width: auto;[^}]*height: 44px/)
+  assert.match(compact, /\.overflow-menu #lang-toggle, \.overflow-menu #refresh, \.overflow-menu #archived-toggle \{/)
+  assert.match(compact, /\.overflow-menu \.btn-label \{ display: inline; \}/)
+  assert.match(compact, /\.overflow-menu #archived-toggle\[aria-pressed="true"\]/)
+  assert.match(markup, /<button id="overflow-toggle"[^>]*aria-haspopup="menu"[^>]*aria-expanded="false"[^>]*aria-controls="toolbar-overflow-menu"/)
+  assert.match(markup, /<div class="overflow-menu" id="toolbar-overflow-menu" role="menu"/)
+  assert.match(script, /overflowToggle\.addEventListener\('click'/)
+  assert.match(script, /toolbarOverflow\.classList\.toggle\('open', open\)/)
+  assert.match(script, /function closeOverflow\(\)/)
   // Every compact control keeps an accessible name and a tooltip.
   for (const id of ['filter-toggle', 'archived-toggle', 'lang-toggle', 'refresh', 'manage-projects']) {
     assert.match(markup, new RegExp(`<button id="${id}"[^>]*aria-label="[^"]+"[^>]*title="[^"]+"`), `${id} has aria-label and title`)
@@ -564,13 +573,16 @@ test('the drawer uses the two-column attribute grid with full-width sections', (
   assert.match(markup, /class="attr-grid"/)
   assert.match(markup, /grid-template-columns: minmax\(0, 1fr\) minmax\(0, 1fr\)/)
   assert.match(markup, /\.attr\.full \{ grid-column: 1 \/ -1; \}/)
-  for (const id of ['attr-status', 'attr-assignee', 'attr-updated', 'attr-created', 'attr-version']) {
+  for (const id of ['attr-status', 'attr-assignee', 'attr-updated', 'attr-created']) {
     assert.match(markup, new RegExp(`id="${id}"`), `${id} is an attribute cell`)
   }
   const details = markup.slice(
     markup.indexOf('id="drawer-panel-details"'),
     markup.indexOf('id="drawer-panel-collaboration"'),
   )
+  const propertyOrder = [...details.matchAll(/data-i18n="(drawer\.(?:statusLabel|priority|assignee|datesLabel))"/g)]
+    .map((match) => match[1])
+  assert.deepEqual(propertyOrder, ['drawer.statusLabel', 'drawer.priority', 'drawer.assignee', 'drawer.datesLabel'])
   const detailsOrder = [...details.matchAll(/data-i18n="(drawer\.(?:description|labels))"/g)]
     .map((match) => match[1])
   assert.deepEqual(detailsOrder, ['drawer.description', 'drawer.labels'])
@@ -589,10 +601,14 @@ test('the drawer uses the two-column attribute grid with full-width sections', (
     'drawer.comments',
     'drawer.actions',
   ])
+  // Version and updated time move to a quiet meta line in the header, not the grid.
+  assert.doesNotMatch(details, /id="attr-version"/)
+  assert.match(markup, /<p class="drawer-meta">\s*<span id="drawer-version">Version 1<\/span>\s*<span id="drawer-updated-meta"><\/span>/)
+  assert.match(script, /drawerVersion\.textContent = t\('drawer\.version', \{ n: task\.version \}\)/)
+  assert.match(script, /drawerUpdatedMeta\.textContent = t\('drawer\.updatedMeta'/)
   assert.match(script, /attrStatus\.value = task\.status \|\| 'backlog'/)
   assert.match(script, /attrUpdated\.textContent = formatTime\(task\.updatedAt\)/)
   assert.match(script, /attrCreated\.textContent = formatTime\(task\.createdAt\)/)
-  assert.match(script, /attrVersion\.textContent = String\(task\.version\)/)
 })
 
 test('column headings stay English in both locales while statuses are localized', () => {
@@ -639,7 +655,7 @@ test('the drawer is split into three tabs with keyboard navigation and a footer 
     markup.indexOf('id="drawer-panel-details"'),
     markup.indexOf('id="drawer-panel-collaboration"'),
   )
-  for (const id of ['edit-title', 'attr-status', 'edit-priority', 'attr-assignee', 'attr-updated', 'attr-created', 'attr-version', 'edit-description', 'edit-labels']) {
+  for (const id of ['edit-title', 'attr-status', 'edit-priority', 'attr-assignee', 'attr-updated', 'attr-created', 'edit-description', 'edit-labels']) {
     assert.ok(details.includes(`id="${id}"`), `${id} lives in the details tab`)
   }
   // Collaboration owns links, blocker, question, attachments, comments and secondary actions.
@@ -663,7 +679,7 @@ test('the drawer is split into three tabs with keyboard navigation and a footer 
   assert.match(footer, /id="archive-task"/)
   assert.match(footer, /id="restore-task"/)
   assert.match(script, /function setDrawerTab\(name, focusTab\)/)
-  assert.match(script, /state\.drawerTab = 'details'/)
+  assert.match(script, /state\.drawerTab = needsDecision \? 'collaboration' : 'details'/)
   assert.match(script, /drawerPanels\[j\]\.hidden = /)
   assert.match(script, /tab\.setAttribute\('aria-selected'/)
   assert.match(script, /event\.key === 'ArrowLeft'/)
@@ -753,8 +769,8 @@ test('a filtered empty board renders one board-level empty state and hides creat
   assert.match(script, /boardEmpty\.hidden = !emptyFiltered/)
   assert.match(script, /board\.classList\.toggle\('empty-filtered', emptyFiltered\)/)
   assert.match(script, /empty\.hidden = columnTasks\.length > 0 \|\| emptyFiltered/)
-  assert.match(script, /creates\[c\]\.hidden = emptyFiltered/)
-  assert.match(script, /foot\.hidden = emptyFiltered/)
+  assert.match(script, /creates\[c\]\.hidden = filtered/)
+  assert.match(script, /foot\.hidden = filtered/)
   assert.match(script, /boardEmptyClear\.addEventListener\('click', clearAllFilters\)/)
   assert.match(script, /function clearAllFilters\(\)/)
   assert.match(STRINGS.en['filter.none'], /Clear the filters/)
@@ -913,7 +929,9 @@ test('no native prompt or confirm survives; decisions, questions, blockers and r
   assert.match(markup, /<textarea id="decision-note"/)
   assert.match(markup, /id="decision-cancel"[^>]*data-i18n="decision\.cancel"/)
   assert.match(markup, /id="decision-approve"[^>]*data-i18n="decision\.approve"/)
-  assert.match(markup, /id="decision-reject" class="danger-solid"[^>]*data-i18n="decision\.reject"/)
+  assert.match(markup, /id="decision-reject" class="danger-outline"[^>]*data-i18n="decision\.reject"/)
+  assert.match(markup, /id="decision-question"/)
+  assert.match(markup, /id="decision-answer"/)
   assert.equal(STRINGS.zh['decision.cancel'], '取消')
   assert.equal(STRINGS.zh['decision.approve'], '确认批准')
   assert.equal(STRINGS.zh['decision.reject'], '确认驳回')
@@ -976,4 +994,129 @@ test('relative times follow the server clock and future timestamps clamp to just
   assert.match(script, /var now = new Date\(nowMs\(\)\)/)
   assert.equal(STRINGS.zh['age.justNow'], '刚刚')
   assert.equal(STRINGS.en['age.justNow'], 'just now')
+})
+
+// --- UX batch E -----------------------------------------------------------
+
+test('a pending decision opens the drawer on collaboration with a tab badge and header context', () => {
+  const collabTab = markup.slice(
+    markup.indexOf('id="drawer-tab-collaboration"'),
+    markup.indexOf('id="drawer-tab-activity"'),
+  )
+  assert.match(collabTab, /id="drawer-tab-badge"[^>]*aria-hidden="true"[^>]*hidden>1<\/span>/)
+  assert.match(markup, /id="drawer-status-chip"/)
+  assert.match(markup, /id="drawer-pending" hidden/)
+  assert.ok(markup.indexOf('id="drawer-status-chip"') < markup.indexOf('class="drawer-tabs"'), 'status chip lives in the head')
+  assert.ok(markup.indexOf('id="drawer-pending"') < markup.indexOf('class="drawer-tabs"'), 'pending line lives in the head')
+  assert.match(script, /var needsDecision = Boolean\(\(task\.pendingQuestion && !task\.questionResolution\) \|\| task\.blockedReason\)/)
+  assert.match(script, /state\.drawerTab = needsDecision \? 'collaboration' : 'details'/)
+  assert.match(script, /setDrawerTab\(state\.drawerTab, false\)/)
+  assert.match(script, /drawerStatusChip\.textContent = t\('status\.' \+ \(task\.status \|\| 'backlog'\)\)/)
+  assert.match(script, /function syncDrawerAttention\(task, pendingQuestion\)/)
+  assert.match(script, /drawerTabBadge\.hidden = !needsDecision/)
+  assert.match(script, /drawerTabBadge\.textContent = '1'/)
+  assert.match(script, /drawerPendingLine\.textContent = t\('drawer\.pendingQuestionLine', \{/)
+  assert.match(script, /drawerPendingLine\.textContent = t\('drawer\.pendingBlockedLine', \{ reason: task\.blockedReason \}\)/)
+  // The base layout has no badge; setDrawerTab never touches it, so it survives tab switches.
+  const setTab = script.slice(script.indexOf('function setDrawerTab'), script.indexOf('function syncDrawerLayout'))
+  assert.doesNotMatch(setTab, /drawerTabBadge/)
+  assert.equal(STRINGS.zh['drawer.pendingQuestionLine'], '需要你回答：{prompt}')
+  assert.equal(STRINGS.zh['drawer.pendingBlockedLine'], '受阻：{reason}')
+})
+
+test('the decision dialog shows question and answer and promotes the chosen decision', () => {
+  const dialog = markup.slice(
+    markup.indexOf('<dialog id="decision-dialog"'),
+    markup.indexOf('<dialog id="ask-dialog"'),
+  )
+  assert.match(dialog, /data-i18n="decision\.questionLabel"/)
+  assert.match(dialog, /data-i18n="decision\.answerLabel"/)
+  assert.match(dialog, /id="decision-question"/)
+  assert.match(dialog, /id="decision-answer"/)
+  assert.ok(dialog.indexOf('id="decision-question"') < dialog.indexOf('id="decision-note"'), 'answer block sits above the note')
+  assert.match(script, /decisionQuestion\.textContent = pending\.prompt \|\| t\('drawer\.review'\)/)
+  assert.match(script, /decisionAnswer\.textContent = answer \|\| t\('decision\.noAnswer'\)/)
+  assert.match(script, /function applyDecisionEmphasis\(kind\)/)
+  assert.match(script, /decisionApprove\.className = 'primary'/)
+  assert.match(script, /decisionReject\.className = 'danger-outline'/)
+  assert.match(script, /decisionApprove\.className = 'outline-neutral'/)
+  assert.match(script, /decisionReject\.className = 'danger-solid'/)
+  assert.match(markup, /#decision-approve\.primary \{[^}]*background: light-dark\(#111827/)
+  assert.match(markup, /#decision-reject\.danger-solid \{[^}]*background: light-dark\(#b42318/)
+  assert.match(markup, /#decision-reject\.danger-outline \{[^}]*color: var\(--danger\)/)
+  assert.match(markup, /#decision-dialog \.dialog-actions #decision-approve,[\s\S]*?#decision-reject \{ min-width: 88px; \}/)
+  assert.ok(STRINGS.zh['decision.noAnswer'] === '尚未选择')
+})
+
+test('the topbar reports the needs-you count beside running and mutes it at zero', () => {
+  assert.ok(markup.indexOf('id="running-count"') < markup.indexOf('id="needs-count"'), 'needs count follows running')
+  assert.match(markup, /<span class="needs-dot" aria-hidden="true"><\/span><span id="needs-count">0 needs you<\/span>/)
+  assert.match(script, /var needs = columnCounts\.needs \|\| 0/)
+  assert.match(script, /needsCount\.textContent = t\('counts\.needs', \{ n: needs \}\)/)
+  assert.match(script, /needsChip\.setAttribute\('data-empty', needs === 0 \? 'true' : 'false'\)/)
+  assert.match(markup, /\.needs-chip \{[^}]*color: var\(--warn\)/)
+  assert.match(markup, /\.needs-chip\[data-empty="true"\] \{ color: var\(--muted-soft\)/)
+  assert.match(markup, /\.needs-dot \{[^}]*background: var\(--warn\)/)
+  assert.equal(STRINGS.zh['counts.needs'], '{n} 需要你')
+})
+
+test('the filter summary stays a compact inline strip and hides every create control while filtering', () => {
+  const summary = markup.match(/\.filter-summary \{[^}]*\}/)[0]
+  assert.match(summary, /width: fit-content/)
+  assert.match(summary, /height: 32px/)
+  assert.match(summary, /background: transparent/)
+  assert.match(summary, /flex-wrap: nowrap/)
+  assert.doesNotMatch(summary, /background: var\(--surface\)/)
+  assert.match(markup, /\.filter-chips \{[^}]*flex-wrap: nowrap/)
+  assert.match(markup, /#filter-clear-all \{[^}]*margin-left: 2px/)
+  assert.doesNotMatch(markup, /#filter-clear-all \{[^}]*margin-left: auto/)
+  // Any active filter hides both the lane + and the footer 新建卡片.
+  assert.match(script, /creates\[c\]\.hidden = filtered/)
+  assert.match(script, /foot\.hidden = filtered/)
+  assert.doesNotMatch(script, /creates\[c\]\.hidden = emptyFiltered/)
+})
+
+test('tag chips share the project chip border, radius and padding', () => {
+  const tag = markup.match(/\.chip\.tag \{[^}]*\}/)[0]
+  assert.match(tag, /padding: 0 7px/)
+  assert.match(tag, /border: 1px solid var\(--border-strong\)/)
+  assert.match(tag, /border-radius: 6px/)
+  assert.match(tag, /color: var\(--muted\)/)
+  assert.match(markup, /--border-strong: light-dark\(#cfd4dc/)
+})
+
+test('the keyboard hint is a 24px sticky bar that hides on mobile', () => {
+  const hint = markup.match(/\.shortcuts \{[^}]*\}/)[0]
+  assert.match(hint, /position: fixed/)
+  assert.match(hint, /bottom: 0/)
+  assert.match(hint, /height: 24px/)
+  assert.match(hint, /border-top: 1px solid var\(--border\)/)
+  const compact = markup.split('@media (max-width: 720px)')[1].split('@media (prefers-reduced-motion')[0]
+  assert.match(compact, /\.shortcuts \{ display: none; \}/)
+  assert.match(markup, /<footer class="shortcuts hint"/)
+})
+
+test('drawer tabs are 44px tall with 16px padding and keep the badge inside 协作', () => {
+  const tab = markup.match(/\.drawer-tab \{[^}]*\}/)[0]
+  assert.match(tab, /min-width: 72px/)
+  assert.match(tab, /height: 44px/)
+  assert.match(tab, /padding: 0 16px/)
+  assert.match(tab, /border-bottom: 2px solid transparent/)
+  assert.match(markup, /\.drawer-tab\[aria-selected="true"\] \{[^}]*border-bottom-color/)
+  const collabTab = markup.slice(
+    markup.indexOf('id="drawer-tab-collaboration"'),
+    markup.indexOf('id="drawer-tab-activity"'),
+  )
+  assert.match(collabTab, /drawer-tab-badge/)
+})
+
+test('the details drawer sizes to content and only sticks the footer when it overflows', () => {
+  assert.match(markup, /aside\.drawer\.drawer-fit \.drawer-body \{[^}]*flex: 0 0 auto/)
+  assert.match(markup, /aside\.drawer\.drawer-fit \.drawer-footer \{ position: static; \}/)
+  assert.match(markup, /aside\.drawer\.drawer-fit\.drawer-overflow \.drawer-body \{[^}]*flex: 1 1 auto/)
+  assert.match(markup, /aside\.drawer\.drawer-fit\.drawer-overflow \.drawer-footer \{[^}]*position: sticky/)
+  assert.match(script, /function syncDrawerLayout\(\)/)
+  assert.match(script, /drawer\.classList\.toggle\('drawer-fit', details\)/)
+  assert.match(script, /drawer\.classList\.add\('drawer-overflow'\)/)
+  assert.match(script, /drawer\.setAttribute\('data-tab', name\)/)
 })

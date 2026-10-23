@@ -45,6 +45,7 @@ export const STRINGS = Object.freeze({
     'counts.running': '{n} running',
     'counts.needs': '{n} needs you',
     'counts.done': '{n} done',
+    'overflow.label': 'More actions',
     'counts.contextAll': 'All projects · {n} projects',
     'counts.contextAllOne': 'All projects · {n} project',
     'counts.contextProject': '{name} · {path}',
@@ -283,12 +284,19 @@ export const STRINGS = Object.freeze({
     'drawer.assignee': 'Assignee',
     'drawer.status': 'Status: {status}',
     'drawer.statusChanged': 'Status changed to {status}',
+    'drawer.pendingQuestionLine': 'Needs your answer: {prompt}',
+    'drawer.pendingBlockedLine': 'Blocked: {reason}',
+    'drawer.updatedMeta': 'Updated {time}',
+    'drawer.datesLabel': 'Dates',
     'drawer.created': 'Created {time}',
     'drawer.selected': 'Selected: {option}',
     'drawer.noOptions': 'No options.',
     'drawer.tabs': 'Task sections',
     'decision.title': 'Review decision',
     'decision.target': '{id} · {title}',
+    'decision.questionLabel': 'Question',
+    'decision.answerLabel': 'Answer',
+    'decision.noAnswer': 'Not selected',
     'decision.noteLabel': 'Decision note (optional)',
     'decision.notePlaceholder': 'Context for the record',
     'decision.cancel': 'Cancel',
@@ -352,8 +360,9 @@ export const STRINGS = Object.freeze({
     'counts.tasks': '{n} 个任务',
     'counts.filteredTasks': '{visible} / {total} 个任务',
     'counts.running': '{n} 个运行中',
-    'counts.needs': '{n} 个需要你',
+    'counts.needs': '{n} 需要你',
     'counts.done': '{n} 个已完成',
+    'overflow.label': '更多操作',
     'counts.contextAll': '全部项目 · {n} 个项目',
     'counts.contextAllOne': '全部项目 · {n} 个项目',
     'counts.contextProject': '{name} · {path}',
@@ -592,12 +601,19 @@ export const STRINGS = Object.freeze({
     'drawer.assignee': '负责人',
     'drawer.status': '状态：{status}',
     'drawer.statusChanged': '状态已改为{status}',
+    'drawer.pendingQuestionLine': '需要你回答：{prompt}',
+    'drawer.pendingBlockedLine': '受阻：{reason}',
+    'drawer.updatedMeta': '更新于 {time}',
+    'drawer.datesLabel': '日期',
     'drawer.created': '创建于 {time}',
     'drawer.selected': '已选择：{option}',
     'drawer.noOptions': '没有选项。',
     'drawer.tabs': '任务分区',
     'decision.title': '审核决定',
     'decision.target': '{id} · {title}',
+    'decision.questionLabel': '问题',
+    'decision.answerLabel': '回答',
+    'decision.noAnswer': '尚未选择',
     'decision.noteLabel': '决定备注（可选）',
     'decision.notePlaceholder': '为记录补充背景',
     'decision.cancel': '取消',
@@ -827,8 +843,10 @@ export function renderLiveHtml({ project = {} } = {}) {
   #filter-toggle, .archived-toggle, #lang-toggle, #manage-projects { white-space: nowrap; }
   .archived-toggle:hover { border-color: var(--border-strong); color: var(--text); }
   .archived-toggle[aria-pressed="true"] {
-    border-color: var(--border-strong); background: var(--surface-soft); color: var(--text);
+    border-color: transparent; background: light-dark(#111827, #f1f5f9);
+    color: light-dark(#ffffff, #111827);
   }
+  .archived-toggle[aria-pressed="true"] .btn-icon { color: currentColor; }
   .archived-toggle .status-dot { background: var(--muted-soft); }
   .filters-popover {
     position: absolute; top: calc(100% + 8px); left: 0; z-index: 40;
@@ -846,27 +864,31 @@ export function renderLiveHtml({ project = {} } = {}) {
   #clear-filters:hover { background: var(--surface-soft); }
   .filter-count { margin-left: auto; color: var(--muted); font-size: 11.5px; }
   .filter-summary {
-    display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
-    margin: 0 0 12px; padding: 8px 12px;
-    border: 1px solid var(--border); border-radius: 10px; background: var(--surface);
+    display: flex; align-items: center; flex-wrap: nowrap; gap: 6px;
+    width: fit-content; max-width: 100%; height: 32px; min-height: 32px;
+    margin: 0; padding: 0; border: 0; background: transparent;
   }
   .filter-summary[hidden] { display: none; }
-  .filter-chips { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; min-width: 0; }
+  .filter-chips {
+    display: flex; align-items: center; flex-wrap: nowrap; gap: 6px; min-width: 0;
+    overflow-x: auto; scrollbar-width: none;
+  }
+  .filter-chips::-webkit-scrollbar { display: none; }
   .filter-chip {
     display: inline-flex; align-items: center; gap: 6px; max-width: 240px;
-    height: 27px; padding: 0 8px 0 10px;
+    height: 24px; padding: 0 8px 0 10px;
     border: 1px solid var(--border-strong); border-radius: 999px;
-    background: var(--surface-soft); color: var(--text);
-    font-size: 12px; font-weight: 550;
+    background: var(--surface); color: var(--text);
+    font-size: 12px; font-weight: 550; white-space: nowrap;
   }
-  .filter-chip:hover { border-color: var(--text); background: var(--surface); }
+  .filter-chip:hover { border-color: var(--text); background: var(--surface-soft); }
   .filter-chip-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .filter-chip-x { flex: none; color: var(--muted); font-size: 14px; line-height: 1; }
   .filter-chip:hover .filter-chip-x { color: var(--text); }
   #filter-clear-all {
-    height: 27px; margin-left: auto; padding: 0 8px; flex: none;
+    height: 24px; margin-left: 2px; padding: 0 6px; flex: none;
     border: 0; border-radius: 7px; background: transparent;
-    color: var(--muted); font-size: 12px; font-weight: 600;
+    color: var(--muted); font-size: 12px; font-weight: 600; white-space: nowrap;
   }
   #filter-clear-all:hover { background: var(--surface-soft); color: var(--text); }
   .topbar-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
@@ -875,11 +897,26 @@ export function renderLiveHtml({ project = {} } = {}) {
     display: inline-flex; align-items: center; gap: 7px; padding: 0 4px;
     color: var(--muted); font-size: 12.5px; white-space: nowrap;
   }
+  .needs-chip {
+    display: inline-flex; align-items: center; gap: 7px; padding: 0 4px;
+    color: var(--warn); font-size: 12.5px; font-weight: 600; white-space: nowrap;
+  }
+  .needs-chip[data-empty="true"] { color: var(--muted-soft); font-weight: 500; }
+  .needs-dot {
+    width: 7px; height: 7px; flex: none; border-radius: 50%;
+    background: var(--warn);
+    box-shadow: 0 0 0 3px light-dark(#fdf1d8, rgba(240, 180, 94, 0.16));
+  }
+  .needs-chip[data-empty="true"] .needs-dot { background: var(--muted-soft); box-shadow: none; }
   .live-dot {
     width: 7px; height: 7px; flex: none; border-radius: 50%;
     background: light-dark(#22c55e, #4ade80);
     box-shadow: 0 0 0 3px light-dark(#dcfce7, rgba(74, 222, 128, 0.16));
   }
+  /* desktop keeps the overflow children inline; the menu only exists below 720px */
+  .toolbar-overflow { display: contents; }
+  .overflow-toggle { display: none; }
+  .overflow-menu { display: contents; }
   #lang-toggle {
     display: inline-flex; align-items: center; justify-content: center; gap: 6px;
     height: 40px; min-width: 40px; padding: 0 10px; border: 1px solid var(--border);
@@ -901,7 +938,7 @@ export function renderLiveHtml({ project = {} } = {}) {
   #manage-projects:hover { background: var(--surface-soft); }
 
   /* ---- page head ------------------------------------------------------- */
-  .shell { max-width: 1400px; margin: 0 auto; padding: 0 24px 48px; }
+  .shell { max-width: 1400px; margin: 0 auto; padding: 0 24px 56px; }
   .board-head { padding: 10px 0 10px; }
   .board-head h1 { margin: 0; font-size: 21px; line-height: 1.2; font-weight: 650; letter-spacing: -0.02em; }
   .board-meta { display: flex; align-items: center; gap: 8px; margin: 3px 0 0; color: var(--muted); font-size: 12.5px; }
@@ -1046,7 +1083,10 @@ export function renderLiveHtml({ project = {} } = {}) {
     line-height: 22px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
   .chip.project { border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); }
-  .chip.tag { padding: 0 5px; color: var(--muted); }
+  .chip.tag {
+    padding: 0 7px; border: 1px solid var(--border-strong); border-radius: 6px;
+    background: transparent; color: var(--muted);
+  }
   .chip.archived { border: 1px solid var(--border-strong); background: var(--surface-soft); color: var(--muted); }
   .chip.priority-high { background: light-dark(#fef3c7, #3a2f16); color: light-dark(#92400e, #f2c46a); }
   .chip.priority-urgent { background: light-dark(#fee2e2, #3d1d1d); color: light-dark(#b91c1c, #f19a92); }
@@ -1145,10 +1185,35 @@ export function renderLiveHtml({ project = {} } = {}) {
   aside.drawer.open { transform: translateX(0); }
   .drawer-head {
     display: flex; align-items: flex-start; gap: 10px;
-    padding: 18px 22px 16px; border-bottom: 1px solid var(--border);
+    padding: 18px 22px 14px; border-bottom: 1px solid var(--border);
   }
+  .drawer-head-main { flex: 1 1 auto; min-width: 0; }
+  .drawer-head-title { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
   .drawer-head h2 { margin: 0; font-size: 18px; line-height: 1.3; font-weight: 650; overflow-wrap: anywhere; }
+  .drawer-status-chip {
+    display: inline-flex; align-items: center; flex: none; height: 22px; padding: 0 8px;
+    border: 1px solid var(--border-strong); border-radius: 999px;
+    background: var(--surface); color: var(--muted);
+    font-size: 11.5px; font-weight: 600; white-space: nowrap;
+  }
+  .drawer-status-chip.status-needs {
+    border-color: var(--warn-border); background: var(--warn-bg); color: var(--warn);
+  }
+  .drawer-status-chip.status-done { border-color: var(--border-done); background: var(--panel-done); color: var(--success); }
+  .drawer-status-chip.status-running { color: var(--text); }
+  .drawer-status-chip.status-canceled { color: var(--muted-soft); }
+  .drawer-pending {
+    margin: 6px 0 0; padding: 6px 9px; border-radius: 8px;
+    border: 1px solid var(--warn-border); background: var(--warn-bg);
+    color: light-dark(#92400e, #f2c46a); font-size: 12.5px; line-height: 1.4;
+    overflow-wrap: anywhere;
+  }
+  .drawer-pending.blocked {
+    border-color: light-dark(#f3c5c0, #5c2a25); background: light-dark(#fef2f1, #2d1a18);
+    color: var(--danger);
+  }
   .drawer-sub { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 0; color: var(--muted); font-size: 12px; }
+  .drawer-meta { display: flex; flex-wrap: wrap; gap: 8px; margin: 3px 0 0; color: var(--muted-soft); font-size: 11.5px; }
   #drawer-close {
     display: inline-flex; align-items: center; justify-content: center;
     width: 30px; height: 30px; flex: none; margin-left: auto; padding: 0;
@@ -1156,18 +1221,31 @@ export function renderLiveHtml({ project = {} } = {}) {
   }
   #drawer-close:hover { background: var(--surface-soft); color: var(--text); }
   .drawer-body { display: grid; gap: 0; flex: 1 1 auto; min-height: 0; align-content: start; padding: 0 22px 24px; overflow: auto; }
+  aside.drawer.drawer-fit .drawer-body { flex: 0 0 auto; overflow: visible; padding-bottom: 16px; }
+  aside.drawer.drawer-fit .drawer-footer { position: static; }
+  aside.drawer.drawer-fit.drawer-overflow .drawer-body { flex: 1 1 auto; overflow: auto; padding-bottom: 24px; }
+  aside.drawer.drawer-fit.drawer-overflow .drawer-footer { position: sticky; bottom: 0; }
   .drawer-tabs {
     display: flex; gap: 4px; flex: none; padding: 0 22px;
     border-bottom: 1px solid var(--border); background: var(--surface);
   }
   .drawer-tab {
-    height: 40px; padding: 0 12px; border: 0; border-bottom: 2px solid transparent;
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    min-width: 72px; height: 44px; padding: 0 16px; border: 0; border-bottom: 2px solid transparent;
     border-radius: 0; background: transparent; color: var(--muted);
     font-size: 13px; font-weight: 600; white-space: nowrap;
   }
   .drawer-tab:hover { color: var(--text); }
   .drawer-tab[aria-selected="true"] { color: var(--text); border-bottom-color: var(--text); }
   .drawer-tab:focus-visible { outline-offset: -3px; }
+  .drawer-tab-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 17px; height: 17px; padding: 0 4px; flex: none;
+    border-radius: 999px; border: 1px solid var(--warn-border);
+    background: var(--warn-bg); color: var(--warn);
+    font-size: 10.5px; font-weight: 700; line-height: 1;
+  }
+  .drawer-tab-badge[hidden] { display: none; }
   .drawer-panel[hidden] { display: none !important; }
   .drawer-band > h3 {
     margin: 0; color: var(--text); font-size: 14px; font-weight: 650; letter-spacing: -0.01em;
@@ -1218,6 +1296,10 @@ export function renderLiveHtml({ project = {} } = {}) {
   }
   .attr-static .status-dot { margin-right: 6px; }
   .attr-status { display: inline-flex; align-items: center; gap: 6px; }
+  .attr-dates { display: grid; gap: 2px; align-content: start; }
+  .attr-date { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
+  .attr-date-label { flex: none; color: var(--muted); font-size: 11.5px; }
+  .attr-date-value { min-width: 0; overflow-wrap: anywhere; }
   .drawer-section { display: grid; gap: 8px; padding-top: 12px; border-top: 1px solid var(--border); }
   .drawer-section h4 { margin: 0; color: var(--text); font-size: 13px; font-weight: 650; }
   .drawer-section[hidden] { display: none; }
@@ -1317,6 +1399,39 @@ export function renderLiveHtml({ project = {} } = {}) {
   }
   .dialog-actions .danger-solid:hover:not(:disabled) { background: light-dark(#961a12, #d97f77); border-color: transparent; }
   .dialog-error { margin: 0; color: var(--danger); font-size: 12px; }
+  .decision-summary {
+    display: grid; gap: 6px; padding: 10px 12px;
+    border: 1px solid var(--border); border-radius: 10px; background: var(--surface-soft);
+  }
+  .decision-summary-row { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 8px; align-items: baseline; }
+  .decision-summary-label { color: var(--muted); font-size: 11.5px; font-weight: 600; }
+  .decision-summary-question { margin: 0; color: var(--text); font-size: 12.5px; font-weight: 550; line-height: 1.4; overflow-wrap: anywhere; }
+  .decision-summary-answer { margin: 0; color: var(--text); font-size: 12.5px; font-weight: 600; line-height: 1.4; overflow-wrap: anywhere; }
+  .decision-summary-answer.empty { color: var(--muted-soft); font-weight: 500; }
+  #decision-dialog .dialog-actions { align-items: center; }
+  #decision-dialog .dialog-actions #decision-approve,
+  #decision-dialog .dialog-actions #decision-reject { min-width: 88px; }
+  #decision-approve.primary {
+    border-color: transparent; background: light-dark(#111827, #f1f5f9);
+    color: light-dark(#ffffff, #111827);
+  }
+  #decision-approve.primary:hover { background: light-dark(#1f2937, #ffffff); }
+  #decision-reject.danger-solid {
+    border-color: transparent; background: light-dark(#b42318, #d4524a); color: #ffffff;
+  }
+  #decision-reject.danger-solid:hover {
+    border-color: transparent; background: light-dark(#961a12, #d97f77);
+  }
+  #decision-approve.outline-neutral {
+    border-color: var(--border-strong); background: var(--surface); color: var(--text);
+  }
+  #decision-approve.outline-neutral:hover { background: var(--surface-soft); }
+  #decision-reject.danger-outline {
+    border-color: light-dark(#e7a9a3, #6b3733); background: transparent; color: var(--danger);
+  }
+  #decision-reject.danger-outline:hover {
+    border-color: var(--danger); background: light-dark(rgba(180, 35, 24, 0.06), rgba(241, 154, 146, 0.1));
+  }
   .ask-options { display: grid; gap: 6px; }
   .ask-options-head { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px 10px; }
   .ask-option-row {
@@ -1381,7 +1496,13 @@ export function renderLiveHtml({ project = {} } = {}) {
   }
   .toast.show { opacity: 1; transform: translate(-50%, 0); }
   .toast.error { background: var(--danger); color: #fff; }
-  .shortcuts { padding: 18px 2px 0; }
+  .shortcuts {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 5;
+    display: flex; align-items: center; justify-content: center;
+    height: 24px; padding: 0 16px; margin: 0;
+    border-top: 1px solid var(--border); background: var(--surface);
+    color: var(--muted); font-size: 11.5px;
+  }
   .sr-only {
     position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
     overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
@@ -1395,32 +1516,60 @@ export function renderLiveHtml({ project = {} } = {}) {
       display: grid; grid-template-columns: auto minmax(0, 1fr);
       align-items: center; gap: 8px; padding: 8px 12px; min-height: 0;
     }
-    .project-chip { grid-column: 1; max-width: 46vw; min-width: 0; }
-    .project-chip select { max-width: calc(46vw - 46px); min-width: 0; }
+    .project-chip { grid-column: 1; grid-row: 2; max-width: 46vw; min-width: 0; height: 44px; }
+    .project-chip select { max-width: calc(46vw - 46px); min-width: 0; height: 42px; }
     .search-wrap {
-      grid-column: 2; flex: none; width: 100%; max-width: none; min-width: 0; height: 44px;
+      grid-column: 1 / -1; grid-row: 1; flex: none; width: 100%; max-width: none;
+      min-width: 0; height: 44px;
     }
     #search { min-width: 0; height: 44px; }
     .topbar-tools {
-      display: flex; grid-column: 1 / -1; align-items: center;
+      display: flex; grid-column: 2; grid-row: 2; align-items: center;
       justify-content: flex-start; gap: 8px;
     }
     .topbar-actions { display: contents; }
-    .running-chip { display: none; }
-    #filter-toggle, .archived-toggle, #lang-toggle, .icon-button, #manage-projects {
+    .running-chip, .needs-chip { display: none; }
+    #filter-toggle, #manage-projects {
       display: inline-flex; align-items: center; justify-content: center;
-      width: 44px; min-width: 44px; height: 44px; padding: 0; gap: 0; border-radius: 10px;
+      width: auto; min-width: 44px; height: 44px; padding: 0 12px; gap: 6px; border-radius: 10px;
     }
     #filter-toggle .filter-badge {
       position: absolute; top: -4px; right: -4px; min-width: 16px; height: 16px;
       border: 1px solid var(--surface);
     }
-    .topbar-tools .icon-button, .topbar-tools #manage-projects {
-      border: 1px solid var(--border); background: var(--surface); color: var(--muted);
+    #manage-projects {
+      border: 1px solid var(--border); background: var(--surface); color: var(--text);
     }
-    .btn-label { display: none; }
-    .btn-icon { display: inline-flex; }
+    .overflow-toggle {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 44px; min-width: 44px; height: 44px; padding: 0;
+      border: 1px solid var(--border); border-radius: 10px;
+      background: var(--surface); color: var(--text); font-size: 18px; font-weight: 600;
+    }
+    .toolbar-overflow { position: relative; display: inline-flex; }
+    .overflow-menu {
+      position: absolute; top: calc(100% + 8px); right: 0; z-index: 46;
+      display: none; flex-direction: column; gap: 2px; min-width: 210px; padding: 6px;
+      border: 1px solid var(--border); border-radius: 12px; background: var(--surface);
+      box-shadow: 0 14px 34px light-dark(rgba(16, 24, 40, 0.12), rgba(0, 0, 0, 0.5));
+    }
+    .toolbar-overflow.open .overflow-menu { display: flex; }
+    .overflow-menu #lang-toggle, .overflow-menu #refresh, .overflow-menu #archived-toggle {
+      display: flex; align-items: center; justify-content: flex-start;
+      width: 100%; min-width: 0; height: 44px; padding: 0 10px; gap: 8px;
+      border: 1px solid transparent; border-radius: 8px;
+      background: transparent; color: var(--text); font-size: 13px; font-weight: 600; text-align: left;
+    }
+    .overflow-menu #lang-toggle:hover, .overflow-menu #refresh:hover,
+    .overflow-menu #archived-toggle:hover { border-color: var(--border); background: var(--surface-soft); }
+    .overflow-menu #archived-toggle[aria-pressed="true"] {
+      border-color: transparent; background: light-dark(#111827, #f1f5f9);
+      color: light-dark(#ffffff, #111827);
+    }
+    .overflow-menu .btn-label { display: inline; }
+    .overflow-menu .btn-icon { display: inline-flex; }
     .filters-popover { width: min(300px, calc(100vw - 24px)); }
+    .shortcuts { display: none; }
   }
   @media (max-width: 600px) {
     aside.drawer { width: 100%; border-left: 0; }
@@ -1431,8 +1580,8 @@ export function renderLiveHtml({ project = {} } = {}) {
     .drawer-footer { padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px)); }
     .drawer-footer .drawer-dirty { order: 1; }
     .drawer-footer-actions { order: 2; width: 100%; margin-left: 0; justify-content: flex-end; }
-    .filter-summary { align-items: flex-start; }
-    #filter-clear-all { margin-left: 0; }
+    .filter-summary { align-items: center; }
+    #filter-clear-all { margin-left: 2px; }
   }
   @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto; }
@@ -1508,19 +1657,26 @@ export function renderLiveHtml({ project = {} } = {}) {
           </div>
         </div>
       </div>
-      <button id="archived-toggle" class="archived-toggle" type="button" aria-pressed="false" data-i18n-aria="filter.archivedAria" aria-label="Show archived tasks on the board" data-i18n-title="filter.archived" title="Show archived">
-        <span class="btn-icon" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4.5" width="16" height="4" rx="1"/><path d="M6 8.5V19a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V8.5"/><path d="M10 12.5h4"/></svg></span>
-        <span class="btn-label" data-i18n="filter.archived">Show archived</span>
-      </button>
+      <div class="toolbar-overflow" id="toolbar-overflow">
+        <button id="overflow-toggle" class="overflow-toggle" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="toolbar-overflow-menu" data-i18n-aria="overflow.label" aria-label="More actions" data-i18n-title="overflow.label" title="More actions">⋯</button>
+        <div class="overflow-menu" id="toolbar-overflow-menu" role="menu" data-i18n-aria="overflow.label" aria-label="More actions">
+          <button id="lang-toggle" type="button" role="menuitem" data-i18n-aria="header.langLabel" aria-label="Switch to Chinese" data-i18n-title="header.langLabel" title="Switch to Chinese">
+            <span class="btn-icon" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17"/><path d="M12 3.5c2.3 2.3 3.5 5.2 3.5 8.5S14.3 18.2 12 20.5C9.7 18.2 8.5 15.3 8.5 12S9.7 5.8 12 3.5Z"/></svg></span>
+            <span class="btn-label" data-i18n="header.langToggle">中文</span>
+          </button>
+          <button id="refresh" class="icon-button" type="button" role="menuitem" data-i18n-aria="header.refresh" aria-label="Refresh" data-i18n-title="header.refresh" title="Refresh">
+            <span class="btn-icon" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6v5h-5"/><path d="M4 18v-5h5"/><path d="M5.6 9a7.5 7.5 0 0 1 12.6-2.7L20 8"/><path d="M18.4 15a7.5 7.5 0 0 1-12.6 2.7L4 16"/></svg></span>
+            <span class="btn-label" data-i18n="header.refresh">Refresh</span>
+          </button>
+          <button id="archived-toggle" class="archived-toggle" type="button" role="menuitem" aria-pressed="false" data-i18n-aria="filter.archivedAria" aria-label="Show archived tasks on the board" data-i18n-title="filter.archived" title="Show archived">
+            <span class="btn-icon" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4.5" width="16" height="4" rx="1"/><path d="M6 8.5V19a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V8.5"/><path d="M10 12.5h4"/></svg></span>
+            <span class="btn-label" data-i18n="filter.archived">Show archived</span>
+          </button>
+        </div>
+      </div>
       <div class="topbar-actions">
         <span class="running-chip"><span class="live-dot" aria-hidden="true"></span><span id="running-count">0 running</span></span>
-        <button id="lang-toggle" type="button" data-i18n-aria="header.langLabel" aria-label="Switch to Chinese" data-i18n-title="header.langLabel" title="Switch to Chinese">
-          <span class="btn-icon" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17"/><path d="M12 3.5c2.3 2.3 3.5 5.2 3.5 8.5S14.3 18.2 12 20.5C9.7 18.2 8.5 15.3 8.5 12S9.7 5.8 12 3.5Z"/></svg></span>
-          <span class="btn-label" data-i18n="header.langToggle">中文</span>
-        </button>
-        <button id="refresh" class="icon-button" type="button" data-i18n-aria="header.refresh" aria-label="Refresh" data-i18n-title="header.refresh" title="Refresh">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6v5h-5"/><path d="M4 18v-5h5"/><path d="M5.6 9a7.5 7.5 0 0 1 12.6-2.7L20 8"/><path d="M18.4 15a7.5 7.5 0 0 1-12.6 2.7L4 16"/></svg>
-        </button>
+        <span class="needs-chip" id="needs-chip" data-empty="true"><span class="needs-dot" aria-hidden="true"></span><span id="needs-count">0 needs you</span></span>
         <button id="manage-projects" type="button" data-i18n-aria="header.projects" aria-label="Projects" data-i18n-title="header.projects" title="Projects">
           <span class="btn-icon" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2v-10Z"/></svg></span>
           <span class="btn-label" data-i18n="header.projects">Projects</span>
@@ -1662,24 +1818,31 @@ export function renderLiveHtml({ project = {} } = {}) {
 </template>
 
 <div class="backdrop" id="backdrop"></div>
-<aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title" aria-hidden="true">
+<aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title" aria-hidden="true" data-tab="details">
   <div class="drawer-head">
-    <div>
-      <h2 id="drawer-title">Task details</h2>
+    <div class="drawer-head-main">
+      <div class="drawer-head-title">
+        <h2 id="drawer-title">Task details</h2>
+        <span class="drawer-status-chip status-backlog" id="drawer-status-chip">Backlog</span>
+      </div>
+      <p class="drawer-pending" id="drawer-pending" hidden></p>
       <p class="drawer-sub">
         <span id="drawer-identifier"></span>
-        <span id="drawer-version">Version 1</span>
         <span id="drawer-project"></span>
+      </p>
+      <p class="drawer-meta">
+        <span id="drawer-version">Version 1</span>
+        <span id="drawer-updated-meta"></span>
       </p>
     </div>
     <button id="drawer-close" type="button" data-i18n-aria="drawer.close" aria-label="Close">×</button>
   </div>
   <div class="drawer-tabs" role="tablist" aria-label="Task sections" data-i18n-aria="drawer.tabs">
     <button class="drawer-tab" id="drawer-tab-details" type="button" role="tab" aria-selected="true" aria-controls="drawer-panel-details" tabindex="0" data-drawer-tab="details" data-i18n="drawer.details">Details</button>
-    <button class="drawer-tab" id="drawer-tab-collaboration" type="button" role="tab" aria-selected="false" aria-controls="drawer-panel-collaboration" tabindex="-1" data-drawer-tab="collaboration" data-i18n="drawer.collaboration">Collaboration</button>
+    <button class="drawer-tab" id="drawer-tab-collaboration" type="button" role="tab" aria-selected="false" aria-controls="drawer-panel-collaboration" tabindex="-1" data-drawer-tab="collaboration"><span data-i18n="drawer.collaboration">Collaboration</span><span class="drawer-tab-badge" id="drawer-tab-badge" aria-hidden="true" hidden>1</span></button>
     <button class="drawer-tab" id="drawer-tab-activity" type="button" role="tab" aria-selected="false" aria-controls="drawer-panel-activity" tabindex="-1" data-drawer-tab="activity" data-i18n="drawer.activity">Activity</button>
   </div>
-  <div class="drawer-body">
+  <div class="drawer-body" id="drawer-body">
     <p class="banner" id="drawer-readonly" hidden data-i18n="drawer.readOnly">This task belongs to an archived project and is read-only.</p>
 
     <section class="panel drawer-band drawer-panel" id="drawer-panel-details" role="tabpanel" aria-labelledby="drawer-tab-details" data-tab-panel="details">
@@ -1729,16 +1892,11 @@ export function renderLiveHtml({ project = {} } = {}) {
           <span class="attr-static" id="attr-assignee"></span>
         </div>
         <div class="attr">
-          <span class="attr-label" data-i18n="drawer.updatedLabel">Updated</span>
-          <span class="attr-static" id="attr-updated"></span>
-        </div>
-        <div class="attr">
-          <span class="attr-label" data-i18n="drawer.createdLabel">Created</span>
-          <span class="attr-static" id="attr-created"></span>
-        </div>
-        <div class="attr">
-          <span class="attr-label" data-i18n="drawer.versionLabel">Version</span>
-          <span class="attr-static" id="attr-version"></span>
+          <span class="attr-label" data-i18n="drawer.datesLabel">Dates</span>
+          <span class="attr-static attr-dates">
+            <span class="attr-date"><span class="attr-date-label" data-i18n="drawer.updatedLabel">Updated</span><span class="attr-date-value" id="attr-updated"></span></span>
+            <span class="attr-date"><span class="attr-date-label" data-i18n="drawer.createdLabel">Created</span><span class="attr-date-value" id="attr-created"></span></span>
+          </span>
         </div>
         <div class="attr full">
           <label for="edit-description" data-i18n="drawer.description">Description</label>
@@ -1916,13 +2074,23 @@ export function renderLiveHtml({ project = {} } = {}) {
   </div>
   <form id="decision-form">
     <p class="hint" id="decision-target"></p>
+    <div class="decision-summary" id="decision-summary" data-i18n-aria="decision.title" aria-label="Review decision">
+      <div class="decision-summary-row">
+        <span class="decision-summary-label" data-i18n="decision.questionLabel">Question</span>
+        <p class="decision-summary-question" id="decision-question"></p>
+      </div>
+      <div class="decision-summary-row">
+        <span class="decision-summary-label" data-i18n="decision.answerLabel">Answer</span>
+        <p class="decision-summary-answer" id="decision-answer"></p>
+      </div>
+    </div>
     <label for="decision-note"><span data-i18n="decision.noteLabel">Decision note (optional)</span>
       <textarea id="decision-note" maxlength="2000" data-i18n-placeholder="decision.notePlaceholder" placeholder="Context for the record"></textarea>
     </label>
     <div class="dialog-actions">
       <button id="decision-cancel" type="button" data-i18n="decision.cancel">Cancel</button>
       <button id="decision-approve" class="primary" type="button" data-i18n="decision.approve">Confirm approve</button>
-      <button id="decision-reject" class="danger-solid" type="button" data-i18n="decision.reject">Confirm reject</button>
+      <button id="decision-reject" class="danger-outline" type="button" data-i18n="decision.reject">Confirm reject</button>
     </div>
   </form>
 </dialog>
@@ -2098,6 +2266,7 @@ export function renderLiveHtml({ project = {} } = {}) {
     confirmHandler: null,
     confirmReturn: null,
     drawerTab: 'details',
+    decisionKind: 'approve',
     skew: 0
   };
 
@@ -2105,6 +2274,10 @@ export function renderLiveHtml({ project = {} } = {}) {
   var boardContext = document.getElementById('board-context');
   var counts = document.getElementById('counts');
   var runningCount = document.getElementById('running-count');
+  var needsChip = document.getElementById('needs-chip');
+  var needsCount = document.getElementById('needs-count');
+  var toolbarOverflow = document.getElementById('toolbar-overflow');
+  var overflowToggle = document.getElementById('overflow-toggle');
   var projectSelect = document.getElementById('project-select');
   var searchInput = document.getElementById('search');
   var manageProjects = document.getElementById('manage-projects');
@@ -2134,6 +2307,11 @@ export function renderLiveHtml({ project = {} } = {}) {
   var drawerTitle = document.getElementById('drawer-title');
   var drawerIdentifier = document.getElementById('drawer-identifier');
   var drawerVersion = document.getElementById('drawer-version');
+  var drawerUpdatedMeta = document.getElementById('drawer-updated-meta');
+  var drawerStatusChip = document.getElementById('drawer-status-chip');
+  var drawerPendingLine = document.getElementById('drawer-pending');
+  var drawerTabBadge = document.getElementById('drawer-tab-badge');
+  var drawerBody = document.getElementById('drawer-body');
   var drawerProject = document.getElementById('drawer-project');
   var drawerReadonly = document.getElementById('drawer-readonly');
   var drawerFooter = document.getElementById('drawer-footer');
@@ -2152,7 +2330,6 @@ export function renderLiveHtml({ project = {} } = {}) {
   var attrAssignee = document.getElementById('attr-assignee');
   var attrUpdated = document.getElementById('attr-updated');
   var attrCreated = document.getElementById('attr-created');
-  var attrVersion = document.getElementById('attr-version');
   var activityList = document.getElementById('activity-list');
   var activityEmpty = document.getElementById('activity-empty');
   var commentList = document.getElementById('comment-list');
@@ -2207,6 +2384,8 @@ export function renderLiveHtml({ project = {} } = {}) {
   var decisionDialog = document.getElementById('decision-dialog');
   var decisionForm = document.getElementById('decision-form');
   var decisionTarget = document.getElementById('decision-target');
+  var decisionQuestion = document.getElementById('decision-question');
+  var decisionAnswer = document.getElementById('decision-answer');
   var decisionNote = document.getElementById('decision-note');
   var decisionApprove = document.getElementById('decision-approve');
   var decisionReject = document.getElementById('decision-reject');
@@ -2446,7 +2625,11 @@ export function renderLiveHtml({ project = {} } = {}) {
     }
     var summary = data.summary || {};
     var columnCounts = summary.counts || {};
-    runningCount.textContent = t('counts.running', { n: columnCounts.running || 0 });
+    var running = columnCounts.running || 0;
+    var needs = columnCounts.needs || 0;
+    runningCount.textContent = t('counts.running', { n: running });
+    needsCount.textContent = t('counts.needs', { n: needs });
+    needsChip.setAttribute('data-empty', needs === 0 ? 'true' : 'false');
     boardContext.textContent = '';
     readonlyBanner.hidden = !state.readOnly;
     archivedToggle.setAttribute('aria-pressed', state.includeArchived ? 'true' : 'false');
@@ -2619,10 +2802,10 @@ export function renderLiveHtml({ project = {} } = {}) {
         creates[c].setAttribute('aria-label', t('columns.addAria', {
           column: t('columns.' + columnId)
         }));
-        creates[c].hidden = emptyFiltered;
+        creates[c].hidden = filtered;
       }
       var foot = section.querySelector('.column-foot');
-      if (foot) foot.hidden = emptyFiltered;
+      if (foot) foot.hidden = filtered;
     }
     counts.textContent = filtered
       ? t('counts.filteredTasks', { visible: totals.visible, total: totals.total })
@@ -3408,14 +3591,16 @@ export function renderLiveHtml({ project = {} } = {}) {
     state.focusReturn = document.activeElement && document.activeElement.focus ? document.activeElement : null;
     state.selectedId = task.id;
     state.selectedOption = null;
-    // Every task opens on Details; tab state never leaks between tasks.
-    state.drawerTab = 'details';
+    // A pending decision is the reason the drawer was opened; surface it first.
+    var needsDecision = Boolean((task.pendingQuestion && !task.questionResolution) || task.blockedReason);
+    state.drawerTab = needsDecision ? 'collaboration' : 'details';
     renderDrawer(task);
-    setDrawerTab('details', false);
+    setDrawerTab(state.drawerTab, false);
     drawer.classList.add('open');
     drawer.setAttribute('aria-hidden', 'false');
     backdrop.classList.add('open');
     document.body.classList.add('drawer-open');
+    syncDrawerLayout();
     drawerClose.focus({ preventScroll: prefersReducedMotion ? false : true });
   }
 
@@ -3440,6 +3625,7 @@ export function renderLiveHtml({ project = {} } = {}) {
   function setDrawerTab(name, focusTab) {
     if (name !== 'details' && name !== 'collaboration' && name !== 'activity') name = 'details';
     state.drawerTab = name;
+    drawer.setAttribute('data-tab', name);
     for (var i = 0; i < drawerTabs.length; i += 1) {
       var tab = drawerTabs[i];
       var selected = tab.getAttribute('data-drawer-tab') === name;
@@ -3450,6 +3636,22 @@ export function renderLiveHtml({ project = {} } = {}) {
     for (var j = 0; j < drawerPanels.length; j += 1) {
       drawerPanels[j].hidden = drawerPanels[j].getAttribute('data-tab-panel') !== name;
     }
+    syncDrawerLayout();
+  }
+
+  function syncDrawerLayout() {
+    if (!drawerBody) return;
+    var details = state.drawerTab === 'details';
+    drawer.classList.toggle('drawer-fit', details);
+    drawer.classList.remove('drawer-overflow');
+    if (!details || !drawer.classList.contains('open')) return;
+    var head = drawer.querySelector('.drawer-head');
+    var tabs = drawer.querySelector('.drawer-tabs');
+    var available = drawer.clientHeight
+      - (head ? head.offsetHeight : 0)
+      - (tabs ? tabs.offsetHeight : 0)
+      - drawerFooter.offsetHeight;
+    if (drawerBody.scrollHeight > available + 1) drawer.classList.add('drawer-overflow');
   }
 
   function handleDrawerTabKey(event) {
@@ -3481,7 +3683,11 @@ export function renderLiveHtml({ project = {} } = {}) {
     drawerTitle.textContent = task.title || t('drawer.title');
     drawerIdentifier.textContent = task.identifier || '';
     drawerVersion.textContent = t('drawer.version', { n: task.version });
+    drawerUpdatedMeta.textContent = t('drawer.updatedMeta', { time: formatTime(task.updatedAt) });
     drawerProject.textContent = task.projectName ? t('drawer.project') + ': ' + task.projectName : '';
+    drawerStatusChip.textContent = t('status.' + (task.status || 'backlog'));
+    drawerStatusChip.className = 'drawer-status-chip ' + statusClass(task);
+    syncDrawerAttention(task, pendingQuestion);
     drawerReadonly.hidden = !readOnly;
     drawerReadonly.textContent = t(archived ? 'drawer.taskArchived' : 'drawer.readOnly');
     editTitle.value = task.title || '';
@@ -3492,7 +3698,6 @@ export function renderLiveHtml({ project = {} } = {}) {
     attrAssignee.textContent = (task.assignee && task.assignee.name) || t('card.unassigned');
     attrUpdated.textContent = formatTime(task.updatedAt);
     attrCreated.textContent = formatTime(task.createdAt);
-    attrVersion.textContent = String(task.version);
     renderLinks(task);
     renderActivity(task);
     renderComments(task);
@@ -3521,6 +3726,30 @@ export function renderLiveHtml({ project = {} } = {}) {
     attachmentError.hidden = true;
     syncSelectFields();
     syncDirty();
+    syncDrawerLayout();
+  }
+
+  function syncDrawerAttention(task, pendingQuestion) {
+    var pending = pendingQuestion === undefined
+      ? Boolean(task.pendingQuestion && !task.questionResolution)
+      : Boolean(pendingQuestion);
+    var needsDecision = pending || Boolean(task.blockedReason);
+    drawerTabBadge.hidden = !needsDecision;
+    drawerTabBadge.textContent = '1';
+    if (pending) {
+      drawerPendingLine.hidden = false;
+      drawerPendingLine.className = 'drawer-pending';
+      drawerPendingLine.textContent = t('drawer.pendingQuestionLine', {
+        prompt: (task.pendingQuestion && task.pendingQuestion.prompt) || ''
+      });
+    } else if (task.blockedReason) {
+      drawerPendingLine.hidden = false;
+      drawerPendingLine.className = 'drawer-pending blocked';
+      drawerPendingLine.textContent = t('drawer.pendingBlockedLine', { reason: task.blockedReason });
+    } else {
+      drawerPendingLine.hidden = true;
+      drawerPendingLine.textContent = '';
+    }
   }
 
   function renderLinks(task) {
@@ -4093,13 +4322,50 @@ export function renderLiveHtml({ project = {} } = {}) {
     });
   }
 
-  function decide() {
+  function pendingOptionLabel(task, id) {
+    var pending = task && task.pendingQuestion ? task.pendingQuestion : {};
+    var options = Array.isArray(pending.options) ? pending.options : [];
+    for (var i = 0; i < options.length; i += 1) {
+      if (options[i].id === id) return options[i].label || options[i].id || '';
+    }
+    return '';
+  }
+
+  function decisionAnswerText(task) {
+    var pending = task && task.pendingQuestion ? task.pendingQuestion : {};
+    var selected = state.selectedOption || pending.selected || '';
+    var label = pendingOptionLabel(task, selected);
+    if (label) return label;
+    if (task && task.questionResolution && task.questionResolution.optionLabel) {
+      return task.questionResolution.optionLabel;
+    }
+    return '';
+  }
+
+  function applyDecisionEmphasis(kind) {
+    state.decisionKind = kind === 'reject' ? 'reject' : 'approve';
+    if (state.decisionKind === 'reject') {
+      decisionApprove.className = 'outline-neutral';
+      decisionReject.className = 'danger-solid';
+    } else {
+      decisionApprove.className = 'primary';
+      decisionReject.className = 'danger-outline';
+    }
+  }
+
+  function decide(kind) {
     var task = currentTask();
     if (!task || !isWritable(task)) return;
     decisionTarget.textContent = t('decision.target', {
       id: task.identifier,
       title: task.title
     });
+    var pending = task.pendingQuestion || {};
+    decisionQuestion.textContent = pending.prompt || t('drawer.review');
+    var answer = decisionAnswerText(task);
+    decisionAnswer.textContent = answer || t('decision.noAnswer');
+    decisionAnswer.classList.toggle('empty', !answer);
+    applyDecisionEmphasis(kind);
     decisionNote.value = (task.pendingQuestion && task.pendingQuestion.answerNote) || '';
     if (!decisionDialog.open) decisionDialog.showModal();
     decisionNote.focus();
@@ -4462,6 +4728,12 @@ export function renderLiveHtml({ project = {} } = {}) {
     renderBoard();
   }
 
+  function closeOverflow() {
+    if (!toolbarOverflow) return;
+    toolbarOverflow.classList.remove('open');
+    overflowToggle.setAttribute('aria-expanded', 'false');
+  }
+
   function bindEvents() {
     setupSelectFields();
     projectSelect.addEventListener('change', function () {
@@ -4489,12 +4761,21 @@ export function renderLiveHtml({ project = {} } = {}) {
     filterClearAll.addEventListener('click', clearAllFilters);
     boardEmptyClear.addEventListener('click', clearAllFilters);
     archivedToggle.addEventListener('click', function () {
+      closeOverflow();
       state.includeArchived = !state.includeArchived;
       storeSet(STORAGE.archived, state.includeArchived ? '1' : '0');
       syncArchivedToggle();
       load(false);
     });
-    refreshButton.addEventListener('click', function () { load(true); });
+    refreshButton.addEventListener('click', function () {
+      closeOverflow();
+      load(true);
+    });
+    overflowToggle.addEventListener('click', function () {
+      var open = !toolbarOverflow.classList.contains('open');
+      toolbarOverflow.classList.toggle('open', open);
+      overflowToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
     filterToggle.addEventListener('click', function () {
       var open = filtersPopover.hidden;
       filtersPopover.hidden = !open;
@@ -4505,6 +4786,7 @@ export function renderLiveHtml({ project = {} } = {}) {
         ? event.target.closest('[data-select-field]')
         : null;
       if (!field) closeSelectFields();
+      if (toolbarOverflow && !toolbarOverflow.contains(event.target)) closeOverflow();
       if (filtersPopover.hidden) return;
       var wrap = filtersPopover.parentNode;
       if (wrap && wrap.contains(event.target)) return;
@@ -4523,6 +4805,7 @@ export function renderLiveHtml({ project = {} } = {}) {
       if (project) restoreProject(project);
     });
     langToggle.addEventListener('click', function () {
+      closeOverflow();
       state.lang = state.lang === 'zh' ? 'en' : 'zh';
       storeSet(STORAGE.lang, state.lang);
       applyI18n();
@@ -4530,6 +4813,9 @@ export function renderLiveHtml({ project = {} } = {}) {
     });
     drawerClose.addEventListener('click', closeDrawer);
     backdrop.addEventListener('click', closeDrawer);
+    window.addEventListener('resize', function () {
+      if (drawer.classList.contains('open')) syncDrawerLayout();
+    });
     drawer.addEventListener('input', syncDirty);
     drawer.addEventListener('change', syncDirty);
     attrStatus.addEventListener('change', changeStatus);
@@ -4665,6 +4951,11 @@ export function renderLiveHtml({ project = {} } = {}) {
         var openSelect = activeSelectField();
         if (openSelect) {
           closeSelectField(openSelect, true);
+          event.preventDefault();
+          return;
+        }
+        if (toolbarOverflow && toolbarOverflow.classList.contains('open')) {
+          closeOverflow();
           event.preventDefault();
           return;
         }
