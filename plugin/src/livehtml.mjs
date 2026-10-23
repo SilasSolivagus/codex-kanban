@@ -74,6 +74,10 @@ export const STRINGS = Object.freeze({
     'import.discoverHint': 'Turn work that already happened into Backlog tasks.',
     'import.preview': 'Preview',
     'import.skip': 'Skip',
+    'import.range30': 'Last 30 days',
+    'import.range90': 'Last 90 days',
+    'import.rangeAll': 'All time',
+    'import.rangeLabel': 'Time range',
     'import.history': 'Import history',
     'import.historyHint': 'Reopen the Codex session importer for this repository.',
     'import.title': 'Import Codex sessions',
@@ -411,6 +415,10 @@ export const STRINGS = Object.freeze({
     'import.discoverHint': '把已经发生的对话变成 Backlog 任务。',
     'import.preview': '预览',
     'import.skip': '跳过',
+    'import.range30': '最近 30 天',
+    'import.range90': '最近 90 天',
+    'import.rangeAll': '全部时间',
+    'import.rangeLabel': '时间范围',
     'import.history': '导入历史',
     'import.historyHint': '重新打开这个仓库的 Codex 对话导入。',
     'import.title': '导入 Codex 对话',
@@ -1456,6 +1464,10 @@ export function renderLiveHtml({ project = {} } = {}) {
     font-size: 12px; font-weight: 600;
   }
   .import-toolbar button:hover { border-color: var(--border-strong); background: var(--surface-soft); }
+  .import-range {
+    height: 30px; padding: 0 8px; border: 1px solid var(--border); border-radius: 8px;
+    background: var(--surface); color: var(--text); font-size: 12px;
+  }
   .import-selection { margin-left: auto; }
   .import-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
   .import-row {
@@ -1832,6 +1844,11 @@ export function renderLiveHtml({ project = {} } = {}) {
       <p class="import-onboarding-hint" data-i18n="import.discoverHint">Turn work that already happened into Backlog tasks.</p>
     </div>
     <div class="import-onboarding-actions">
+      <select id="import-range" class="import-range" data-i18n-aria="import.rangeLabel" aria-label="Time range">
+        <option value="30d" data-i18n="import.range30">Last 30 days</option>
+        <option value="90d" data-i18n="import.range90">Last 90 days</option>
+        <option value="all" data-i18n="import.rangeAll">All time</option>
+      </select>
       <button class="primary" id="import-preview" type="button" data-i18n="import.preview">Preview</button>
       <button id="import-skip" type="button" data-i18n="import.skip">Skip</button>
     </div>
@@ -2305,6 +2322,11 @@ export function renderLiveHtml({ project = {} } = {}) {
   <div class="dialog-body">
     <p class="hint" data-i18n="import.hint">Choose conversations to turn into Backlog tasks. Only the title and summary are stored.</p>
     <div class="import-toolbar">
+      <select id="import-range-dialog" class="import-range" data-i18n-aria="import.rangeLabel" aria-label="Time range">
+        <option value="30d" data-i18n="import.range30">Last 30 days</option>
+        <option value="90d" data-i18n="import.range90">Last 90 days</option>
+        <option value="all" data-i18n="import.rangeAll">All time</option>
+      </select>
       <button id="import-select-all" type="button" data-i18n="import.selectAll">Select all</button>
       <span class="hint import-selection" id="import-selection"></span>
     </div>
@@ -2325,7 +2347,6 @@ export function renderLiveHtml({ project = {} } = {}) {
   var API_TASK = '/api/task';
   var API_IMPORT = '/api/import/candidates';
   var ATTACHMENT_API = '/api/attachments/';
-  var IMPORT_SINCE = '30d';
   var IMPORT_LIMIT = 10;
   var MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024;
   var MIN_ASK_OPTIONS = 2;
@@ -2359,7 +2380,7 @@ export function renderLiveHtml({ project = {} } = {}) {
     collapsed: 'codex-kanban.collapsed',
     project: 'codex-kanban.project',
     archived: 'codex-kanban.archived',
-    importSkipped: 'codex-kanban.importSkipped'
+    importSkipped: 'codex-kanban.importSkipped.'
   };
   var I18N = ${JSON.stringify(STRINGS)};
 
@@ -2388,8 +2409,13 @@ export function renderLiveHtml({ project = {} } = {}) {
     return storeGet(STORAGE.archived, '0') === '1';
   }
 
+  function importSkipKey() {
+    var id = state.data && state.data.boardId ? state.data.boardId : 'default';
+    return STORAGE.importSkipped + id;
+  }
+
   function readImportSkipped() {
-    return storeGet(STORAGE.importSkipped, '0') === '1';
+    return storeGet(importSkipKey(), '0') === '1';
   }
 
   function readTaskRef() {
@@ -2437,8 +2463,9 @@ export function renderLiveHtml({ project = {} } = {}) {
     decisionKind: 'approve',
     decisionTaskId: null,
     decisionBusy: false,
-    importSkipped: readImportSkipped(),
+    importSkipped: false,
     importCandidates: [],
+    importSince: '30d',
     importRequested: false,
     importLoading: false,
     importSelection: Object.create(null),
@@ -2479,6 +2506,8 @@ export function renderLiveHtml({ project = {} } = {}) {
   var importOnboardingTitle = document.getElementById('import-onboarding-title');
   var importPreview = document.getElementById('import-preview');
   var importSkip = document.getElementById('import-skip');
+  var importRange = document.getElementById('import-range');
+  var importRangeDialog = document.getElementById('import-range-dialog');
   var importDialog = document.getElementById('import-dialog');
   var importList = document.getElementById('import-list');
   var importSelectAll = document.getElementById('import-select-all');
@@ -3375,7 +3404,7 @@ export function renderLiveHtml({ project = {} } = {}) {
     if (state.importLoading) return Promise.resolve([]);
     state.importRequested = true;
     state.importLoading = true;
-    return fetch(API_IMPORT + '?since=' + encodeURIComponent(IMPORT_SINCE) + '&limit=' + IMPORT_LIMIT, {
+    return fetch(API_IMPORT + '?since=' + encodeURIComponent(state.importSince) + '&limit=' + IMPORT_LIMIT, {
       cache: 'no-store',
       headers: { accept: 'application/json' }
     }).then(function (response) {
@@ -3478,7 +3507,7 @@ export function renderLiveHtml({ project = {} } = {}) {
   function submitImport() {
     var ids = selectedImportIds();
     if (!ids.length || state.importLoading) return;
-    var payload = { sessionIds: ids };
+    var payload = { sessionIds: ids, since: state.importSince };
     if (state.projectId && state.projectId !== 'all') payload.projectId = state.projectId;
     importApply.disabled = true;
     act('import.apply', payload).then(function (body) {
@@ -3525,6 +3554,7 @@ export function renderLiveHtml({ project = {} } = {}) {
     if (!payload || payload.ok !== true) return;
     applyServerTime(payload);
     state.data = payload;
+    state.importSkipped = readImportSkipped();
     state.readOnly = Boolean(payload.board && payload.board.project && payload.board.project.archivedAt);
     renderAll();
     openDeepLink();
@@ -5208,9 +5238,25 @@ export function renderLiveHtml({ project = {} } = {}) {
       if (state.importCandidates.length) openImportDialog();
       else loadImportCandidates(true);
     });
+    function setImportSince(value) {
+      state.importSince = value;
+      state.importRequested = false;
+      state.importCandidates = [];
+      if (importRange) importRange.value = value;
+      if (importRangeDialog) importRangeDialog.value = value;
+      var wasOpen = importDialog.open;
+      loadImportCandidates(wasOpen);
+    }
+
+    if (importRange) {
+      importRange.addEventListener('change', function () { setImportSince(this.value); });
+    }
+    if (importRangeDialog) {
+      importRangeDialog.addEventListener('change', function () { setImportSince(this.value); });
+    }
     importSkip.addEventListener('click', function () {
       state.importSkipped = true;
-      storeSet(STORAGE.importSkipped, '1');
+      storeSet(importSkipKey(), '1');
       importOnboarding.hidden = true;
     });
     importHistory.addEventListener('click', openImportHistory);

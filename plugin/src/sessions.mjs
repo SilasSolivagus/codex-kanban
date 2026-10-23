@@ -33,6 +33,7 @@ function invalid(message) {
 // compare against file mtimes.
 export function parseSinceDays(value, now = Date.now()) {
   const raw = value === undefined || value === null || value === '' ? '30d' : String(value).trim()
+  if (raw.toLowerCase() === 'all') return null
   const relative = /^(\d+)d$/i.exec(raw)
   if (relative) {
     const days = Number(relative[1])
@@ -255,9 +256,9 @@ export async function scanSessions({
   }
   const base = path.resolve(root.trim())
   const home = resolveCodexHome(codexHome)
-  const days = Number.isFinite(sinceDays) && sinceDays >= 0 ? sinceDays : 30
+  const days = sinceDays === null ? null : Number.isFinite(sinceDays) && sinceDays >= 0 ? sinceDays : 30
   const cap = Number.isInteger(limit) && limit > 0 ? limit : 10
-  const cutoff = Date.now() - days * DAY_MS
+  const cutoff = days === null ? Number.NEGATIVE_INFINITY : Date.now() - days * DAY_MS
   const index = readIndex(home)
   const files = walkRollouts(path.join(home, 'sessions'))
   const candidates = []

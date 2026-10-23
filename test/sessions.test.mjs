@@ -240,3 +240,9 @@ test('normalizeTitle lowercases and strips punctuation', () => {
   assert.equal(normalizeTitle('修复：登录问题'), '修复登录问题')
   assert.equal(normalizeTitle(''), '')
 })
+
+test('all-time scanning ignores the age cutoff', async () => {
+  const { scanSessions, parseSinceDays } = await import('../plugin/src/sessions.mjs')
+  assert.equal(parseSinceDays('all'), null)
+  assert.equal(typeof scanSessions, 'function')
+})

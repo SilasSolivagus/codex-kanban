@@ -1,4 +1,5 @@
 import http from 'node:http'
+import { createHash } from 'node:crypto'
 import { URL } from 'node:url'
 import {
   addAttachment,
@@ -152,9 +153,11 @@ function collectFilters(tasks) {
 
 function boardPayload(store, projectId, withArchived = false) {
   const board = store.read()
+  const boardId = createHash('sha256').update(store.root).digest('hex').slice(0, 12)
   const view = boardView(board, { projectId, includeArchived: withArchived })
   return {
     ok: true,
+    boardId,
     serverNow: new Date().toISOString(),
     projects: projectSummaries(board),
     board: { project: view.project, columns: view.columns, tasks: view.tasks },

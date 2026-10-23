@@ -24,7 +24,7 @@ test('manifest parses, matches the marketplace entry, and points at real skills 
 
   assert.ok(entry, `marketplace has no entry named ${manifest.name}`)
   assert.equal(manifest.name, entry.name)
-  assert.equal(manifest.version, '0.7.0')
+  assert.equal(manifest.version, '0.7.1')
   assert.equal(manifest.license, 'MIT')
 
   for (const key of ['skills', 'mcpServers']) {

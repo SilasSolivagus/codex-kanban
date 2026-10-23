@@ -104,6 +104,7 @@ test('serves the live board page and the v2 board payload', async (t) => {
   assert.equal(json.projects[0].archivedAt, null)
   assert.deepEqual(Object.keys(json.board.columns), ['backlog', 'running', 'needs', 'done'])
   assert.equal(json.board.project, null)
+  assert.match(json.boardId, /^[a-f0-9]{12}$/)
   assert.deepEqual(json.board.tasks, [])
   assert.equal(json.summary.total, 0)
   assert.deepEqual(json.filters, { labels: [], priorities: [], assignees: [] })
