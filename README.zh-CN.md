@@ -70,6 +70,11 @@ codex plugin add codex-kanban@silassolivagus
 
 ## 三种用法
 
+![Codex Kanban 怎么用：装一次插件，日常在 Codex 里，想看完整看板时再手动 serve](docs/assets/usage-flow.zh.png)
+
+装插件不会自动打开浏览器。默认的看板出现在对话里；网页看板是单独的 `serve` 一步。
+下面三条入口覆盖完整闭环。
+
 ### 1. 在 Codex 里（agent 写，人做决定）
 
 > “把 SSO 跳转这个 bug 建成高优先级任务，标签 auth。问我先修 staging 还是 production。”

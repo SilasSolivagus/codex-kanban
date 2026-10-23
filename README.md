@@ -72,6 +72,12 @@ loads with the plugin and the MCP server exposes the tools below.
 
 ## Three ways to use it
 
+![How Codex Kanban is used: install once, work in Codex, run serve only when you want the web board](docs/assets/usage-flow.en.png)
+
+Installing the plugin never opens a browser. The default board appears in the
+conversation; the web board is a separate `serve` step. The three entry points below
+cover the whole loop.
+
 ### 1. In Codex (agent writes, you decide)
 
 > "Track the SSO redirect bug as a high-priority task with the `auth` label. Ask me
