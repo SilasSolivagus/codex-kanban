@@ -120,24 +120,25 @@ export const STRINGS = Object.freeze({
     'age.days': '{n}d',
     'actor.you': 'You',
     'actor.codex': 'Codex',
+    'actor.someone': 'Someone',
     'activity.today': 'Today',
     'activity.yesterday': 'Yesterday',
-    'activity.created': 'Created {id} in {status}',
-    'activity.question': 'Asked: {prompt}',
-    'activity.answered': 'Answered “{option}”',
-    'activity.answeredNote': 'Recorded an answer',
-    'activity.approved': 'Approved {id}',
-    'activity.rejected': 'Rejected {id}',
-    'activity.blocked': 'Blocked: {reason}',
-    'activity.unblocked': 'Unblocked',
-    'activity.attached': 'Attached {name}',
-    'activity.detached': 'Removed attachment {name}',
-    'activity.commented': 'Comment: {body}',
-    'activity.moved': 'Moved: {from} → {to}',
-    'activity.archived': 'Archived',
-    'activity.restored': 'Restored',
-    'activity.updated': 'Updated: {fields}',
-    'activity.reordered': 'Reordered',
+    'activity.created': '{actor} created {id} in {status}',
+    'activity.question': '{actor} asked: {prompt}',
+    'activity.answered': '{actor} answered “{option}”',
+    'activity.answeredNote': '{actor} recorded an answer',
+    'activity.approved': '{actor} approved {id}',
+    'activity.rejected': '{actor} rejected {id}',
+    'activity.blocked': '{actor} blocked {id}: {reason}',
+    'activity.unblocked': '{actor} unblocked {id}',
+    'activity.attached': '{actor} attached {name}',
+    'activity.detached': '{actor} removed attachment {name}',
+    'activity.commented': '{actor} commented: {body}',
+    'activity.moved': '{actor} moved {id}: {from} → {to}',
+    'activity.archived': '{actor} archived {id}',
+    'activity.restored': '{actor} restored {id}',
+    'activity.updated': '{actor} updated {fields}',
+    'activity.reordered': '{actor} reordered {id}',
     'activity.field.title': 'title',
     'activity.field.description': 'description',
     'activity.field.priority': 'priority',
@@ -285,6 +286,40 @@ export const STRINGS = Object.freeze({
     'drawer.created': 'Created {time}',
     'drawer.selected': 'Selected: {option}',
     'drawer.noOptions': 'No options.',
+    'drawer.tabs': 'Task sections',
+    'decision.title': 'Review decision',
+    'decision.target': '{id} · {title}',
+    'decision.noteLabel': 'Decision note (optional)',
+    'decision.notePlaceholder': 'Context for the record',
+    'decision.cancel': 'Cancel',
+    'decision.approve': 'Confirm approve',
+    'decision.reject': 'Confirm reject',
+    'ask.title': 'Ask a question',
+    'ask.promptLabel': 'Question',
+    'ask.promptPlaceholder': 'What do you need the human to decide?',
+    'ask.optionsLabel': 'Options',
+    'ask.optionLabel': 'Option {n}',
+    'ask.optionLabelPlaceholder': 'Label',
+    'ask.optionDetailPlaceholder': 'Detail (optional)',
+    'ask.addOption': 'Add option',
+    'ask.removeOption': 'Remove option {n}',
+    'ask.optionsHint': '2–5 options. Each option needs a label.',
+    'ask.cancel': 'Cancel',
+    'ask.submit': 'Ask question',
+    'ask.promptRequired': 'Write the question first.',
+    'ask.optionsRange': 'Provide 2–5 options with labels.',
+    'block.title': 'Block task',
+    'block.reasonLabel': 'Blocker reason',
+    'block.reasonPlaceholder': 'What is blocking this task?',
+    'block.cancel': 'Cancel',
+    'block.submit': 'Save blocker',
+    'rename.title': 'Rename project',
+    'rename.nameLabel': 'Name',
+    'rename.prefixLabel': 'Prefix',
+    'rename.cancel': 'Cancel',
+    'rename.submit': 'Save project',
+    'rename.nameRequired': 'A project name is required.',
+    'rename.prefixInvalid': 'Prefix must be 2–6 uppercase letters or digits.',
     'confirm.cancel': 'Cancel',
     'confirm.archive': 'Confirm archive',
     'confirm.restore': 'Confirm restore',
@@ -394,24 +429,25 @@ export const STRINGS = Object.freeze({
     'age.days': '{n}天',
     'actor.you': '你',
     'actor.codex': 'Codex',
+    'actor.someone': '有人',
     'activity.today': '今天',
     'activity.yesterday': '昨天',
-    'activity.created': '创建了 {id}（{status}）',
-    'activity.question': '提问：{prompt}',
-    'activity.answered': '回答了「{option}」',
-    'activity.answeredNote': '记录了回答',
-    'activity.approved': '批准了 {id}',
-    'activity.rejected': '驳回了 {id}',
-    'activity.blocked': '阻塞：{reason}',
-    'activity.unblocked': '解除阻塞',
-    'activity.attached': '添加了附件 {name}',
-    'activity.detached': '移除了附件 {name}',
-    'activity.commented': '评论：{body}',
-    'activity.moved': '移动：{from} → {to}',
-    'activity.archived': '归档',
-    'activity.restored': '恢复',
-    'activity.updated': '更新：{fields}',
-    'activity.reordered': '调整了排序',
+    'activity.created': '{actor}创建了 {id}（{status}）',
+    'activity.question': '{actor}提问：{prompt}',
+    'activity.answered': '{actor}回答了「{option}」',
+    'activity.answeredNote': '{actor}记录了回答',
+    'activity.approved': '{actor}批准了 {id}',
+    'activity.rejected': '{actor}驳回了 {id}',
+    'activity.blocked': '{actor}将 {id} 标记为阻塞：{reason}',
+    'activity.unblocked': '{actor}解除了 {id} 的阻塞',
+    'activity.attached': '{actor}添加了附件 {name}',
+    'activity.detached': '{actor}移除了附件 {name}',
+    'activity.commented': '{actor}评论：{body}',
+    'activity.moved': '{actor}移动了 {id}：{from} → {to}',
+    'activity.archived': '{actor}归档了 {id}',
+    'activity.restored': '{actor}恢复了 {id}',
+    'activity.updated': '{actor}更新了{fields}',
+    'activity.reordered': '{actor}调整了 {id} 的顺序',
     'activity.field.title': '标题',
     'activity.field.description': '描述',
     'activity.field.priority': '优先级',
@@ -559,6 +595,40 @@ export const STRINGS = Object.freeze({
     'drawer.created': '创建于 {time}',
     'drawer.selected': '已选择：{option}',
     'drawer.noOptions': '没有选项。',
+    'drawer.tabs': '任务分区',
+    'decision.title': '审核决定',
+    'decision.target': '{id} · {title}',
+    'decision.noteLabel': '决定备注（可选）',
+    'decision.notePlaceholder': '为记录补充背景',
+    'decision.cancel': '取消',
+    'decision.approve': '确认批准',
+    'decision.reject': '确认驳回',
+    'ask.title': '提出问题',
+    'ask.promptLabel': '问题',
+    'ask.promptPlaceholder': '需要人类决定什么？',
+    'ask.optionsLabel': '选项',
+    'ask.optionLabel': '选项 {n}',
+    'ask.optionLabelPlaceholder': '名称',
+    'ask.optionDetailPlaceholder': '说明（可选）',
+    'ask.addOption': '添加选项',
+    'ask.removeOption': '移除选项 {n}',
+    'ask.optionsHint': '2–5 个选项，每个选项都需要名称。',
+    'ask.cancel': '取消',
+    'ask.submit': '确认提问',
+    'ask.promptRequired': '请先填写问题。',
+    'ask.optionsRange': '请提供 2–5 个带名称的选项。',
+    'block.title': '标记阻塞',
+    'block.reasonLabel': '阻塞原因',
+    'block.reasonPlaceholder': '是什么阻塞了这个任务？',
+    'block.cancel': '取消',
+    'block.submit': '保存阻塞原因',
+    'rename.title': '重命名项目',
+    'rename.nameLabel': '名称',
+    'rename.prefixLabel': '前缀',
+    'rename.cancel': '取消',
+    'rename.submit': '保存项目',
+    'rename.nameRequired': '项目名称不能为空。',
+    'rename.prefixInvalid': '前缀必须是 2–6 位大写字母或数字。',
     'confirm.cancel': '取消',
     'confirm.archive': '确认归档',
     'confirm.restore': '确认恢复',
@@ -712,6 +782,7 @@ export function renderLiveHtml({ project = {} } = {}) {
     overflow-wrap: anywhere;
   }
   .select-option:hover, .select-option:focus { background: var(--surface-soft); }
+  .select-option.active { background: var(--surface-soft); outline: 1px solid var(--border-strong); outline-offset: -1px; }
   .select-option.selected { background: var(--surface-soft); font-weight: 600; }
   .select-option.selected::after { content: '✓'; float: right; color: var(--muted); font-weight: 500; }
   .search-wrap { position: relative; flex: 1 1 520px; max-width: 520px; min-width: 0; height: 40px; }
@@ -1084,13 +1155,26 @@ export function renderLiveHtml({ project = {} } = {}) {
     border: 0; border-radius: 8px; background: transparent; color: var(--muted); font-size: 20px;
   }
   #drawer-close:hover { background: var(--surface-soft); color: var(--text); }
-  .drawer-body { display: grid; gap: 0; align-content: start; padding: 0 22px 24px; overflow: auto; }
+  .drawer-body { display: grid; gap: 0; flex: 1 1 auto; min-height: 0; align-content: start; padding: 0 22px 24px; overflow: auto; }
+  .drawer-tabs {
+    display: flex; gap: 4px; flex: none; padding: 0 22px;
+    border-bottom: 1px solid var(--border); background: var(--surface);
+  }
+  .drawer-tab {
+    height: 40px; padding: 0 12px; border: 0; border-bottom: 2px solid transparent;
+    border-radius: 0; background: transparent; color: var(--muted);
+    font-size: 13px; font-weight: 600; white-space: nowrap;
+  }
+  .drawer-tab:hover { color: var(--text); }
+  .drawer-tab[aria-selected="true"] { color: var(--text); border-bottom-color: var(--text); }
+  .drawer-tab:focus-visible { outline-offset: -3px; }
+  .drawer-panel[hidden] { display: none !important; }
   .drawer-band > h3 {
     margin: 0; color: var(--text); font-size: 14px; font-weight: 650; letter-spacing: -0.01em;
   }
   .drawer-band .drawer-section:first-of-type { padding-top: 0; border-top: 0; }
   .drawer-actions-band { padding: 14px 0 16px; gap: 6px; }
-  .drawer-actions-band > h3 { color: var(--muted); font-size: 12px; font-weight: 600; }
+  .drawer-actions-band > h4 { color: var(--muted); font-size: 12px; font-weight: 600; }
   .drawer-actions-band .actions button { height: 30px; font-size: 12px; }
   .drawer-footer {
     position: sticky; bottom: 0; z-index: 3; flex: none;
@@ -1222,6 +1306,29 @@ export function renderLiveHtml({ project = {} } = {}) {
   }
   .dialog-head button:hover { background: var(--surface-soft); color: var(--text); }
   .dialog-actions { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 0 0; border-top: 1px solid var(--border); }
+  .dialog-actions button {
+    height: 34px; padding: 0 14px; border: 1px solid var(--border);
+    border-radius: 8px; background: var(--surface); color: var(--text);
+    font-size: 12.5px; font-weight: 600;
+  }
+  .dialog-actions button:hover:not(:disabled) { border-color: var(--border-strong); background: var(--surface-soft); }
+  .dialog-actions .danger-solid {
+    border-color: transparent; background: light-dark(#b42318, #d4524a); color: #ffffff;
+  }
+  .dialog-actions .danger-solid:hover:not(:disabled) { background: light-dark(#961a12, #d97f77); border-color: transparent; }
+  .dialog-error { margin: 0; color: var(--danger); font-size: 12px; }
+  .ask-options { display: grid; gap: 6px; }
+  .ask-options-head { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px 10px; }
+  .ask-option-row {
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) auto;
+    gap: 6px; align-items: center;
+  }
+  .ask-option-row input { min-width: 0; }
+  .ask-option-row button {
+    width: 32px; height: 32px; padding: 0; border: 1px solid var(--border);
+    border-radius: 8px; background: var(--surface); color: var(--muted); font-size: 16px;
+  }
+  .ask-option-row button:hover:not(:disabled) { border-color: var(--danger); color: var(--danger); }
   .project-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
   .project-row {
     display: grid; gap: 4px; padding: 10px 12px;
@@ -1318,6 +1425,7 @@ export function renderLiveHtml({ project = {} } = {}) {
   @media (max-width: 600px) {
     aside.drawer { width: 100%; border-left: 0; }
     .drawer-head { padding: 16px 16px 14px; }
+    .drawer-tabs { padding: 0 16px; }
     .drawer-body { padding: 0 16px 20px; }
     .attr-grid { grid-template-columns: minmax(0, 1fr); }
     .drawer-footer { padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px)); }
@@ -1566,11 +1674,15 @@ export function renderLiveHtml({ project = {} } = {}) {
     </div>
     <button id="drawer-close" type="button" data-i18n-aria="drawer.close" aria-label="Close">×</button>
   </div>
+  <div class="drawer-tabs" role="tablist" aria-label="Task sections" data-i18n-aria="drawer.tabs">
+    <button class="drawer-tab" id="drawer-tab-details" type="button" role="tab" aria-selected="true" aria-controls="drawer-panel-details" tabindex="0" data-drawer-tab="details" data-i18n="drawer.details">Details</button>
+    <button class="drawer-tab" id="drawer-tab-collaboration" type="button" role="tab" aria-selected="false" aria-controls="drawer-panel-collaboration" tabindex="-1" data-drawer-tab="collaboration" data-i18n="drawer.collaboration">Collaboration</button>
+    <button class="drawer-tab" id="drawer-tab-activity" type="button" role="tab" aria-selected="false" aria-controls="drawer-panel-activity" tabindex="-1" data-drawer-tab="activity" data-i18n="drawer.activity">Activity</button>
+  </div>
   <div class="drawer-body">
     <p class="banner" id="drawer-readonly" hidden data-i18n="drawer.readOnly">This task belongs to an archived project and is read-only.</p>
 
-    <section class="panel drawer-band" data-band="details">
-      <h3 data-i18n="drawer.details">Details</h3>
+    <section class="panel drawer-band drawer-panel" id="drawer-panel-details" role="tabpanel" aria-labelledby="drawer-tab-details" data-tab-panel="details">
       <div class="attr-grid">
         <div class="attr full">
           <label for="edit-title" data-i18n="drawer.titleField">Title</label>
@@ -1640,8 +1752,7 @@ export function renderLiveHtml({ project = {} } = {}) {
       </div>
     </section>
 
-    <section class="panel drawer-band" data-band="collaboration">
-      <h3 data-i18n="drawer.collaboration">Collaboration</h3>
+    <section class="panel drawer-band drawer-panel" id="drawer-panel-collaboration" role="tabpanel" aria-labelledby="drawer-tab-collaboration" data-tab-panel="collaboration" hidden>
       <div class="drawer-section">
         <h4 data-i18n="drawer.links">Links</h4>
         <div id="edit-links" class="feed"></div>
@@ -1692,23 +1803,21 @@ export function renderLiveHtml({ project = {} } = {}) {
           <button id="add-comment" type="button" data-write data-i18n="drawer.addComment">Add comment</button>
         </div>
       </div>
+      <div class="drawer-section drawer-actions-band" id="drawer-actions">
+        <h4 data-i18n="drawer.actions">Actions</h4>
+        <div id="move-actions" class="actions"></div>
+        <div class="actions">
+          <button id="ask-task" type="button" data-write data-i18n="drawer.ask">Ask a question</button>
+          <button id="block-task" type="button" data-write data-i18n="drawer.block">Block</button>
+          <button id="unblock-task" type="button" data-write data-i18n="drawer.unblock">Unblock</button>
+        </div>
+        <p class="hint" id="drawer-status" hidden></p>
+      </div>
     </section>
 
-    <section class="panel drawer-band" data-band="activity">
-      <h3 data-i18n="drawer.activity">Activity</h3>
+    <section class="panel drawer-band drawer-panel" id="drawer-panel-activity" role="tabpanel" aria-labelledby="drawer-tab-activity" data-tab-panel="activity" hidden>
       <ol id="activity-list" class="feed"></ol>
       <p id="activity-empty" class="hint" hidden data-i18n="drawer.activityEmpty">No activity yet.</p>
-    </section>
-
-    <section class="panel drawer-band drawer-actions-band" data-band="actions">
-      <h3 data-i18n="drawer.actions">Actions</h3>
-      <div id="move-actions" class="actions"></div>
-      <div class="actions">
-        <button id="ask-task" type="button" data-write data-i18n="drawer.ask">Ask a question</button>
-        <button id="block-task" type="button" data-write data-i18n="drawer.block">Block</button>
-        <button id="unblock-task" type="button" data-write data-i18n="drawer.unblock">Unblock</button>
-      </div>
-      <p class="hint" id="drawer-status" hidden></p>
     </section>
   </div>
   <footer class="drawer-footer" id="drawer-footer">
@@ -1800,6 +1909,86 @@ export function renderLiveHtml({ project = {} } = {}) {
   </div>
 </dialog>
 
+<dialog id="decision-dialog" aria-labelledby="decision-heading">
+  <div class="dialog-head">
+    <h2 id="decision-heading" data-i18n="decision.title">Review decision</h2>
+    <button id="decision-close" type="button" data-i18n-aria="drawer.close" aria-label="Close">×</button>
+  </div>
+  <form id="decision-form">
+    <p class="hint" id="decision-target"></p>
+    <label for="decision-note"><span data-i18n="decision.noteLabel">Decision note (optional)</span>
+      <textarea id="decision-note" maxlength="2000" data-i18n-placeholder="decision.notePlaceholder" placeholder="Context for the record"></textarea>
+    </label>
+    <div class="dialog-actions">
+      <button id="decision-cancel" type="button" data-i18n="decision.cancel">Cancel</button>
+      <button id="decision-approve" class="primary" type="button" data-i18n="decision.approve">Confirm approve</button>
+      <button id="decision-reject" class="danger-solid" type="button" data-i18n="decision.reject">Confirm reject</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="ask-dialog" aria-labelledby="ask-heading">
+  <div class="dialog-head">
+    <h2 id="ask-heading" data-i18n="ask.title">Ask a question</h2>
+    <button id="ask-close" type="button" data-i18n-aria="drawer.close" aria-label="Close">×</button>
+  </div>
+  <form id="ask-form">
+    <label for="ask-prompt"><span data-i18n="ask.promptLabel">Question</span>
+      <textarea id="ask-prompt" maxlength="2000" data-i18n-placeholder="ask.promptPlaceholder" placeholder="What do you need the human to decide?"></textarea>
+    </label>
+    <div class="ask-options-head">
+      <span class="hint" data-i18n="ask.optionsLabel">Options</span>
+      <span class="hint" data-i18n="ask.optionsHint">2–5 options. Each option needs a label.</span>
+    </div>
+    <div class="ask-options" id="ask-options"></div>
+    <div class="actions">
+      <button id="ask-add-option" type="button" data-i18n="ask.addOption">Add option</button>
+    </div>
+    <p class="dialog-error" id="ask-error" role="alert" hidden></p>
+    <div class="dialog-actions">
+      <button id="ask-cancel" type="button" data-i18n="ask.cancel">Cancel</button>
+      <button class="primary" type="submit" data-i18n="ask.submit">Ask question</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="block-dialog" aria-labelledby="block-heading">
+  <div class="dialog-head">
+    <h2 id="block-heading" data-i18n="block.title">Block task</h2>
+    <button id="block-close" type="button" data-i18n-aria="drawer.close" aria-label="Close">×</button>
+  </div>
+  <form id="block-form">
+    <label for="block-reason"><span data-i18n="block.reasonLabel">Blocker reason</span>
+      <textarea id="block-reason" maxlength="2000" data-i18n-placeholder="block.reasonPlaceholder" placeholder="What is blocking this task?"></textarea>
+    </label>
+    <p class="dialog-error" id="block-error" role="alert" hidden></p>
+    <div class="dialog-actions">
+      <button id="block-cancel" type="button" data-i18n="block.cancel">Cancel</button>
+      <button class="primary" type="submit" data-i18n="block.submit">Save blocker</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="rename-project-dialog" aria-labelledby="rename-heading">
+  <div class="dialog-head">
+    <h2 id="rename-heading" data-i18n="rename.title">Rename project</h2>
+    <button id="rename-close" type="button" data-i18n-aria="drawer.close" aria-label="Close">×</button>
+  </div>
+  <form id="rename-form">
+    <label for="rename-name"><span data-i18n="rename.nameLabel">Name</span>
+      <input id="rename-name" type="text" maxlength="120" />
+    </label>
+    <label for="rename-prefix"><span data-i18n="rename.prefixLabel">Prefix</span>
+      <input id="rename-prefix" type="text" maxlength="6" />
+    </label>
+    <p class="dialog-error" id="rename-error" role="alert" hidden></p>
+    <div class="dialog-actions">
+      <button id="rename-cancel" type="button" data-i18n="rename.cancel">Cancel</button>
+      <button class="primary" type="submit" data-i18n="rename.submit">Save project</button>
+    </div>
+  </form>
+</dialog>
+
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
@@ -1808,6 +1997,8 @@ export function renderLiveHtml({ project = {} } = {}) {
   var API_ACTION = '/api/action';
   var ATTACHMENT_API = '/api/attachments/';
   var MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024;
+  var MIN_ASK_OPTIONS = 2;
+  var MAX_ASK_OPTIONS = 5;
   var COLUMNS = ['backlog', 'running', 'needs', 'done'];
   var DRAG_COLUMNS = ['backlog', 'running', 'done'];
   var PRIORITIES = ['none', 'low', 'medium', 'high', 'urgent'];
@@ -1905,7 +2096,9 @@ export function renderLiveHtml({ project = {} } = {}) {
     focusReturn: null,
     dirty: false,
     confirmHandler: null,
-    confirmReturn: null
+    confirmReturn: null,
+    drawerTab: 'details',
+    skew: 0
   };
 
   var boardTitle = document.getElementById('board-title');
@@ -2011,6 +2204,30 @@ export function renderLiveHtml({ project = {} } = {}) {
   var confirmDetail = document.getElementById('confirm-detail');
   var confirmCancel = document.getElementById('confirm-cancel');
   var confirmOk = document.getElementById('confirm-ok');
+  var decisionDialog = document.getElementById('decision-dialog');
+  var decisionForm = document.getElementById('decision-form');
+  var decisionTarget = document.getElementById('decision-target');
+  var decisionNote = document.getElementById('decision-note');
+  var decisionApprove = document.getElementById('decision-approve');
+  var decisionReject = document.getElementById('decision-reject');
+  var askDialog = document.getElementById('ask-dialog');
+  var askForm = document.getElementById('ask-form');
+  var askPromptInput = document.getElementById('ask-prompt');
+  var askOptionsList = document.getElementById('ask-options');
+  var askAddOption = document.getElementById('ask-add-option');
+  var askError = document.getElementById('ask-error');
+  var blockDialog = document.getElementById('block-dialog');
+  var blockForm = document.getElementById('block-form');
+  var blockReasonInput = document.getElementById('block-reason');
+  var blockError = document.getElementById('block-error');
+  var renameDialog = document.getElementById('rename-project-dialog');
+  var renameForm = document.getElementById('rename-form');
+  var renameNameInput = document.getElementById('rename-name');
+  var renamePrefixInput = document.getElementById('rename-prefix');
+  var renameError = document.getElementById('rename-error');
+  var renameTarget = null;
+  var drawerTabs = drawer.querySelectorAll('[data-drawer-tab]');
+  var drawerPanels = drawer.querySelectorAll('[data-tab-panel]');
 
   var prefersReducedMotion = false;
   try {
@@ -2068,11 +2285,22 @@ export function renderLiveHtml({ project = {} } = {}) {
     }
   }
 
+  function nowMs() {
+    return Date.now() - (state.skew || 0);
+  }
+
+  function applyServerTime(payload) {
+    if (!payload || typeof payload.serverNow !== 'string') return;
+    var parsed = Date.parse(payload.serverNow);
+    if (!isFinite(parsed)) return;
+    state.skew = Date.now() - parsed;
+  }
+
   function ageParts(iso) {
     if (!iso) return null;
     var then = new Date(iso).getTime();
     if (!isFinite(then)) return null;
-    var seconds = Math.max(0, Math.round((Date.now() - then) / 1000));
+    var seconds = Math.max(0, Math.round((nowMs() - then) / 1000));
     if (seconds < 60) return { justNow: true, value: '' };
     var minutes = Math.round(seconds / 60);
     if (minutes < 60) return { justNow: false, value: t('age.minutes', { n: minutes }) };
@@ -2764,6 +2992,7 @@ export function renderLiveHtml({ project = {} } = {}) {
 
   function applyPayload(payload) {
     if (!payload || payload.ok !== true) return;
+    applyServerTime(payload);
     state.data = payload;
     state.readOnly = Boolean(payload.board && payload.board.project && payload.board.project.archivedAt);
     renderAll();
@@ -2892,21 +3121,32 @@ export function renderLiveHtml({ project = {} } = {}) {
     var valueEl = field.querySelector('.select-value');
     var menu = field.querySelector('.select-menu');
     if (!select || !trigger || !menu) return;
+    var wasOpen = field.classList.contains('open');
+    var active = Number(field.getAttribute('data-active-index'));
     var selected = select.options[select.selectedIndex];
     if (valueEl) valueEl.textContent = selected ? selected.textContent : '';
+    trigger.title = selected ? selected.textContent : '';
     trigger.disabled = Boolean(select.disabled);
-    trigger.setAttribute('aria-expanded', field.classList.contains('open') ? 'true' : 'false');
+    trigger.setAttribute('aria-expanded', wasOpen ? 'true' : 'false');
     trigger.setAttribute('aria-label', select.getAttribute('aria-label') || trigger.textContent.trim());
     menu.textContent = '';
     for (var i = 0; i < select.options.length; i += 1) {
       var option = select.options[i];
       var item = el('li', 'select-option', option.textContent);
+      item.id = (select.id || 'select') + '-option-' + i;
       item.setAttribute('role', 'option');
       item.setAttribute('data-value', option.value);
       item.setAttribute('aria-selected', option.value === select.value ? 'true' : 'false');
       item.classList.toggle('selected', option.value === select.value);
       item.tabIndex = -1;
       menu.appendChild(item);
+    }
+    if (wasOpen) {
+      if (!isFinite(active)) active = select.selectedIndex >= 0 ? select.selectedIndex : 0;
+      setActiveSelectOption(field, active, false);
+    } else {
+      field.removeAttribute('data-active-index');
+      trigger.removeAttribute('aria-activedescendant');
     }
   }
 
@@ -2915,15 +3155,51 @@ export function renderLiveHtml({ project = {} } = {}) {
     for (var i = 0; i < fields.length; i += 1) syncSelectField(fields[i]);
   }
 
+  function selectOptions(field) {
+    var menu = field ? field.querySelector('.select-menu') : null;
+    return menu ? Array.prototype.slice.call(menu.querySelectorAll('.select-option')) : [];
+  }
+
+  function activeSelectIndex(field) {
+    var index = Number(field.getAttribute('data-active-index'));
+    return isFinite(index) ? index : 0;
+  }
+
+  function setActiveSelectOption(field, index, scroll) {
+    var options = selectOptions(field);
+    if (!options.length) return;
+    if (!isFinite(index)) index = 0;
+    index = ((index % options.length) + options.length) % options.length;
+    field.setAttribute('data-active-index', String(index));
+    for (var i = 0; i < options.length; i += 1) {
+      options[i].classList.toggle('active', i === index);
+      options[i].setAttribute('aria-current', i === index ? 'true' : 'false');
+    }
+    var trigger = field.querySelector('.select-trigger');
+    if (trigger) trigger.setAttribute('aria-activedescendant', options[index].id);
+    if (scroll && options[index].scrollIntoView) {
+      options[index].scrollIntoView({ block: 'nearest' });
+    }
+  }
+
   function closeSelectField(field, restoreFocus) {
     if (!field) return;
     field.classList.remove('open');
+    field.removeAttribute('data-active-index');
+    field._typeBuffer = '';
+    if (field._typeTimer) clearTimeout(field._typeTimer);
     var menu = field.querySelector('.select-menu');
     if (menu) menu.hidden = true;
     var trigger = field.querySelector('.select-trigger');
     if (trigger) {
       trigger.setAttribute('aria-expanded', 'false');
+      trigger.removeAttribute('aria-activedescendant');
       if (restoreFocus) trigger.focus({ preventScroll: true });
+    }
+    var options = selectOptions(field);
+    for (var i = 0; i < options.length; i += 1) {
+      options[i].classList.remove('active');
+      options[i].removeAttribute('aria-current');
     }
   }
 
@@ -2947,14 +3223,12 @@ export function renderLiveHtml({ project = {} } = {}) {
     var menu = field.querySelector('.select-menu');
     menu.hidden = false;
     var trigger = field.querySelector('.select-trigger');
-    if (trigger) trigger.setAttribute('aria-expanded', 'true');
-    var options = menu.querySelectorAll('.select-option');
-    var selected = menu.querySelector('.select-option[aria-selected="true"]') || options[0];
-    if (selected) {
-      for (var i = 0; i < options.length; i += 1) options[i].tabIndex = -1;
-      selected.tabIndex = 0;
-      selected.focus({ preventScroll: true });
+    if (trigger) {
+      trigger.setAttribute('aria-expanded', 'true');
+      trigger.focus({ preventScroll: true });
     }
+    var selected = select.selectedIndex >= 0 ? select.selectedIndex : 0;
+    setActiveSelectOption(field, selected, true);
   }
 
   function chooseSelectOption(field, value) {
@@ -2968,38 +3242,88 @@ export function renderLiveHtml({ project = {} } = {}) {
     closeSelectField(field, true);
   }
 
-  function handleSelectNav(event, field) {
-    var menu = field.querySelector('.select-menu');
-    if (!menu) return;
-    var options = Array.prototype.slice.call(menu.querySelectorAll('.select-option'));
-    var index = options.indexOf(document.activeElement);
+  function typeAheadSelect(field, char) {
+    if (!field.classList.contains('open')) openSelectField(field);
+    var buffer = String(field._typeBuffer || '') + char.toLowerCase();
+    field._typeBuffer = buffer;
+    if (field._typeTimer) clearTimeout(field._typeTimer);
+    field._typeTimer = setTimeout(function () { field._typeBuffer = ''; }, 700);
+    var options = selectOptions(field);
+    if (!options.length) return;
+    var active = activeSelectIndex(field);
+    var start = buffer.length === 1 ? active + 1 : 0;
+    var match = -1;
+    for (var i = 0; i < options.length; i += 1) {
+      var index = (start + i) % options.length;
+      var label = String(options[index].textContent || '').toLowerCase();
+      var value = String(options[index].getAttribute('data-value') || '').toLowerCase();
+      if (label.indexOf(buffer) === 0 || value.indexOf(buffer) === 0) {
+        match = index;
+        break;
+      }
+    }
+    // A dead multi-character buffer restarts from the latest keystroke.
+    if (match === -1 && buffer.length > 1) {
+      field._typeBuffer = char.toLowerCase();
+      for (var j = 0; j < options.length; j += 1) {
+        var text = String(options[j].textContent || '').toLowerCase();
+        var optionValue = String(options[j].getAttribute('data-value') || '').toLowerCase();
+        if (text.indexOf(field._typeBuffer) === 0 || optionValue.indexOf(field._typeBuffer) === 0) {
+          match = j;
+          break;
+        }
+      }
+    }
+    if (match !== -1) setActiveSelectOption(field, match, true);
+  }
+
+  function handleSelectKeydown(event, field) {
+    var open = field.classList.contains('open');
     if (event.key === 'Escape') {
+      if (!open) return;
       event.preventDefault();
       event.stopPropagation();
       closeSelectField(field, true);
       return;
     }
     if (event.key === 'Tab') {
-      closeSelectField(field, false);
+      if (open) closeSelectField(field, false);
       return;
     }
+    if (event.ctrlKey || event.metaKey || event.altKey) return;
     if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
       event.preventDefault();
-      var next = index + (event.key === 'ArrowDown' ? 1 : -1);
-      if (next < 0) next = options.length - 1;
-      if (next >= options.length) next = 0;
-      if (options[next]) options[next].focus();
+      if (!open) {
+        openSelectField(field);
+        return;
+      }
+      setActiveSelectOption(field, activeSelectIndex(field) + (event.key === 'ArrowDown' ? 1 : -1), true);
       return;
     }
-    if (event.key === 'Home' || event.key === 'End') {
+    if (open && (event.key === 'Home' || event.key === 'End')) {
       event.preventDefault();
-      var edge = event.key === 'Home' ? options[0] : options[options.length - 1];
-      if (edge) edge.focus();
+      setActiveSelectOption(field, event.key === 'Home' ? 0 : selectOptions(field).length - 1, true);
       return;
     }
-    if (event.key === 'Enter' || event.key === ' ') {
+    if (event.key === 'Enter') {
       event.preventDefault();
-      if (index >= 0) chooseSelectOption(field, options[index].getAttribute('data-value'));
+      if (!open) {
+        openSelectField(field);
+        return;
+      }
+      var options = selectOptions(field);
+      var active = options[activeSelectIndex(field)];
+      if (active) chooseSelectOption(field, active.getAttribute('data-value'));
+      return;
+    }
+    if (event.key === ' ' && !open) {
+      event.preventDefault();
+      openSelectField(field);
+      return;
+    }
+    if (event.key.length === 1) {
+      event.preventDefault();
+      typeAheadSelect(field, event.key);
     }
   }
 
@@ -3011,18 +3335,16 @@ export function renderLiveHtml({ project = {} } = {}) {
         var trigger = field.querySelector('.select-trigger');
         var menu = field.querySelector('.select-menu');
         if (!select || !trigger || !menu) return;
+        trigger.setAttribute('aria-autocomplete', 'list');
         trigger.addEventListener('click', function () {
           if (field.classList.contains('open')) closeSelectField(field, true);
           else openSelectField(field);
         });
         trigger.addEventListener('keydown', function (event) {
-          if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-            event.preventDefault();
-            openSelectField(field);
-          }
+          handleSelectKeydown(event, field);
         });
         menu.addEventListener('keydown', function (event) {
-          handleSelectNav(event, field);
+          handleSelectKeydown(event, field);
         });
         menu.addEventListener('click', function (event) {
           var option = event.target && event.target.closest
@@ -3086,7 +3408,10 @@ export function renderLiveHtml({ project = {} } = {}) {
     state.focusReturn = document.activeElement && document.activeElement.focus ? document.activeElement : null;
     state.selectedId = task.id;
     state.selectedOption = null;
+    // Every task opens on Details; tab state never leaks between tasks.
+    state.drawerTab = 'details';
     renderDrawer(task);
+    setDrawerTab('details', false);
     drawer.classList.add('open');
     drawer.setAttribute('aria-hidden', 'false');
     backdrop.classList.add('open');
@@ -3110,6 +3435,39 @@ export function renderLiveHtml({ project = {} } = {}) {
     if (target && typeof target.focus === 'function') {
       target.focus({ preventScroll: true });
     }
+  }
+
+  function setDrawerTab(name, focusTab) {
+    if (name !== 'details' && name !== 'collaboration' && name !== 'activity') name = 'details';
+    state.drawerTab = name;
+    for (var i = 0; i < drawerTabs.length; i += 1) {
+      var tab = drawerTabs[i];
+      var selected = tab.getAttribute('data-drawer-tab') === name;
+      tab.setAttribute('aria-selected', selected ? 'true' : 'false');
+      tab.tabIndex = selected ? 0 : -1;
+      if (selected && focusTab) tab.focus({ preventScroll: true });
+    }
+    for (var j = 0; j < drawerPanels.length; j += 1) {
+      drawerPanels[j].hidden = drawerPanels[j].getAttribute('data-tab-panel') !== name;
+    }
+  }
+
+  function handleDrawerTabKey(event) {
+    var tab = event.target && event.target.closest
+      ? event.target.closest('[data-drawer-tab]')
+      : null;
+    if (!tab) return;
+    var order = ['details', 'collaboration', 'activity'];
+    var index = order.indexOf(tab.getAttribute('data-drawer-tab'));
+    if (index === -1) return;
+    var next = null;
+    if (event.key === 'ArrowLeft') next = index === 0 ? order.length - 1 : index - 1;
+    else if (event.key === 'ArrowRight') next = index === order.length - 1 ? 0 : index + 1;
+    else if (event.key === 'Home') next = 0;
+    else if (event.key === 'End') next = order.length - 1;
+    if (next === null) return;
+    event.preventDefault();
+    setDrawerTab(order[next], true);
   }
 
   function renderDrawer(task) {
@@ -3226,67 +3584,67 @@ export function renderLiveHtml({ project = {} } = {}) {
     return field;
   }
 
+  function statusName(value) {
+    return value ? t('status.' + value) : '';
+  }
+
   function activityText(entry, task) {
     var kind = entry.kind || '';
-    var summary = String(entry.summary || '');
-    var changes = Array.isArray(entry.changes) ? entry.changes : [];
+    var data = entry.data && typeof entry.data === 'object' && !Array.isArray(entry.data)
+      ? entry.data
+      : null;
     var id = (task && task.identifier) || '';
+    var actor = actorName(entry.actor) || t('actor.someone');
+    // Legacy entries predate structured data: keep their stored summary verbatim.
+    if (!data) return entry.summary || kind;
     if (kind === 'created') {
-      var created = / in ([a-z_]+)$/.exec(summary);
-      var createdStatus = created ? created[1] : ((task && task.status) || 'backlog');
-      return t('activity.created', { id: id, status: t('status.' + createdStatus) });
+      return t('activity.created', { actor: actor, id: id, status: statusName(data.status) });
+    }
+    if (kind === 'moved') {
+      return t('activity.moved', {
+        actor: actor,
+        id: id,
+        from: statusName(data.from),
+        to: statusName(data.to)
+      });
+    }
+    if (kind === 'blocked') {
+      return t('activity.blocked', { actor: actor, id: id, reason: data.reason || '' });
+    }
+    if (kind === 'unblocked') return t('activity.unblocked', { actor: actor, id: id });
+    if (kind === 'question') {
+      return t('activity.question', { actor: actor, prompt: data.prompt || '' });
     }
     if (kind === 'answered') {
-      var answered = summary.indexOf('answered: ') === 0 ? summary.slice('answered: '.length) : '';
-      return answered
-        ? t('activity.answered', { option: answered })
-        : t('activity.answeredNote');
+      return data.optionLabel
+        ? t('activity.answered', { actor: actor, option: data.optionLabel })
+        : t('activity.answeredNote', { actor: actor });
     }
-    if (kind === 'approved') return t('activity.approved', { id: id });
-    if (kind === 'rejected') return t('activity.rejected', { id: id });
-    if (kind === 'blocked') {
-      var reason = changes[0] && changes[0].after ? changes[0].after : summary.replace(/^blocked [^:]+: /, '');
-      return t('activity.blocked', { reason: reason });
+    if (kind === 'approved') return t('activity.approved', { actor: actor, id: id });
+    if (kind === 'rejected') {
+      return t('activity.rejected', { actor: actor, id: id })
+        + (data.note ? ' · ' + data.note : '');
     }
-    if (kind === 'unblocked') return t('activity.unblocked');
+    if (kind === 'commented') {
+      return t('activity.commented', { actor: actor, body: data.preview || '' });
+    }
     if (kind === 'attached') {
-      return t('activity.attached', { name: summary.replace(/^attached /, '') });
+      return t('activity.attached', { actor: actor, name: data.filename || '' });
     }
     if (kind === 'detached') {
-      return t('activity.detached', { name: summary.replace(/^removed attachment /, '') });
+      return t('activity.detached', { actor: actor, name: data.filename || '' });
     }
-    if (kind === 'commented') return t('activity.commented', { body: summary });
-    if (kind === 'moved') {
-      var before = changes[0] && changes[0].before;
-      var after = changes[0] && changes[0].after;
-      if (!before || !after) {
-        var moved = /from ([a-z_]+) to ([a-z_]+)$/.exec(summary);
-        if (moved) {
-          before = before || moved[1];
-          after = after || moved[2];
-        }
-      }
-      return t('activity.moved', {
-        from: before ? t('status.' + before) : '',
-        to: after ? t('status.' + after) : ''
-      });
-    }
-    if (kind === 'archived') return t('activity.archived');
-    if (kind === 'restored') return t('activity.restored');
-    if (kind === 'question') return t('activity.question', { prompt: summary.replace(/^asked: /, '') });
-    if (kind === 'reordered') return t('activity.reordered');
+    if (kind === 'reordered') return t('activity.reordered', { actor: actor, id: id });
+    if (kind === 'archived') return t('activity.archived', { actor: actor, id: id });
+    if (kind === 'restored') return t('activity.restored', { actor: actor, id: id });
     if (kind === 'updated') {
-      var fields = [];
-      for (var i = 0; i < changes.length; i += 1) {
-        var field = changes[i] && changes[i].field;
-        if (field) fields.push(activityFieldLabel(field));
-      }
-      if (!fields.length) fields.push(summary.replace(/^updated /, ''));
+      var fields = Array.isArray(data.fields) ? data.fields : [];
       return t('activity.updated', {
-        fields: fields.join(state.lang === 'zh' ? '、' : ', ')
+        actor: actor,
+        fields: fields.map(activityFieldLabel).join(state.lang === 'zh' ? '、' : ', ')
       });
     }
-    return summary || kind;
+    return entry.summary || kind;
   }
 
   function dayKey(iso) {
@@ -3298,7 +3656,7 @@ export function renderLiveHtml({ project = {} } = {}) {
   function dayLabel(iso) {
     var date = new Date(iso);
     if (isNaN(date.getTime())) return '';
-    var now = new Date();
+    var now = new Date(nowMs());
     var today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
     var yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1).getTime();
     var day = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
@@ -3333,9 +3691,13 @@ export function renderLiveHtml({ project = {} } = {}) {
       var item = el('li', 'feed-item');
       item.appendChild(el('span', 'feed-summary', activityText(entry, task)));
       var meta = el('span', 'hint');
-      var actor = actorName(entry.actor);
       var when = agoText(entry.at);
-      meta.textContent = (actor ? actor + ' · ' : '') + when;
+      var metaText = when;
+      if (!entry.data) {
+        var legacyActor = actorName(entry.actor);
+        if (legacyActor) metaText = legacyActor + (when ? ' · ' + when : '');
+      }
+      meta.textContent = metaText;
       item.appendChild(meta);
       activityList.appendChild(item);
     }
@@ -3731,38 +4093,59 @@ export function renderLiveHtml({ project = {} } = {}) {
     });
   }
 
-  function decide(kind) {
+  function decide() {
     var task = currentTask();
     if (!task || !isWritable(task)) return;
-    var note = window.prompt(
-      t('drawer.decisionNotePrompt', { id: task.identifier }),
-      (task.pendingQuestion && task.pendingQuestion.answerNote) || ''
-    );
-    if (note === null) return;
-    var confirmKey = kind === 'approve' ? 'drawer.approveConfirm' : 'drawer.rejectConfirm';
-    if (!window.confirm(t(confirmKey, { id: task.identifier }))) return;
+    decisionTarget.textContent = t('decision.target', {
+      id: task.identifier,
+      title: task.title
+    });
+    decisionNote.value = (task.pendingQuestion && task.pendingQuestion.answerNote) || '';
+    if (!decisionDialog.open) decisionDialog.showModal();
+    decisionNote.focus();
+  }
+
+  function submitDecision(kind) {
+    var task = currentTask();
+    if (!task || !isWritable(task)) return;
     var action = kind === 'approve' ? 'task.approve' : 'task.reject';
     var doneKey = kind === 'approve' ? 'drawer.approved' : 'drawer.rejected';
-    act(action, { id: task.id, version: task.version, note: note }).then(function (body) {
-      if (body) notify(t(doneKey));
+    act(action, {
+      id: task.id,
+      version: task.version,
+      note: decisionNote.value
+    }).then(function (body) {
+      if (!body) return;
+      decisionDialog.close();
+      notify(t(doneKey));
     });
   }
 
   function blockTask() {
     var task = currentTask();
     if (!task || !isWritable(task)) return;
-    var reason = window.prompt(
-      t('drawer.blockPrompt', { id: task.identifier }),
-      task.blockedReason || ''
-    );
-    if (reason === null) return;
-    reason = reason.trim();
+    blockReasonInput.value = task.blockedReason || '';
+    blockError.hidden = true;
+    blockError.textContent = '';
+    if (!blockDialog.open) blockDialog.showModal();
+    blockReasonInput.focus();
+  }
+
+  function submitBlock() {
+    var task = currentTask();
+    if (!task || !isWritable(task)) return;
+    var reason = blockReasonInput.value.trim();
     if (!reason) {
-      notify(t('drawer.blockReasonRequired'), true);
+      blockError.textContent = t('drawer.blockReasonRequired');
+      blockError.hidden = false;
+      blockReasonInput.focus();
       return;
     }
+    blockError.hidden = true;
     act('task.block', { id: task.id, version: task.version, reason: reason }).then(function (body) {
-      if (body) notify(t('drawer.blocked'));
+      if (!body) return;
+      blockDialog.close();
+      notify(t('drawer.blocked'));
     });
   }
 
@@ -3774,35 +4157,114 @@ export function renderLiveHtml({ project = {} } = {}) {
     });
   }
 
+  function askOptionRows() {
+    return Array.prototype.slice.call(askOptionsList.querySelectorAll('[data-ask-option]'));
+  }
+
+  function refreshAskControls() {
+    var rows = askOptionRows();
+    for (var i = 0; i < rows.length; i += 1) {
+      var remove = rows[i].querySelector('.ask-option-remove');
+      if (remove) {
+        remove.disabled = rows.length <= MIN_ASK_OPTIONS;
+        remove.setAttribute('aria-label', t('ask.removeOption', { n: i + 1 }));
+      }
+      var label = rows[i].querySelector('.ask-option-label');
+      if (label) label.setAttribute('aria-label', t('ask.optionLabel', { n: i + 1 }));
+    }
+    askAddOption.disabled = rows.length >= MAX_ASK_OPTIONS;
+  }
+
+  function appendAskOption(option, focus) {
+    if (askOptionRows().length >= MAX_ASK_OPTIONS) return;
+    var row = el('div', 'ask-option-row');
+    row.setAttribute('data-ask-option', 'true');
+    var label = document.createElement('input');
+    label.type = 'text';
+    label.className = 'ask-option-label';
+    label.maxLength = 200;
+    label.value = option && option.label ? option.label : '';
+    label.setAttribute('placeholder', t('ask.optionLabelPlaceholder'));
+    var detail = document.createElement('input');
+    detail.type = 'text';
+    detail.className = 'ask-option-detail';
+    detail.maxLength = 1000;
+    detail.value = option && option.detail ? option.detail : '';
+    detail.setAttribute('placeholder', t('ask.optionDetailPlaceholder'));
+    var remove = button('×', 'ask-option-remove', function () {
+      if (askOptionRows().length <= MIN_ASK_OPTIONS) return;
+      if (row.parentNode) row.parentNode.removeChild(row);
+      refreshAskControls();
+    });
+    remove.type = 'button';
+    row.appendChild(label);
+    row.appendChild(detail);
+    row.appendChild(remove);
+    askOptionsList.appendChild(row);
+    refreshAskControls();
+    if (focus) label.focus();
+  }
+
+  function renderAskOptions(options) {
+    askOptionsList.textContent = '';
+    var list = Array.isArray(options) && options.length ? options : [{}, {}];
+    for (var i = 0; i < list.length && i < MAX_ASK_OPTIONS; i += 1) {
+      appendAskOption(list[i], false);
+    }
+    while (askOptionRows().length < MIN_ASK_OPTIONS) appendAskOption({}, false);
+    refreshAskControls();
+  }
+
   function askQuestion() {
     var task = currentTask();
     if (!task || !isWritable(task)) return;
-    var promptText = window.prompt(t('drawer.askPrompt'), '');
-    if (promptText === null) return;
-    promptText = promptText.trim();
-    if (!promptText) return;
-    var raw = window.prompt(t('drawer.askOptionsPrompt'), '');
-    if (raw === null) return;
-    var lines = raw.split(String.fromCharCode(10));
-    var options = [];
-    for (var i = 0; i < lines.length; i += 1) {
-      var line = lines[i].trim();
-      if (!line) continue;
-      var pipe = line.indexOf('|');
-      if (pipe === -1) options.push({ label: line });
-      else options.push({ label: line.slice(0, pipe).trim(), detail: line.slice(pipe + 1).trim() });
-    }
-    if (options.length < 2) {
-      notify(t('drawer.askOptionsRequired'), true);
+    askPromptInput.value = '';
+    askError.hidden = true;
+    askError.textContent = '';
+    renderAskOptions([{}, {}]);
+    if (!askDialog.open) askDialog.showModal();
+    askPromptInput.focus();
+  }
+
+  function submitAsk() {
+    var task = currentTask();
+    if (!task || !isWritable(task)) return;
+    var prompt = askPromptInput.value.trim();
+    if (!prompt) {
+      askError.textContent = t('ask.promptRequired');
+      askError.hidden = false;
+      askPromptInput.focus();
       return;
     }
+    var rows = askOptionRows();
+    var options = [];
+    for (var i = 0; i < rows.length; i += 1) {
+      var label = rows[i].querySelector('.ask-option-label').value.trim();
+      var detail = rows[i].querySelector('.ask-option-detail').value.trim();
+      if (!label && !detail) continue;
+      if (!label) {
+        askError.textContent = t('ask.optionsRange');
+        askError.hidden = false;
+        rows[i].querySelector('.ask-option-label').focus();
+        return;
+      }
+      options.push(detail ? { label: label, detail: detail } : { label: label });
+    }
+    if (options.length < MIN_ASK_OPTIONS || options.length > MAX_ASK_OPTIONS) {
+      askError.textContent = t('ask.optionsRange');
+      askError.hidden = false;
+      return;
+    }
+    askError.hidden = true;
     act('task.ask', {
       id: task.id,
       version: task.version,
-      prompt: promptText,
+      prompt: prompt,
       options: options
     }).then(function (body) {
-      if (body) notify(t('drawer.asked'));
+      if (!body) return;
+      askDialog.close();
+      notify(t('drawer.asked'));
     });
   }
 
@@ -3876,12 +4338,40 @@ export function renderLiveHtml({ project = {} } = {}) {
   }
 
   function renameProject(project) {
-    var name = window.prompt(t('project.renamePrompt', { name: project.name }), project.name);
-    if (name === null) return;
-    name = name.trim();
-    if (!name || name === project.name) return;
-    act('project.update', { id: project.id, name: name }).then(function (body) {
-      if (body) notify(t('toast.projectRenamed'));
+    if (!project) return;
+    renameTarget = project;
+    renameNameInput.value = project.name || '';
+    renamePrefixInput.value = project.prefix || '';
+    renameError.hidden = true;
+    renameError.textContent = '';
+    if (!renameDialog.open) renameDialog.showModal();
+    renameNameInput.focus();
+  }
+
+  function submitRename() {
+    var project = renameTarget;
+    if (!project) return;
+    var name = renameNameInput.value.trim();
+    if (!name) {
+      renameError.textContent = t('rename.nameRequired');
+      renameError.hidden = false;
+      renameNameInput.focus();
+      return;
+    }
+    var prefix = renamePrefixInput.value.trim();
+    if (prefix && !/^[A-Z0-9]{2,6}$/.test(prefix)) {
+      renameError.textContent = t('rename.prefixInvalid');
+      renameError.hidden = false;
+      renamePrefixInput.focus();
+      return;
+    }
+    var payload = { id: project.id, name: name };
+    if (prefix && prefix !== project.prefix) payload.prefix = prefix;
+    renameError.hidden = true;
+    act('project.update', payload).then(function (body) {
+      if (!body) return;
+      renameDialog.close();
+      notify(t('toast.projectRenamed'));
     });
   }
 
@@ -4087,6 +4577,37 @@ export function renderLiveHtml({ project = {} } = {}) {
     confirmCancel.addEventListener('click', closeConfirm);
     confirmOk.addEventListener('click', confirmAccept);
     confirmBackdrop.addEventListener('click', closeConfirm);
+    for (var tabIndex = 0; tabIndex < drawerTabs.length; tabIndex += 1) {
+      (function (tab) {
+        tab.addEventListener('click', function () {
+          setDrawerTab(tab.getAttribute('data-drawer-tab'), false);
+        });
+      })(drawerTabs[tabIndex]);
+    }
+    drawer.querySelector('.drawer-tabs').addEventListener('keydown', handleDrawerTabKey);
+    document.getElementById('decision-close').addEventListener('click', function () { decisionDialog.close(); });
+    document.getElementById('decision-cancel').addEventListener('click', function () { decisionDialog.close(); });
+    decisionApprove.addEventListener('click', function () { submitDecision('approve'); });
+    decisionReject.addEventListener('click', function () { submitDecision('reject'); });
+    document.getElementById('ask-close').addEventListener('click', function () { askDialog.close(); });
+    document.getElementById('ask-cancel').addEventListener('click', function () { askDialog.close(); });
+    askAddOption.addEventListener('click', function () { appendAskOption({}, true); });
+    askForm.addEventListener('submit', function (event) {
+      event.preventDefault();
+      submitAsk();
+    });
+    document.getElementById('block-close').addEventListener('click', function () { blockDialog.close(); });
+    document.getElementById('block-cancel').addEventListener('click', function () { blockDialog.close(); });
+    blockForm.addEventListener('submit', function (event) {
+      event.preventDefault();
+      submitBlock();
+    });
+    document.getElementById('rename-close').addEventListener('click', function () { renameDialog.close(); });
+    document.getElementById('rename-cancel').addEventListener('click', function () { renameDialog.close(); });
+    renameForm.addEventListener('submit', function (event) {
+      event.preventDefault();
+      submitRename();
+    });
     confirmSheet.addEventListener('keydown', function (event) {
       if (event.key === 'Escape') {
         event.preventDefault();
@@ -4116,6 +4637,26 @@ export function renderLiveHtml({ project = {} } = {}) {
     document.addEventListener('keydown', function (event) {
       if (event.defaultPrevented) return;
       if (event.key === 'Escape') {
+        if (decisionDialog.open) {
+          decisionDialog.close();
+          event.preventDefault();
+          return;
+        }
+        if (askDialog.open) {
+          askDialog.close();
+          event.preventDefault();
+          return;
+        }
+        if (blockDialog.open) {
+          blockDialog.close();
+          event.preventDefault();
+          return;
+        }
+        if (renameDialog.open) {
+          renameDialog.close();
+          event.preventDefault();
+          return;
+        }
         if (!confirmSheet.hidden) {
           closeConfirm();
           event.preventDefault();
@@ -4164,6 +4705,7 @@ export function renderLiveHtml({ project = {} } = {}) {
       }
       if (event.ctrlKey || event.metaKey || event.altKey) return;
       if (!confirmSheet.hidden || activeSelectField()) return;
+      if (decisionDialog.open || askDialog.open || blockDialog.open || renameDialog.open) return;
       var target = event.target;
       var tag = target && target.tagName ? target.tagName : '';
       var typing = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (target && target.isContentEditable);

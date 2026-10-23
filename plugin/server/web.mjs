@@ -34,7 +34,9 @@ const ATTACHMENT_PREFIX = '/api/attachments/'
 const HUMAN = { as: 'user', actor: 'you' }
 
 function sendJson(res, status, payload) {
-  const body = JSON.stringify(payload)
+  // Every JSON response carries the server clock so the UI can correct skew.
+  const stamped = { ...payload, serverNow: payload.serverNow || new Date().toISOString() }
+  const body = JSON.stringify(stamped)
   res.writeHead(status, {
     'content-type': 'application/json; charset=utf-8',
     'cache-control': 'no-store',
@@ -150,6 +152,7 @@ function boardPayload(store, projectId, withArchived = false) {
   const view = boardView(board, { projectId, includeArchived: withArchived })
   return {
     ok: true,
+    serverNow: new Date().toISOString(),
     projects: projectSummaries(board),
     board: { project: view.project, columns: view.columns, tasks: view.tasks },
     summary: summarizeBoard(board, { projectId, includeArchived: withArchived }),

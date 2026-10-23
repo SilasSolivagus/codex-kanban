@@ -254,7 +254,7 @@ test('drawer contains editable details, links, activity, comments and attachment
   assert.match(script, /t\('drawer\.version', \{ n: task\.version \}\)/)
 })
 
-test('activity groups the latest twelve events by day with localised sentences', () => {
+test('activity renders kind plus structured data and never parses English summaries', () => {
   assert.match(script, /var latest = activity\.slice\(-12\)/)
   assert.match(script, /function activityText\(entry, task\)/)
   assert.match(script, /function actorName\(actor\)/)
@@ -265,23 +265,49 @@ test('activity groups the latest twelve events by day with localised sentences',
   assert.match(script, /t\('activity\.yesterday'\)/)
   assert.match(script, /t\('actor\.you'\)/)
   assert.match(script, /t\('actor\.codex'\)/)
-  assert.match(script, /status: t\('status\.' \+ createdStatus\)/)
+  assert.match(script, /var data = entry\.data/)
+  assert.match(script, /t\('activity\.created', \{ actor: actor, id: id, status: statusName\(data\.status\) \}\)/)
   assert.match(script, /t\('activity\.moved', \{/)
-  assert.match(script, /kind === 'approved'/)
-  assert.equal(STRINGS.zh['activity.created'], '创建了 {id}（{status}）')
-  assert.equal(STRINGS.zh['activity.answered'], '回答了「{option}」')
-  assert.equal(STRINGS.zh['activity.approved'], '批准了 {id}')
-  assert.equal(STRINGS.zh['activity.rejected'], '驳回了 {id}')
-  assert.equal(STRINGS.zh['activity.blocked'], '阻塞：{reason}')
-  assert.equal(STRINGS.zh['activity.unblocked'], '解除阻塞')
-  assert.equal(STRINGS.zh['activity.attached'], '添加了附件 {name}')
-  assert.equal(STRINGS.zh['activity.commented'], '评论：{body}')
-  assert.equal(STRINGS.zh['activity.moved'], '移动：{from} → {to}')
-  assert.equal(STRINGS.zh['activity.archived'], '归档')
-  assert.equal(STRINGS.zh['activity.restored'], '恢复')
-  for (const key of ['activity.today', 'activity.yesterday', 'actor.you', 'actor.codex']) {
+  assert.match(script, /statusName\(data\.from\)/)
+  assert.match(script, /data\.reason/)
+  assert.match(script, /data\.optionLabel/)
+  assert.match(script, /data\.prompt/)
+  assert.match(script, /data\.preview/)
+  assert.match(script, /data\.filename/)
+  for (const kind of [
+    'created', 'moved', 'blocked', 'unblocked', 'question', 'answered', 'approved',
+    'rejected', 'commented', 'attached', 'detached', 'reordered', 'archived', 'restored',
+  ]) {
+    assert.match(script, new RegExp(`kind === '${kind}'`), `${kind} is rendered from its kind`)
+  }
+  // Legacy entries fall back to the stored summary instead of being parsed.
+  assert.match(script, /if \(!data\) return entry\.summary \|\| kind/)
+  assert.doesNotMatch(script, /summary\.replace/)
+  assert.doesNotMatch(script, /indexOf\('answered: '\)/)
+  assert.doesNotMatch(script, /\.exec\(summary\)/)
+  // Every template is localised and carries the actor label.
+  for (const key of [
+    'activity.created', 'activity.moved', 'activity.blocked', 'activity.unblocked',
+    'activity.question', 'activity.answered', 'activity.approved', 'activity.rejected',
+    'activity.commented', 'activity.attached', 'activity.detached', 'activity.reordered',
+    'activity.archived', 'activity.restored',
+  ]) {
+    assert.match(STRINGS.en[key], /\{actor\}/, `en ${key} names the actor`)
     assert.ok(I18N_KEYS.includes(key), `${key} is in both dictionaries`)
   }
+  assert.equal(STRINGS.zh['actor.you'], '你')
+  assert.equal(STRINGS.zh['actor.codex'], 'Codex')
+  assert.equal(STRINGS.zh['activity.created'], '{actor}创建了 {id}（{status}）')
+  assert.equal(STRINGS.zh['activity.answered'], '{actor}回答了「{option}」')
+  assert.equal(STRINGS.zh['activity.approved'], '{actor}批准了 {id}')
+  assert.equal(STRINGS.zh['activity.rejected'], '{actor}驳回了 {id}')
+  assert.equal(STRINGS.zh['activity.blocked'], '{actor}将 {id} 标记为阻塞：{reason}')
+  assert.equal(STRINGS.zh['activity.unblocked'], '{actor}解除了 {id} 的阻塞')
+  assert.equal(STRINGS.zh['activity.attached'], '{actor}添加了附件 {name}')
+  assert.equal(STRINGS.zh['activity.commented'], '{actor}评论：{body}')
+  assert.equal(STRINGS.zh['activity.moved'], '{actor}移动了 {id}：{from} → {to}')
+  assert.equal(STRINGS.zh['activity.archived'], '{actor}归档了 {id}')
+  assert.equal(STRINGS.zh['activity.restored'], '{actor}恢复了 {id}')
 })
 
 test('comments and attachments use the v2 api and show sizes', () => {
@@ -302,15 +328,20 @@ test('attachment uploads read base64 with FileReader and stop above 10 MB', () =
   assert.match(script, /contentType: file\.type \|\| 'application\/octet-stream'/)
 })
 
-test('question options show label and detail, then answer, approve or reject with a note', () => {
+test('question options show label and detail, then a decision dialog approves or rejects with a note', () => {
   assert.match(script, /el\('span', 'option-label', option\.label\)/)
   assert.match(script, /option\.detail/)
   assert.match(script, /act\('task\.answer'/)
-  assert.match(script, /var note = window\.prompt\(/)
-  assert.match(script, /window\.confirm\(t\(confirmKey/)
+  assert.match(markup, /<dialog id="decision-dialog"/)
+  assert.match(markup, /<textarea id="decision-note"/)
+  assert.match(script, /function submitDecision\(kind\)/)
   assert.match(script, /var action = kind === 'approve' \? 'task\.approve' : 'task\.reject'/)
+  assert.match(script, /note: decisionNote\.value/)
   assert.match(script, /act\('task\.ask'/)
   assert.match(script, /options: options/)
+  assert.equal(STRINGS.zh['decision.approve'], '确认批准')
+  assert.equal(STRINGS.zh['decision.reject'], '确认驳回')
+  assert.equal(STRINGS.zh['decision.cancel'], '取消')
 })
 
 // --- projects -------------------------------------------------------------
@@ -536,17 +567,27 @@ test('the drawer uses the two-column attribute grid with full-width sections', (
   for (const id of ['attr-status', 'attr-assignee', 'attr-updated', 'attr-created', 'attr-version']) {
     assert.match(markup, new RegExp(`id="${id}"`), `${id} is an attribute cell`)
   }
-  const order = [...markup.matchAll(/data-i18n="(drawer\.(?:description|labels|links|blocker|question|attachments|comments|activity))"/g)]
+  const details = markup.slice(
+    markup.indexOf('id="drawer-panel-details"'),
+    markup.indexOf('id="drawer-panel-collaboration"'),
+  )
+  const detailsOrder = [...details.matchAll(/data-i18n="(drawer\.(?:description|labels))"/g)]
     .map((match) => match[1])
-  assert.deepEqual(order, [
-    'drawer.description',
-    'drawer.labels',
+  assert.deepEqual(detailsOrder, ['drawer.description', 'drawer.labels'])
+  const collaboration = markup.slice(
+    markup.indexOf('id="drawer-panel-collaboration"'),
+    markup.indexOf('id="drawer-panel-activity"'),
+  )
+  const collaborationOrder = [...collaboration.matchAll(
+    /data-i18n="(drawer\.(?:links|blocker|question|attachments|comments|actions))"/g,
+  )].map((match) => match[1])
+  assert.deepEqual(collaborationOrder, [
     'drawer.links',
     'drawer.blocker',
     'drawer.question',
     'drawer.attachments',
     'drawer.comments',
-    'drawer.activity',
+    'drawer.actions',
   ])
   assert.match(script, /attrStatus\.value = task\.status \|\| 'backlog'/)
   assert.match(script, /attrUpdated\.textContent = formatTime\(task\.updatedAt\)/)
@@ -580,36 +621,55 @@ test('the drawer takes focus, restores it and supports the ?task= deep link', ()
   assert.match(script, /event\.key === 'Escape'/)
 })
 
-test('the drawer is split into details, collaboration and activity bands in order', () => {
-  const bands = [...markup.matchAll(/data-band="([^"]+)"/g)].map((match) => match[1])
-  assert.deepEqual(bands, ['details', 'collaboration', 'activity', 'actions'])
-  const headings = [...markup.matchAll(/<h3 data-i18n="(drawer\.(?:details|collaboration|activity|actions))"/g)]
-    .map((match) => match[1])
-  assert.deepEqual(headings, [
-    'drawer.details',
-    'drawer.collaboration',
-    'drawer.activity',
-    'drawer.actions',
-  ])
-  // The details band owns the metadata and editable fields.
-  const details = markup.slice(markup.indexOf('data-band="details"'), markup.indexOf('data-band="collaboration"'))
+test('the drawer is split into three tabs with keyboard navigation and a footer shared by every tab', () => {
+  const tabs = [...markup.matchAll(/data-drawer-tab="([^"]+)"/g)].map((match) => match[1])
+  assert.deepEqual(tabs, ['details', 'collaboration', 'activity'])
+  assert.match(markup, /role="tablist"/)
+  assert.match(markup, /id="drawer-tab-details"[^>]*role="tab"[^>]*aria-selected="true"/)
+  for (const id of ['details', 'collaboration', 'activity']) {
+    assert.match(markup, new RegExp(`id="drawer-tab-${id}"`))
+    assert.match(markup, new RegExp(`aria-controls="drawer-panel-${id}"`))
+  }
+  const panels = [...markup.matchAll(/data-tab-panel="([^"]+)"/g)].map((match) => match[1])
+  assert.deepEqual(panels, ['details', 'collaboration', 'activity'])
+  assert.match(markup, /id="drawer-panel-collaboration"[^>]*hidden/)
+  assert.match(markup, /id="drawer-panel-activity"[^>]*hidden/)
+  // The details panel owns the editable metadata.
+  const details = markup.slice(
+    markup.indexOf('id="drawer-panel-details"'),
+    markup.indexOf('id="drawer-panel-collaboration"'),
+  )
   for (const id of ['edit-title', 'attr-status', 'edit-priority', 'attr-assignee', 'attr-updated', 'attr-created', 'attr-version', 'edit-description', 'edit-labels']) {
-    assert.ok(details.includes(`id="${id}"`), `${id} lives in the details band`)
+    assert.ok(details.includes(`id="${id}"`), `${id} lives in the details tab`)
   }
-  // Collaboration owns links, blocker, question, attachments and comments.
-  const collaboration = markup.slice(markup.indexOf('data-band="collaboration"'), markup.indexOf('data-band="activity"'))
-  for (const id of ['edit-links', 'blocker-section', 'question-section', 'attachment-list', 'comment-list']) {
-    assert.ok(collaboration.includes(`id="${id}"`), `${id} lives in the collaboration band`)
+  // Collaboration owns links, blocker, question, attachments, comments and secondary actions.
+  const collaboration = markup.slice(
+    markup.indexOf('id="drawer-panel-collaboration"'),
+    markup.indexOf('id="drawer-panel-activity"'),
+  )
+  for (const id of ['edit-links', 'blocker-section', 'question-section', 'attachment-list', 'comment-list', 'move-actions', 'ask-task']) {
+    assert.ok(collaboration.includes(`id="${id}"`), `${id} lives in the collaboration tab`)
   }
-  // Activity keeps its latest-twelve feed, and move/block/archive sit after collaboration.
-  const activity = markup.slice(markup.indexOf('data-band="activity"'), markup.indexOf('data-band="actions"'))
+  const activity = markup.slice(
+    markup.indexOf('id="drawer-panel-activity"'),
+    markup.indexOf('id="drawer-footer"'),
+  )
   assert.ok(activity.includes('id="activity-list"'))
-  assert.ok(markup.indexOf('id="move-actions"') > markup.indexOf('data-band="activity"'))
-  for (const id of ['ask-task', 'block-task', 'unblock-task']) {
-    assert.ok(markup.indexOf(`id="${id}"`) > markup.indexOf('data-band="activity"'), `${id} is a secondary action`)
-  }
-  assert.ok(markup.indexOf('id="archive-task"') > markup.indexOf('data-band="activity"'))
-  assert.ok(markup.indexOf('id="archive-task"') > markup.indexOf('data-band="collaboration"'))
+  // The footer sits outside the tab panels, so save/archive/restore never hide with a tab.
+  assert.ok(markup.indexOf('id="drawer-footer"') > markup.indexOf('id="drawer-panel-activity"'))
+  assert.match(markup, /\.drawer-body \{[^}]*flex: 1 1 auto;[^}]*min-height: 0;/)
+  const footer = markup.slice(markup.indexOf('id="drawer-footer"'))
+  assert.match(footer, /id="save-task"/)
+  assert.match(footer, /id="archive-task"/)
+  assert.match(footer, /id="restore-task"/)
+  assert.match(script, /function setDrawerTab\(name, focusTab\)/)
+  assert.match(script, /state\.drawerTab = 'details'/)
+  assert.match(script, /drawerPanels\[j\]\.hidden = /)
+  assert.match(script, /tab\.setAttribute\('aria-selected'/)
+  assert.match(script, /event\.key === 'ArrowLeft'/)
+  assert.match(script, /event\.key === 'ArrowRight'/)
+  assert.match(script, /setDrawerTab\(order\[next\], true\)/)
+  assert.equal(STRINGS.zh['drawer.details'], '详情')
   assert.equal(STRINGS.zh['drawer.collaboration'], '协作')
   assert.equal(STRINGS.zh['drawer.activity'], '动态')
 })
@@ -633,12 +693,13 @@ test('the drawer has a sticky footer whose save button waits for unsaved changes
   assert.doesNotMatch(markup, /<div class="actions">\s*<button id="save-task"/)
 })
 
-test('below 600px the drawer is full width and the bands still stack in order', () => {
+test('below 600px the drawer is full width and the three tabs stay reachable', () => {
   const compact = markup.split('@media (max-width: 600px)')[1].split('@media (prefers-reduced-motion')[0]
   assert.match(compact, /aside\.drawer \{ width: 100%; border-left: 0; \}/)
   assert.match(compact, /\.attr-grid \{ grid-template-columns: minmax\(0, 1fr\); \}/)
-  const bands = [...markup.matchAll(/data-band="([^"]+)"/g)].map((match) => match[1])
-  assert.deepEqual(bands, ['details', 'collaboration', 'activity', 'actions'])
+  assert.match(compact, /\.drawer-tabs \{ padding: 0 16px; \}/)
+  const tabs = [...markup.matchAll(/data-drawer-tab="([^"]+)"/g)].map((match) => match[1])
+  assert.deepEqual(tabs, ['details', 'collaboration', 'activity'])
 })
 
 test('the density scale gives cards room while keeping the fold', () => {
@@ -751,9 +812,12 @@ test('native browser chrome is replaced with styled selects, a dropzone and a co
   assert.equal((markup.match(/role="combobox"/g) || []).length, 5)
   assert.equal((markup.match(/role="listbox"/g) || []).length, 5)
   assert.match(script, /function setupSelectFields\(\)/)
-  assert.match(script, /function handleSelectNav\(event, field\)/)
+  assert.match(script, /function handleSelectKeydown\(event, field\)/)
+  assert.match(script, /function typeAheadSelect\(field, char\)/)
+  assert.match(script, /trigger\.setAttribute\('aria-activedescendant'/)
+  assert.match(script, /trigger\.removeAttribute\('aria-activedescendant'\)/)
   assert.match(script, /event\.key === 'ArrowDown' \|\| event\.key === 'ArrowUp'/)
-  assert.match(script, /event\.key === 'Enter' \|\| event\.key === ' '/)
+  assert.match(script, /event\.key === 'Enter'/)
   assert.match(script, /event\.key === 'Escape'/)
   for (const id of ['filter-priority', 'filter-label', 'filter-assignee', 'edit-priority']) {
     assert.match(markup, new RegExp(`data-select-field>\\s*<select id="${id}"`), `${id} sits in a styled field`)
@@ -768,7 +832,7 @@ test('native browser chrome is replaced with styled selects, a dropzone and a co
   assert.match(script, /setAttachmentFilename\(file\.name\)/)
   assert.match(script, /file\.size > MAX_ATTACHMENT_BYTES/)
   assert.match(script, /attachmentError\.textContent = t\('drawer\.attachmentTooLarge'\)/)
-  // The confirm sheet replaces window.confirm for archive and restore.
+  // The confirm sheet replaces native confirmation for archive and restore.
   assert.match(markup, /<div class="confirm-sheet" id="confirm-sheet" role="alertdialog" aria-modal="true"/)
   assert.match(markup, /<h2 id="confirm-title"><\/h2>/)
   assert.match(markup, /<p class="confirm-target" id="confirm-target"><\/p>/)
@@ -835,4 +899,81 @@ test('Escape clears or blurs the search before closing the topmost layer', () =>
   assert.match(keydown, /openNewTask\(\)/)
   assert.match(STRINGS.zh['shortcuts.hint'], /Esc.*n 新建任务/)
   assert.match(STRINGS.en['shortcuts.hint'], /Esc.*n for a new task/)
+})
+
+// --- UX batch D -----------------------------------------------------------
+
+test('no native prompt or confirm survives; decisions, questions, blockers and renames use dialogs', () => {
+  assert.doesNotMatch(script, /window\.prompt\(/)
+  assert.doesNotMatch(script, /window\.confirm\(/)
+  for (const id of ['decision-dialog', 'ask-dialog', 'block-dialog', 'rename-project-dialog']) {
+    assert.match(markup, new RegExp(`<dialog id="${id}"`), `${id} is an in-product modal`)
+  }
+  // Approve / reject: one note textarea with cancel, confirm approve and destructive confirm reject.
+  assert.match(markup, /<textarea id="decision-note"/)
+  assert.match(markup, /id="decision-cancel"[^>]*data-i18n="decision\.cancel"/)
+  assert.match(markup, /id="decision-approve"[^>]*data-i18n="decision\.approve"/)
+  assert.match(markup, /id="decision-reject" class="danger-solid"[^>]*data-i18n="decision\.reject"/)
+  assert.equal(STRINGS.zh['decision.cancel'], '取消')
+  assert.equal(STRINGS.zh['decision.approve'], '确认批准')
+  assert.equal(STRINGS.zh['decision.reject'], '确认驳回')
+  assert.match(script, /note: decisionNote\.value/)
+  // Ask: a question textarea plus 2–5 label/detail option rows with add, remove and validation.
+  assert.match(markup, /<textarea id="ask-prompt"/)
+  assert.match(markup, /<div class="ask-options" id="ask-options">/)
+  assert.match(markup, /id="ask-add-option"[^>]*data-i18n="ask\.addOption"/)
+  assert.match(markup, /id="ask-error"[^>]*role="alert"/)
+  assert.match(script, /var MIN_ASK_OPTIONS = 2/)
+  assert.match(script, /var MAX_ASK_OPTIONS = 5/)
+  assert.match(script, /function appendAskOption\(option, focus\)/)
+  assert.match(script, /function refreshAskControls\(\)/)
+  assert.match(script, /function submitAsk\(\)/)
+  assert.match(script, /label\.className = 'ask-option-label'/)
+  assert.match(script, /detail\.className = 'ask-option-detail'/)
+  assert.match(script, /options\.length < MIN_ASK_OPTIONS \|\| options\.length > MAX_ASK_OPTIONS/)
+  assert.match(script, /askError\.textContent = t\('ask\.optionsRange'\)/)
+  // Block: a required reason textarea.
+  assert.match(markup, /<textarea id="block-reason"/)
+  assert.match(script, /function submitBlock\(\)/)
+  assert.match(script, /blockReasonInput\.value\.trim\(\)/)
+  assert.match(script, /blockError\.textContent = t\('drawer\.blockReasonRequired'\)/)
+  // Rename: name and prefix fields wired to project.update.
+  assert.match(markup, /<input id="rename-name"/)
+  assert.match(markup, /<input id="rename-prefix"/)
+  assert.match(script, /function submitRename\(\)/)
+  assert.match(script, /act\('project\.update', payload\)/)
+  assert.match(script, /renameError\.textContent = t\('rename\.prefixInvalid'\)/)
+  // Every new dialog closes on Escape before the drawer.
+  for (const name of ['decisionDialog', 'askDialog', 'blockDialog', 'renameDialog']) {
+    assert.match(script, new RegExp(`if \\(${name}\\.open\\) \\{\\s*${name}\\.close\\(\\);`))
+  }
+})
+
+test('styled selects type ahead, track the active option and truncate only in the trigger', () => {
+  assert.match(script, /field\._typeBuffer/)
+  assert.match(script, /field\._typeTimer/)
+  assert.match(script, /function typeAheadSelect\(field, char\)/)
+  assert.match(script, /label\.indexOf\(buffer\) === 0/)
+  assert.match(script, /setActiveSelectOption\(field, match, true\)/)
+  assert.match(script, /aria-autocomplete', 'list'/)
+  assert.match(script, /item\.id = \(select\.id \|\| 'select'\) \+ '-option-' \+ i/)
+  assert.match(script, /trigger\.setAttribute\('aria-activedescendant'/)
+  assert.match(script, /trigger\.title = selected \? selected\.textContent : ''/)
+  assert.match(markup, /\.select-value \{[^}]*text-overflow: ellipsis;[^}]*white-space: nowrap;/)
+  assert.match(markup, /\.select-option \{[^}]*overflow-wrap: anywhere;/)
+  assert.match(markup, /\.select-option\.active \{/)
+})
+
+test('relative times follow the server clock and future timestamps clamp to just now', () => {
+  assert.match(script, /skew: 0/)
+  assert.match(script, /function nowMs\(\)/)
+  assert.match(script, /return Date\.now\(\) - \(state\.skew \|\| 0\)/)
+  assert.match(script, /function applyServerTime\(payload\)/)
+  assert.match(script, /if \(!payload \|\| typeof payload\.serverNow !== 'string'\) return/)
+  assert.match(script, /state\.skew = Date\.now\(\) - parsed/)
+  assert.match(script, /applyServerTime\(payload\)/)
+  assert.match(script, /Math\.max\(0, Math\.round\(\(nowMs\(\) - then\) \/ 1000\)\)/)
+  assert.match(script, /var now = new Date\(nowMs\(\)\)/)
+  assert.equal(STRINGS.zh['age.justNow'], '刚刚')
+  assert.equal(STRINGS.en['age.justNow'], 'just now')
 })

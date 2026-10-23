@@ -56,6 +56,8 @@ test('serves the live board page and the v2 board payload', async (t) => {
 
   const json = await board(url)
   assert.equal(json.ok, true)
+  assert.equal(typeof json.serverNow, 'string')
+  assert.ok(Number.isFinite(Date.parse(json.serverNow)), 'serverNow is an ISO timestamp')
   assert.equal(json.projects.length, 1)
   assert.deepEqual(
     Object.keys(json.projects[0]).sort(),
@@ -72,6 +74,7 @@ test('serves the live board page and the v2 board payload', async (t) => {
 
   const all = await board(url, 'all')
   assert.equal(all.ok, true)
+  assert.equal(typeof all.serverNow, 'string')
   assert.equal(all.board.project, null)
   assert.equal(all.summary.total, 0)
 })
@@ -80,8 +83,10 @@ test('create, move and version conflicts round-trip through the api', async (t) 
   const { url } = await fixture(t)
   const created = await act(url, { action: 'task.create', title: 'Ship the web board', priority: 'high' })
   assert.equal(created.status, 200)
+  assert.equal(typeof created.body.serverNow, 'string')
   const task = column(created.body, 'backlog')[0]
   assert.match(task.identifier, /^[A-Z0-9]+-1$/)
+  assert.deepEqual(task.activity.at(-1).data, { status: 'backlog' })
   assert.equal(task.version, 1)
   assert.equal(task.priority, 'high')
   assert.equal(task.projectId, created.body.projects[0].id)
@@ -120,16 +125,23 @@ test('ask, answer and approve work from the web ui', async (t) => {
   assert.equal(waiting.attention, 'question')
   assert.equal(waiting.version, 2)
   assert.equal(waiting.pendingQuestion.options[1].detail, 'live traffic')
+  assert.deepEqual(waiting.activity.at(-1).data, { prompt: 'Which target?' })
 
   const answered = await act(url, { action: 'task.answer', id, version: 2, option: 'opt_2' })
   assert.equal(answered.status, 200)
   assert.equal(column(answered.body, 'needs')[0].pendingQuestion.selected, 'opt_2')
+  assert.deepEqual(column(answered.body, 'needs')[0].activity.at(-1).data, {
+    optionLabel: 'Production',
+  })
 
   const approved = await act(url, { action: 'task.approve', id, version: 3, note: 'ship it' })
   assert.equal(approved.status, 200)
   assert.equal(column(approved.body, 'done')[0].status, 'done')
   assert.equal(column(approved.body, 'needs').length, 0)
   assert.equal(column(approved.body, 'done')[0].questionResolution.decision, 'approve')
+  assert.deepEqual(column(approved.body, 'done')[0].activity.at(-1).data, {
+    optionLabel: 'Production',
+  })
   assert.equal(approved.body.projects[0].openCount, 0)
 
   const second = await act(url, { action: 'task.create', title: 'Pick a format' })
@@ -154,9 +166,13 @@ test('block and unblock move a task in and out of needs you', async (t) => {
   const blocked = await act(url, { action: 'task.block', id, version: 1, reason: 'need access' })
   assert.equal(blocked.status, 200)
   assert.equal(column(blocked.body, 'needs')[0].blockedReason, 'need access')
+  assert.deepEqual(column(blocked.body, 'needs')[0].activity.at(-1).data, {
+    reason: 'need access',
+  })
   const cleared = await act(url, { action: 'task.unblock', id, version: 2 })
   assert.equal(cleared.status, 200)
   assert.equal(column(cleared.body, 'backlog')[0].blockedReason, null)
+  assert.deepEqual(column(cleared.body, 'backlog')[0].activity.at(-1).data, {})
 })
 
 test('project create, filter, archive and restore round-trip through the api', async (t) => {

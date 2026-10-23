@@ -168,11 +168,13 @@ function checkVersion(task, version) {
   }
 }
 
-function touch(task, actor, kind, summary, changes = []) {
+function touch(task, actor, kind, summary, changes = [], data = {}) {
   task.version += 1
   task.updatedAt = nowIso()
   if (!Array.isArray(task.activity)) task.activity = []
-  task.activity.push({ at: task.updatedAt, actor, kind, summary, changes })
+  const entry = { at: task.updatedAt, actor, kind, summary, changes }
+  if (data && typeof data === 'object' && !Array.isArray(data)) entry.data = data
+  task.activity.push(entry)
   if (task.activity.length > MAX_ACTIVITY) {
     task.activity = task.activity.slice(-MAX_ACTIVITY)
   }
@@ -417,6 +419,7 @@ export async function createTask(store, input = {}) {
           kind: 'created',
           summary: `created ${identifier} in ${status}`,
           changes: [],
+          data: { status },
         },
       ],
       version: 1,
@@ -479,7 +482,14 @@ export async function updateTask(store, input = {}) {
     }
 
     if (!changes.length) return { ok: true, task, unchanged: true }
-    touch(task, actor, 'updated', `updated ${changes.map((change) => change.field).join(', ')}`, changes)
+    touch(
+      task,
+      actor,
+      'updated',
+      `updated ${changes.map((change) => change.field).join(', ')}`,
+      changes,
+      { fields: changes.map((change) => change.field) },
+    )
     return { ok: true, task }
   })
 }
@@ -533,9 +543,14 @@ export async function moveTask(store, input = {}) {
     const before = task.status
     task.status = status
     task.statusSince = nowIso()
-    touch(task, actor, 'moved', `moved ${task.identifier} from ${before} to ${status}`, [
-      { field: 'status', before, after: status },
-    ])
+    touch(
+      task,
+      actor,
+      'moved',
+      `moved ${task.identifier} from ${before} to ${status}`,
+      [{ field: 'status', before, after: status }],
+      { from: before, to: status },
+    )
     return { ok: true, task }
   })
 }
@@ -614,9 +629,14 @@ export async function reorderTask(store, input = {}) {
 
     const before = sortOrderOf(task)
     task.sortOrder = sortOrder
-    touch(task, actor, 'reordered', `reordered ${task.identifier} in ${column}`, [
-      { field: 'sortOrder', before, after: sortOrder },
-    ])
+    touch(
+      task,
+      actor,
+      'reordered',
+      `reordered ${task.identifier} in ${column}`,
+      [{ field: 'sortOrder', before, after: sortOrder }],
+      { column },
+    )
     return { ok: true, task }
   })
 }
@@ -631,9 +651,14 @@ export async function blockTask(store, input = {}) {
     const before = task.blockedReason
     task.blockedReason = reason
     task.blockedSince = nowIso()
-    touch(task, actor, 'blocked', `blocked ${task.identifier}: ${reason}`, [
-      { field: 'blockedReason', before, after: reason },
-    ])
+    touch(
+      task,
+      actor,
+      'blocked',
+      `blocked ${task.identifier}: ${reason}`,
+      [{ field: 'blockedReason', before, after: reason }],
+      { reason },
+    )
     return { ok: true, task }
   })
 }
@@ -647,9 +672,14 @@ export async function unblockTask(store, input = {}) {
     const before = task.blockedReason
     task.blockedReason = null
     task.blockedSince = null
-    touch(task, actor, 'unblocked', `unblocked ${task.identifier}`, [
-      { field: 'blockedReason', before, after: null },
-    ])
+    touch(
+      task,
+      actor,
+      'unblocked',
+      `unblocked ${task.identifier}`,
+      [{ field: 'blockedReason', before, after: null }],
+      {},
+    )
     return { ok: true, task }
   })
 }
@@ -691,7 +721,7 @@ export async function askTask(store, input = {}) {
       createdAt: nowIso(),
     }
     task.questionResolution = null
-    touch(task, actor, 'question', `asked: ${prompt}`)
+    touch(task, actor, 'question', `asked: ${prompt}`, [], { prompt })
     return { ok: true, task }
   })
 }
@@ -718,7 +748,14 @@ export async function answerTask(store, input = {}) {
       task.pendingQuestion.selected = selected.id
     }
     task.pendingQuestion.answerNote = note
-    touch(task, actor, 'answered', selected ? `answered: ${selected.label}` : 'recorded an answer note')
+    touch(
+      task,
+      actor,
+      'answered',
+      selected ? `answered: ${selected.label}` : 'recorded an answer note',
+      [],
+      { optionLabel: selected ? selected.label : null },
+    )
     return { ok: true, task }
   })
 }
@@ -758,9 +795,14 @@ export async function approveTask(store, input = {}) {
     }
     task.status = 'done'
     task.statusSince = at
-    touch(task, actor, 'approved', `approved ${task.identifier}`, [
-      { field: 'status', before, after: 'done' },
-    ])
+    touch(
+      task,
+      actor,
+      'approved',
+      `approved ${task.identifier}`,
+      [{ field: 'status', before, after: 'done' }],
+      { optionLabel: task.questionResolution ? task.questionResolution.optionLabel : null },
+    )
     return { ok: true, task }
   })
 }
@@ -790,9 +832,14 @@ export async function rejectTask(store, input = {}) {
     task.statusSince = at
     task.blockedReason = null
     task.blockedSince = null
-    touch(task, actor, 'rejected', `rejected ${task.identifier} back to backlog`, [
-      { field: 'status', before, after: 'backlog' },
-    ])
+    touch(
+      task,
+      actor,
+      'rejected',
+      `rejected ${task.identifier} back to backlog`,
+      [{ field: 'status', before, after: 'backlog' }],
+      note ? { note } : {},
+    )
     return { ok: true, task }
   })
 }
@@ -805,9 +852,14 @@ export async function archiveTask(store, input = {}) {
     checkVersion(task, input.version)
     if (task.archivedAt) return { ok: true, task, unchanged: true }
     task.archivedAt = nowIso()
-    touch(task, actor, 'archived', `archived ${task.identifier}`, [
-      { field: 'archivedAt', before: null, after: task.archivedAt },
-    ])
+    touch(
+      task,
+      actor,
+      'archived',
+      `archived ${task.identifier}`,
+      [{ field: 'archivedAt', before: null, after: task.archivedAt }],
+      {},
+    )
     return { ok: true, task }
   })
 }
@@ -823,9 +875,14 @@ export async function restoreTask(store, input = {}) {
     }
     const before = task.archivedAt
     task.archivedAt = null
-    touch(task, actor, 'restored', `restored ${task.identifier}`, [
-      { field: 'archivedAt', before, after: null },
-    ])
+    touch(
+      task,
+      actor,
+      'restored',
+      `restored ${task.identifier}`,
+      [{ field: 'archivedAt', before, after: null }],
+      {},
+    )
     return { ok: true, task }
   })
 }
@@ -843,7 +900,7 @@ export async function addComment(store, input = {}) {
       createdAt: nowIso(),
     }
     task.comments.push(comment)
-    touch(task, actor, 'commented', body.slice(0, 120))
+    touch(task, actor, 'commented', body.slice(0, 120), [], { preview: body.slice(0, 120) })
     return { ok: true, task }
   })
 }
@@ -912,7 +969,7 @@ export async function addAttachment(store, input = {}) {
       writeAttachmentFile(store, attachment.id, buffer)
       writtenId = attachment.id
       task.attachments.push(attachment)
-      touch(task, actor, 'attached', `attached ${filename}`)
+      touch(task, actor, 'attached', `attached ${filename}`, [], { filename })
       return { ok: true, task, attachment }
     })
   } catch (error) {
@@ -943,7 +1000,14 @@ export async function removeAttachment(store, input = {}) {
     }
     const [attachment] = attachments.splice(index, 1)
     deleteAttachmentFile(store, attachment.id)
-    touch(task, actor, 'detached', `removed attachment ${attachment.filename}`)
+    touch(
+      task,
+      actor,
+      'detached',
+      `removed attachment ${attachment.filename}`,
+      [],
+      { filename: attachment.filename },
+    )
     return { ok: true, task, attachment }
   })
 }

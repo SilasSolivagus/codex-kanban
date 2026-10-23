@@ -6,6 +6,7 @@ import path from 'node:path'
 import { createStore } from '../plugin/src/store.mjs'
 import {
   KanbanError,
+  addAttachment,
   addComment,
   answerTask,
   approveTask,
@@ -22,6 +23,7 @@ import {
   listProjects,
   moveTask,
   rejectTask,
+  removeAttachment,
   reorderTask,
   restoreProject,
   restoreTask,
@@ -73,8 +75,12 @@ test('creating a task assigns CK-1, a version and a created activity entry', asy
   assert.equal(task.pendingQuestion, null)
   assert.equal(task.questionResolution, null)
   assert.equal(task.activity.length, 1)
-  assert.deepEqual(Object.keys(task.activity[0]).sort(), ['actor', 'at', 'changes', 'kind', 'summary'])
+  assert.deepEqual(
+    Object.keys(task.activity[0]).sort(),
+    ['actor', 'at', 'changes', 'data', 'kind', 'summary'],
+  )
   assert.equal(task.activity[0].kind, 'created')
+  assert.deepEqual(task.activity[0].data, { status: 'backlog' })
   assert.equal(store.read().projects[0].nextTaskNumber, 2)
 })
 test('identifiers keep counting up and a created task can start in another status', async (t) => {
@@ -622,6 +628,106 @@ test('activity is capped at 200 entries', async (t) => {
   assert.equal(commented.task.activity.length, 200)
   assert.equal(commented.task.activity.at(-1).kind, 'commented')
   assert.equal(commented.task.activity[0].summary, 'seed 1')
+})
+
+test('activity entries carry structured data for every kind', async (t) => {
+  const { store } = fixture(t)
+  let task = (await createTask(store, { title: 'structured activity' })).task
+  const expectLast = (kind, data) => {
+    const last = task.activity.at(-1)
+    assert.equal(last.kind, kind)
+    assert.deepEqual(last.data, data)
+    assert.equal(typeof last.summary, 'string')
+    assert.ok(last.summary.length > 0, `${kind} keeps a human summary`)
+  }
+  expectLast('created', { status: 'backlog' })
+
+  task = (await updateTask(store, {
+    id: task.id,
+    version: task.version,
+    priority: 'high',
+  })).task
+  expectLast('updated', { fields: ['priority'] })
+
+  task = (await moveTask(store, { id: task.id, version: task.version, to: 'running' })).task
+  expectLast('moved', { from: 'backlog', to: 'in_progress' })
+
+  task = (await reorderTask(store, { id: task.id, version: task.version, position: 0 })).task
+  expectLast('reordered', { column: 'running' })
+
+  task = (await blockTask(store, {
+    id: task.id,
+    version: task.version,
+    reason: 'need token',
+  })).task
+  expectLast('blocked', { reason: 'need token' })
+
+  task = (await unblockTask(store, { id: task.id, version: task.version })).task
+  expectLast('unblocked', {})
+
+  task = (await askTask(store, {
+    id: task.id,
+    version: task.version,
+    prompt: 'Which target?',
+    options: [{ label: 'Staging' }, { label: 'Production' }],
+  })).task
+  expectLast('question', { prompt: 'Which target?' })
+
+  task = (await answerTask(store, {
+    id: task.id,
+    version: task.version,
+    option: 'opt_2',
+  })).task
+  expectLast('answered', { optionLabel: 'Production' })
+
+  task = (await approveTask(store, {
+    id: task.id,
+    version: task.version,
+    as: 'user',
+    note: 'go ahead',
+  })).task
+  expectLast('approved', { optionLabel: 'Production' })
+
+  task = (await addComment(store, {
+    id: task.id,
+    version: task.version,
+    body: 'looks good',
+  })).task
+  expectLast('commented', { preview: 'looks good' })
+
+  task = (await addAttachment(store, {
+    id: task.id,
+    version: task.version,
+    filename: 'spec.txt',
+    contentType: 'text/plain',
+    data: Buffer.from('hello').toString('base64'),
+  })).task
+  expectLast('attached', { filename: 'spec.txt' })
+
+  const attachment = task.attachments[0]
+  task = (await removeAttachment(store, {
+    id: task.id,
+    version: task.version,
+    attachmentId: attachment.id,
+  })).task
+  expectLast('detached', { filename: 'spec.txt' })
+
+  task = (await archiveTask(store, { id: task.id, version: task.version })).task
+  expectLast('archived', {})
+
+  task = (await restoreTask(store, { id: task.id, version: task.version })).task
+  expectLast('restored', {})
+
+  const review = await newTask(store, { status: 'in_review', title: 'reject me' })
+  const rejected = await rejectTask(store, {
+    id: review.identifier,
+    version: 1,
+    as: 'user',
+    note: 'not now',
+  })
+  const rejection = rejected.task.activity.at(-1)
+  assert.equal(rejection.kind, 'rejected')
+  assert.deepEqual(rejection.data, { note: 'not now' })
 })
 
 test('findTask resolves ids and identifiers case-insensitively', async (t) => {
